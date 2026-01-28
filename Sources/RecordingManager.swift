@@ -8,6 +8,7 @@ class RecordingManager {
     private var whisperKit: WhisperKit?
     private var recordingURL: URL?
     private var isRecording = false
+    private var currentModelName: String = ""
 
     init() {
         Task {
@@ -15,8 +16,14 @@ class RecordingManager {
         }
     }
 
+    private func getSelectedModelName() -> String {
+        // 从 UserDefaults 读取模型设置，默认为 "base"
+        return UserDefaults.standard.string(forKey: "modelSize") ?? "base"
+    }
+
     private func initializeWhisper() async {
-        let modelName = "large-v3_turbo"
+        let modelName = getSelectedModelName()
+        currentModelName = modelName
         let modelFolder = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-\(modelName)")
 
@@ -148,6 +155,9 @@ class RecordingManager {
     func startRecording() {
         guard !isRecording else { return }
 
+        // 检查是否需要重新加载模型
+        reloadModelIfNeeded()
+
         // 创建临时文件
         let tempDir = FileManager.default.temporaryDirectory
         recordingURL = tempDir.appendingPathComponent("typeless_recording_\(UUID().uuidString).wav")
@@ -232,5 +242,17 @@ class RecordingManager {
 
     var isInitialized: Bool {
         whisperKit != nil
+    }
+
+    /// 检查是否需要重新加载模型（如果用户切换了模型设置）
+    func reloadModelIfNeeded() {
+        let selectedModel = getSelectedModelName()
+        if selectedModel != currentModelName {
+            print("检测到模型设置变更: \(currentModelName) -> \(selectedModel)")
+            whisperKit = nil
+            Task {
+                await initializeWhisper()
+            }
+        }
     }
 }
