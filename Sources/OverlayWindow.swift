@@ -60,6 +60,7 @@ class OverlayWindowController {
 
     func showProcessing() {
         viewModel.state = .processing
+        positionWindow()
     }
 
     func hide() {
@@ -114,6 +115,7 @@ struct OverlayView: View {
                     .scaleEffect(0.8)
             }
         }
+        .frame(width: 80, height: 20) // 固定内容区域大小，防止切换时窗口跳动
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(
