@@ -16,17 +16,110 @@ class RecordingManager {
     }
 
     private func initializeWhisper() async {
-        do {
-            // 使用 base 模型，平衡速度和准确性
-            // 对于中英混合，base 或 small 模型效果较好
-            whisperKit = try await WhisperKit(model: "base")
-            print("WhisperKit 初始化成功")
+        let modelName = "large-v3_turbo"
+        let modelFolder = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-\(modelName)")
 
-            // 预热模型：用一小段静音数据进行一次推理，让模型完全加载到内存
+        print("========== 开始加载 WhisperKit 模型 ==========")
+        print("模型名称: \(modelName)")
+        print("开始时间: \(Date())")
+
+        // 检查模型完整性
+        let isModelComplete = checkModelIntegrity(at: modelFolder)
+        if !isModelComplete {
+            print("⚠️ 检测到模型不完整或不存在，将删除并重新下载...")
+            try? FileManager.default.removeItem(at: modelFolder)
+            // 同时清理缓存
+            let cacheFolder = modelFolder.deletingLastPathComponent().appendingPathComponent(".cache")
+            try? FileManager.default.removeItem(at: cacheFolder)
+        } else {
+            print("✓ 模型文件完整性检查通过")
+        }
+
+        print("提示: 首次下载模型可能需要几分钟，请耐心等待...")
+
+        do {
+            print(">>> 正在初始化 WhisperKit...")
+            whisperKit = try await WhisperKit(
+                model: modelName,
+                verbose: true,
+                logLevel: .debug,
+                prewarm: false,
+                load: true,
+                download: true
+            )
+            print("========== WhisperKit 初始化成功 ==========")
+            print("完成时间: \(Date())")
+
+            // 预热模型
             await warmupModel()
         } catch {
-            print("WhisperKit 初始化失败: \(error)")
+            print("========== WhisperKit 初始化失败 ==========")
+            print("失败时间: \(Date())")
+            print("错误类型: \(type(of: error))")
+            print("错误信息: \(error)")
+            print("错误详情: \(error.localizedDescription)")
+
+            // 如果加载失败，尝试删除模型并提示用户重启
+            print(">>> 正在清理可能损坏的模型文件...")
+            try? FileManager.default.removeItem(at: modelFolder)
+            print(">>> 模型已清理，请重启应用以重新下载模型")
         }
+    }
+
+    /// 检查模型文件完整性
+    private func checkModelIntegrity(at modelFolder: URL) -> Bool {
+        let fileManager = FileManager.default
+
+        // 检查模型文件夹是否存在
+        guard fileManager.fileExists(atPath: modelFolder.path) else {
+            print("  - 模型文件夹不存在")
+            return false
+        }
+
+        // 必需的 mlmodelc 目录及其 weights 子目录
+        let requiredModels = [
+            "AudioEncoder.mlmodelc",
+            "MelSpectrogram.mlmodelc",
+            "TextDecoder.mlmodelc"
+        ]
+
+        for model in requiredModels {
+            let modelPath = modelFolder.appendingPathComponent(model)
+            let weightsPath = modelPath.appendingPathComponent("weights/weight.bin")
+
+            // 检查 mlmodelc 目录存在
+            guard fileManager.fileExists(atPath: modelPath.path) else {
+                print("  - \(model): ✗ (目录不存在)")
+                return false
+            }
+
+            // 检查 weights/weight.bin 存在（某些模型可能不需要）
+            if !fileManager.fileExists(atPath: weightsPath.path) {
+                // 检查是否有 model.mil 文件（有些模型用这个代替 weights）
+                let milPath = modelPath.appendingPathComponent("model.mil")
+                if fileManager.fileExists(atPath: milPath.path) {
+                    // 如果有 model.mil，还需要检查它引用的 weights 是否存在
+                    // 读取 model.mil 检查是否引用了 weight.bin
+                    if let milContent = try? String(contentsOf: milPath, encoding: .utf8),
+                       milContent.contains("weight.bin") {
+                        print("  - \(model): ✗ (缺少 weights/weight.bin)")
+                        return false
+                    }
+                }
+            }
+            print("  - \(model): ✓")
+        }
+
+        // 检查 config.json
+        let configPath = modelFolder.appendingPathComponent("config.json")
+        guard fileManager.fileExists(atPath: configPath.path) else {
+            print("  - config.json: ✗")
+            return false
+        }
+        print("  - config.json: ✓")
+
+        return true
     }
 
     private func warmupModel() async {
