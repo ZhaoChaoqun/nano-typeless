@@ -21,8 +21,34 @@ class RecordingManager {
             // 对于中英混合，base 或 small 模型效果较好
             whisperKit = try await WhisperKit(model: "base")
             print("WhisperKit 初始化成功")
+
+            // 预热模型：用一小段静音数据进行一次推理，让模型完全加载到内存
+            await warmupModel()
         } catch {
             print("WhisperKit 初始化失败: \(error)")
+        }
+    }
+
+    private func warmupModel() async {
+        guard let whisper = whisperKit else { return }
+
+        print("正在预热模型...")
+        do {
+            // 创建一小段静音音频数据进行预热
+            let sampleRate = 16000
+            let duration = 0.5 // 0.5秒静音
+            let sampleCount = Int(Double(sampleRate) * duration)
+            let silentAudio = [Float](repeating: 0.0, count: sampleCount)
+
+            // 执行一次转录来预热模型
+            let options = DecodingOptions(
+                task: .transcribe,
+                language: "zh"
+            )
+            _ = try await whisper.transcribe(audioArray: silentAudio, decodeOptions: options)
+            print("模型预热完成")
+        } catch {
+            print("模型预热失败（可忽略）: \(error)")
         }
     }
 
@@ -91,7 +117,15 @@ class RecordingManager {
         }
 
         do {
-            let results = try await whisper.transcribe(audioPath: audioURL.path)
+            // 配置解码选项，支持中英文混合识别
+            let options = DecodingOptions(
+                task: .transcribe,
+                language: "zh",
+                temperatureFallbackCount: 3,
+                usePrefillPrompt: true
+            )
+
+            let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
 
             // 合并所有转录结果
             let text = results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)

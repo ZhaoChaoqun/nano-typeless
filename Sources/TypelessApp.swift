@@ -69,14 +69,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.async {
                     self.showPermissionAlert(for: "麦克风")
                 }
+            } else {
+                print("✓ 麦克风权限已授予")
             }
         }
 
         // Check accessibility permission for global key monitoring
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let trusted = AXIsProcessTrustedWithOptions(options)
-        if !trusted {
-            print("需要辅助功能权限才能监听全局按键")
+        if trusted {
+            print("✓ 辅助功能权限已授予")
+        } else {
+            print("⚠️ 需要辅助功能权限才能监听全局按键")
+            print("请前往: 系统设置 > 隐私与安全性 > 辅助功能")
+            print("授权后需要重新启动 Typeless 应用")
         }
     }
 
