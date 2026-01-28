@@ -14,6 +14,7 @@
 		1A000005 /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000015 /* TextInserter.swift */; };
 		1A000006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000016 /* SettingsView.swift */; };
 		1A000020 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A00001F /* WhisperKit */; };
+		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		1A000016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1A000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A000018 /* Typeless.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Typeless.entitlements; sourceTree = "<group>"; };
+		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +40,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1A000032 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A000030 /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXGroup section */
 		1A000007 = {
@@ -67,6 +80,7 @@
 				1A000016 /* SettingsView.swift */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
+				1A000031 /* AppIcon.icns */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -80,6 +94,7 @@
 			buildPhases = (
 				1A00000B /* Sources */,
 				1A00000D /* Frameworks */,
+				1A000032 /* Resources */,
 			);
 			buildRules = (
 			);
