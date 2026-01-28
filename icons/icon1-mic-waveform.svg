@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="110" fill="url(#bg1)"/>
+  <!-- Microphone -->
+  <rect x="206" y="100" width="100" height="160" rx="50" fill="white"/>
+  <path d="M166 220 v40 a90 90 0 0 0 180 0 v-40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+  <line x1="256" y1="350" x2="256" y2="400" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  <!-- Waveform lines -->
+  <line x1="100" y1="256" x2="100" y2="256" stroke="rgba(255,255,255,0.6)" stroke-width="16" stroke-linecap="round">
+    <animate attributeName="y1" values="220;290;220" dur="0.8s" repeatCount="indefinite"/>
+    <animate attributeName="y2" values="290;220;290" dur="0.8s" repeatCount="indefinite"/>
+  </line>
+  <line x1="140" y1="200" x2="140" y2="310" stroke="rgba(255,255,255,0.6)" stroke-width="16" stroke-linecap="round"/>
+  <line x1="372" y1="200" x2="372" y2="310" stroke="rgba(255,255,255,0.6)" stroke-width="16" stroke-linecap="round"/>
+  <line x1="412" y1="230" x2="412" y2="280" stroke="rgba(255,255,255,0.6)" stroke-width="16" stroke-linecap="round"/>
+</svg>

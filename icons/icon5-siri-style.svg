@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Background gradient like Siri -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="50%" style="stop-color:#16213e"/>
+      <stop offset="100%" style="stop-color:#0f0f1a"/>
+    </linearGradient>
+
+    <!-- Multicolor orb gradients -->
+    <radialGradient id="orbGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" style="stop-color:#ff6b9d"/>
+      <stop offset="25%" style="stop-color:#c44dff"/>
+      <stop offset="50%" style="stop-color:#6e8efb"/>
+      <stop offset="75%" style="stop-color:#4ecdc4"/>
+      <stop offset="100%" style="stop-color:#44a08d"/>
+    </radialGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Inner highlight -->
+    <radialGradient id="highlight" cx="35%" cy="25%" r="40%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.6)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+
+  <!-- Outer glow rings -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#orbGrad)" stroke-width="2" opacity="0.3"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#orbGrad)" stroke-width="1" opacity="0.2"/>
+
+  <!-- Main orb -->
+  <circle cx="256" cy="256" r="130" fill="url(#orbGrad)" filter="url(#glow)"/>
+
+  <!-- Highlight -->
+  <ellipse cx="220" cy="200" rx="60" ry="40" fill="url(#highlight)"/>
+
+  <!-- Waveform lines inside orb -->
+  <g opacity="0.9">
+    <line x1="176" y1="280" x2="176" y2="230" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <line x1="206" y1="300" x2="206" y2="210" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <line x1="236" y1="310" x2="236" y2="200" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <line x1="266" y1="315" x2="266" y2="195" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <line x1="296" y1="305" x2="296" y2="205" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <line x1="326" y1="290" x2="326" y2="220" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <line x1="356" y1="270" x2="356" y2="240" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>
