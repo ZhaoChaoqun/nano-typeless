@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import AVFoundation
 
 @main
 struct TypelessApp: App {
@@ -17,6 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var recordingManager: RecordingManager?
     var overlayWindow: OverlayWindowController?
     var keyMonitor: KeyMonitor?
+    var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide dock icon - we're a menu bar app
@@ -123,12 +125,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func openSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        print(">>> openSettings() 被调用")
+
+        // 如果设置窗口已经存在，直接显示
+        if let window = settingsWindow {
+            print(">>> 使用已存在的设置窗口")
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        // 创建新的设置窗口
+        print(">>> 创建新的设置窗口")
+        let settingsView = SettingsView()
+        let hostingController = NSHostingController(rootView: settingsView)
+
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "Typeless 设置"
+        window.styleMask = [.titled, .closable]
+        window.setContentSize(NSSize(width: 400, height: 450))
+        window.center()
+
+        // 保持窗口引用
+        settingsWindow = window
+
+        // 显示窗口
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        print(">>> 设置窗口已创建并显示")
     }
 
     @objc func quitApp() {
         NSApplication.shared.terminate(nil)
     }
 }
-
-import AVFoundation
