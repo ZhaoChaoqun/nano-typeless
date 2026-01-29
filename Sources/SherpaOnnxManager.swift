@@ -2,15 +2,26 @@ import Foundation
 
 /// Sherpa-ONNX 语音识别管理器
 /// 支持 Paraformer 和 SenseVoice 模型
-class SherpaOnnxManager {
+class SherpaOnnxManager: NSObject {
     static let shared = SherpaOnnxManager()
 
-    /// 模型存储根目录
+    /// 下载进度回调
+    private var progressCallback: ((String) -> Void)?
+    /// 下载完成回调
+    private var completionCallback: ((Bool, String?) -> Void)?
+    /// 当前下载的模型名称
+    private var currentModelName: String?
+    /// 当前下载任务
+    private var currentDownloadTask: URLSessionDownloadTask?
+    /// 临时文件保存路径
+    private var tempFileURL: URL?
+
+    /// 模型存储根目录 (使用 Application Support 目录，避免触发文稿文件夹访问弹窗)
     private let modelsDirectory: URL = {
-        let documentsPath = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Documents/typeless/models")
-        try? FileManager.default.createDirectory(at: documentsPath, withIntermediateDirectories: true)
-        return documentsPath
+        let appSupportPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Typeless/models")
+        try? FileManager.default.createDirectory(at: appSupportPath, withIntermediateDirectories: true)
+        return appSupportPath
     }()
 
     /// Paraformer 模型信息
@@ -105,41 +116,31 @@ class SherpaOnnxManager {
             return
         }
 
+        // 保存回调和模型名称
+        self.progressCallback = progress
+        self.completionCallback = completion
+        self.currentModelName = modelName
+
         progress("正在下载 \(modelName)...")
 
-        let task = URLSession.shared.downloadTask(with: url) { [weak self] tempURL, response, error in
-            guard let self = self else { return }
+        // 创建带委托的 URLSession
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
 
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(false, "下载失败: \(error.localizedDescription)")
-                }
-                return
-            }
-
-            guard let tempURL = tempURL else {
-                DispatchQueue.main.async {
-                    completion(false, "下载失败: 无法获取临时文件")
-                }
-                return
-            }
-
-            progress("正在解压模型...")
-
-            // 解压到模型目录
-            let destDir = self.modelsDirectory
-            let result = self.extractTarBz2(from: tempURL, to: destDir)
-
-            DispatchQueue.main.async {
-                if result {
-                    completion(true, nil)
-                } else {
-                    completion(false, "解压失败")
-                }
-            }
-        }
-
+        let task = session.downloadTask(with: url)
+        self.currentDownloadTask = task
         task.resume()
+    }
+
+    /// 格式化文件大小
+    private func formatBytes(_ bytes: Int64) -> String {
+        let kb = Double(bytes) / 1024
+        let mb = kb / 1024
+        if mb >= 1 {
+            return String(format: "%.1fMB", mb)
+        } else {
+            return String(format: "%.0fKB", kb)
+        }
     }
 
     /// 解压 tar.bz2 文件
@@ -155,6 +156,58 @@ class SherpaOnnxManager {
         } catch {
             print("解压失败: \(error)")
             return false
+        }
+    }
+}
+
+// MARK: - URLSessionDownloadDelegate
+extension SherpaOnnxManager: URLSessionDownloadDelegate {
+    /// 下载进度更新
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        let modelName = currentModelName ?? "模型"
+
+        if totalBytesExpectedToWrite > 0 {
+            let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+            let percentage = Int(progress * 100)
+            let downloaded = formatBytes(totalBytesWritten)
+            let total = formatBytes(totalBytesExpectedToWrite)
+            progressCallback?("正在下载 \(modelName)... \(percentage)% (\(downloaded) / \(total))")
+        } else {
+            let downloaded = formatBytes(totalBytesWritten)
+            progressCallback?("正在下载 \(modelName)... \(downloaded)")
+        }
+    }
+
+    /// 下载完成
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        progressCallback?("正在解压模型...")
+
+        // 解压到模型目录
+        let result = extractTarBz2(from: location, to: modelsDirectory)
+
+        if result {
+            completionCallback?(true, nil)
+        } else {
+            completionCallback?(false, "解压失败")
+        }
+
+        // 清理状态
+        currentModelName = nil
+        currentDownloadTask = nil
+        progressCallback = nil
+        completionCallback = nil
+    }
+
+    /// 下载出错
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            completionCallback?(false, "下载失败: \(error.localizedDescription)")
+
+            // 清理状态
+            currentModelName = nil
+            currentDownloadTask = nil
+            progressCallback = nil
+            completionCallback = nil
         }
     }
 }

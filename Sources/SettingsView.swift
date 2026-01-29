@@ -66,8 +66,9 @@ class ModelDownloadManager: ObservableObject {
         if model.engine == .funasr {
             return SherpaOnnxManager.shared.getModelDirectory(for: model.id)
         } else {
-            return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-\(model.name)")
+            // 使用 Application Support 目录，避免触发文稿文件夹访问弹窗
+            return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("Typeless/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-\(model.name)")
         }
     }
 
@@ -130,10 +131,16 @@ class ModelDownloadManager: ObservableObject {
             })
         } else {
             // 使用 WhisperKit 下载 Whisper 模型
+            // 使用 Application Support 目录，避免触发文稿文件夹访问弹窗
+            let whisperModelRepo = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("Typeless/huggingface/models/argmaxinc/whisperkit-coreml")
+            try? FileManager.default.createDirectory(at: whisperModelRepo, withIntermediateDirectories: true)
+
             Task {
                 do {
                     let _ = try await WhisperKit(
                         model: model.name,
+                        modelFolder: whisperModelRepo.path,
                         verbose: true,
                         logLevel: .debug,
                         prewarm: false,
@@ -284,7 +291,7 @@ struct SettingsView: View {
             }
 
             Section("关于") {
-                LabeledContent("版本", value: "1.0.0")
+                LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "未知")
                 LabeledContent("作者", value: "赵超群（Zhao Chaoqun）")
             }
 

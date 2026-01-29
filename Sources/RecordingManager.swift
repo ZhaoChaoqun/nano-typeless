@@ -91,8 +91,9 @@ class RecordingManager {
     }
 
     private func initializeWhisper(modelName: String) async {
-        let modelFolder = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Documents/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-\(modelName)")
+        // 使用 Application Support 目录，避免触发文稿文件夹访问弹窗
+        let modelFolder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Typeless/huggingface/models/argmaxinc/whisperkit-coreml/openai_whisper-\(modelName)")
 
         // 检查模型完整性
         let isModelComplete = checkWhisperModelIntegrity(at: modelFolder)
@@ -107,10 +108,16 @@ class RecordingManager {
 
         print("提示: 首次下载模型可能需要几分钟，请耐心等待...")
 
+        // WhisperKit 模型存储的父目录
+        let whisperModelRepo = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Typeless/huggingface/models/argmaxinc/whisperkit-coreml")
+        try? FileManager.default.createDirectory(at: whisperModelRepo, withIntermediateDirectories: true)
+
         do {
             print(">>> 正在初始化 WhisperKit...")
             whisperKit = try await WhisperKit(
                 model: modelName,
+                modelFolder: whisperModelRepo.path,
                 verbose: true,
                 logLevel: .debug,
                 prewarm: false,

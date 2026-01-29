@@ -42,6 +42,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Check permissions
         checkPermissions()
+
+        // 首次启动时自动下载默认模型
+        autoDownloadDefaultModelIfNeeded()
+    }
+
+    /// 首次启动时自动下载默认模型（Paraformer）
+    private func autoDownloadDefaultModelIfNeeded() {
+        let downloadManager = ModelDownloadManager.shared
+
+        // 检查是否有任何模型已下载
+        let hasAnyModel = downloadManager.availableModels.contains { downloadManager.isModelDownloaded($0.id) }
+
+        if !hasAnyModel {
+            print(">>> 首次启动，自动下载默认模型 (Paraformer)...")
+            downloadManager.downloadModel("paraformer")
+        }
     }
 
     private func setupStatusBar() {
