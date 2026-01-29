@@ -15,6 +15,12 @@
 		1A000006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000016 /* SettingsView.swift */; };
 		1A000020 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A00001F /* WhisperKit */; };
 		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
+		1A000040 /* SherpaOnnxRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000041 /* SherpaOnnxRecognizer.swift */; };
+		1A000042 /* SherpaOnnxManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000043 /* SherpaOnnxManager.swift */; };
+		1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; };
+		1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; };
+		1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +34,11 @@
 		1A000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A000018 /* Typeless.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Typeless.entitlements; sourceTree = "<group>"; };
 		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		1A000041 /* SherpaOnnxRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxRecognizer.swift; sourceTree = "<group>"; };
+		1A000043 /* SherpaOnnxManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxManager.swift; sourceTree = "<group>"; };
+		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
+		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libonnxruntime.1.17.1.dylib"; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
+		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,10 +47,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A000020 /* WhisperKit in Frameworks */,
+				1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */,
+				1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1A000056 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */,
+				1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1A000032 /* Resources */ = {
@@ -56,6 +83,7 @@
 		1A000007 = {
 			isa = PBXGroup;
 			children = (
+				1A000057 /* Frameworks */,
 				1A000019 /* Sources */,
 				1A00000F /* Products */,
 			);
@@ -78,11 +106,23 @@
 				1A000014 /* OverlayWindow.swift */,
 				1A000015 /* TextInserter.swift */,
 				1A000016 /* SettingsView.swift */,
+				1A000041 /* SherpaOnnxRecognizer.swift */,
+				1A000043 /* SherpaOnnxManager.swift */,
+				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
 				1A000031 /* AppIcon.icns */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		1A000057 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1A000051 /* libsherpa-onnx-c-api.dylib */,
+				1A000053 /* libonnxruntime.1.17.1.dylib */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -95,6 +135,7 @@
 				1A00000B /* Sources */,
 				1A00000D /* Frameworks */,
 				1A000032 /* Resources */,
+				1A000056 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -155,6 +196,8 @@
 				1A000004 /* OverlayWindow.swift in Sources */,
 				1A000005 /* TextInserter.swift in Sources */,
 				1A000006 /* SettingsView.swift in Sources */,
+				1A000040 /* SherpaOnnxRecognizer.swift in Sources */,
+				1A000042 /* SherpaOnnxManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,6 +332,11 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Sources/CSherpaOnnx",
+					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
+				);
 				INFOPLIST_FILE = Sources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -297,10 +345,15 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
+				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/CSherpaOnnx-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -315,6 +368,11 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Sources/CSherpaOnnx",
+					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
+				);
 				INFOPLIST_FILE = Sources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -323,10 +381,15 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
+				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/CSherpaOnnx-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

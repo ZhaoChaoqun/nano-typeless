@@ -1,5 +1,7 @@
 import Foundation
+#if SWIFT_PACKAGE
 import CSherpaOnnx
+#endif
 
 /// Sherpa-ONNX 离线语音识别器
 /// 支持 Paraformer 和 SenseVoice 模型
