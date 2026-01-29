@@ -35,3 +35,6 @@ Models/
 # Temporary files
 *.tmp
 *.temp
+
+# FunASR CoreML conversion scripts (contains large model files)
+funasr-coreml/
