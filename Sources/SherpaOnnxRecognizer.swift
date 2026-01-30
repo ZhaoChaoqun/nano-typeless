@@ -130,7 +130,7 @@ class SherpaOnnxRecognizer {
         config.model_config.tokens = toCString(tokensPath)
         config.model_config.num_threads = 2
         config.model_config.debug = 0
-        config.model_config.provider = toCString("cpu")
+        config.model_config.provider = toCString("coreml")
 
         switch modelType {
         case .paraformer:
