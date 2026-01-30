@@ -13,6 +13,7 @@
 		1A000004 /* OverlayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000014 /* OverlayWindow.swift */; };
 		1A000005 /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000015 /* TextInserter.swift */; };
 		1A000006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000016 /* SettingsView.swift */; };
+		1A000071 /* OnboardingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000070 /* OnboardingOverlay.swift */; };
 		1A000020 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A00001F /* WhisperKit */; };
 		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
 		1A000040 /* SherpaOnnxRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000041 /* SherpaOnnxRecognizer.swift */; };
@@ -39,6 +40,7 @@
 		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
 		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libonnxruntime.1.17.1.dylib"; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
 		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
+		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +106,7 @@
 				1A000012 /* KeyMonitor.swift */,
 				1A000013 /* RecordingManager.swift */,
 				1A000014 /* OverlayWindow.swift */,
+				1A000070 /* OnboardingOverlay.swift */,
 				1A000015 /* TextInserter.swift */,
 				1A000016 /* SettingsView.swift */,
 				1A000041 /* SherpaOnnxRecognizer.swift */,
@@ -194,6 +197,7 @@
 				1A000002 /* KeyMonitor.swift in Sources */,
 				1A000003 /* RecordingManager.swift in Sources */,
 				1A000004 /* OverlayWindow.swift in Sources */,
+				1A000071 /* OnboardingOverlay.swift in Sources */,
 				1A000005 /* TextInserter.swift in Sources */,
 				1A000006 /* SettingsView.swift in Sources */,
 				1A000040 /* SherpaOnnxRecognizer.swift in Sources */,

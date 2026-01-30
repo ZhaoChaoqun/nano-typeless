@@ -16,6 +16,7 @@ struct TypelessApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var overlayWindow: OverlayWindowController?
+    var onboardingWindow: OnboardingWindowController?
     var keyMonitor: KeyMonitor?
     var settingsWindow: NSWindow?
 
@@ -45,6 +46,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 首次启动时自动下载默认模型
         autoDownloadDefaultModelIfNeeded()
+
+        // 显示首次启动引导
+        showOnboardingIfNeeded()
+    }
+
+    /// 显示首次启动引导
+    private func showOnboardingIfNeeded() {
+        onboardingWindow = OnboardingWindowController()
+        if onboardingWindow?.shouldShowOnboarding == true {
+            // 延迟一小段时间让窗口准备好，并获取菜单栏图标位置
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                // 传递菜单栏图标位置给引导窗口
+                if let button = self?.statusItem?.button, let buttonWindow = button.window {
+                    let frameInScreen = buttonWindow.convertToScreen(button.frame)
+                    self?.onboardingWindow?.setStatusItemFrame(frameInScreen)
+                }
+                self?.onboardingWindow?.show()
+            }
+        }
     }
 
     /// 首次启动时自动下载默认模型（Paraformer）

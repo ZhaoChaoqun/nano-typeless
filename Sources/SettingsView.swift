@@ -104,6 +104,15 @@ class ModelDownloadManager: ObservableObject {
         return downloadingModel == modelId
     }
 
+    /// 发送下载进度通知
+    private func notifyDownloadProgress(_ progress: String) {
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ModelDownloadProgress"),
+            object: nil,
+            userInfo: ["progress": progress]
+        )
+    }
+
     /// 下载指定模型
     func downloadModel(_ modelId: String) {
         guard downloadingModel == nil else { return }
@@ -111,18 +120,21 @@ class ModelDownloadManager: ObservableObject {
 
         downloadingModel = modelId
         downloadProgress = "正在下载 \(model.displayName) 模型..."
+        notifyDownloadProgress(downloadProgress)
 
         if model.engine == .funasr {
             // 使用 Sherpa-ONNX 下载 FunASR 模型
             SherpaOnnxManager.shared.downloadModel(modelId, progress: { [weak self] progressText in
                 DispatchQueue.main.async {
                     self?.downloadProgress = progressText
+                    self?.notifyDownloadProgress(progressText)
                 }
             }, completion: { [weak self] success, error in
                 DispatchQueue.main.async {
                     if success {
                         self?.downloadedModels.insert(modelId)
                         self?.downloadProgress = "下载完成"
+                        self?.notifyDownloadProgress("下载完成")
                     } else {
                         self?.downloadProgress = error ?? "下载失败"
                     }
