@@ -28,7 +28,7 @@
 
 ## 🎬 Demo
 
-<video src="https://github.com/ZhaoChaoqun/typeless/raw/main/promo-video-4k.mp4" controls="controls" muted="muted" style="max-width: 100%;"></video>
+https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 
 ## ✨ Features
 
