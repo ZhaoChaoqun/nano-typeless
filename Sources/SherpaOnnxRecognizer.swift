@@ -80,7 +80,10 @@ class SherpaOnnxRecognizer {
 
         guard let textPtr = result.pointee.text else { return nil }
 
-        let text = String(cString: textPtr).trimmingCharacters(in: .whitespacesAndNewlines)
+        // 过滤 FunASR 特殊标记（如 <|nospeech|>, <|HAPPY|>, <|en|> 等）
+        var text = String(cString: textPtr)
+        text = text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? nil : text
     }
 

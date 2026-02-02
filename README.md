@@ -75,8 +75,8 @@ brew update && brew upgrade nano-typeless && xattr -cr "/Applications/Nano Typel
 
 ```bash
 # 克隆仓库
-git clone https://github.com/ZhaoChaoqun/typeless.git
-cd typeless
+git clone https://github.com/ZhaoChaoqun/nano-typeless.git
+cd nano-typeless
 
 # 用 Xcode 打开
 open Typeless.xcodeproj
@@ -259,8 +259,8 @@ brew update && brew upgrade nano-typeless && xattr -cr "/Applications/Nano Typel
 
 ```bash
 # Clone the repository
-git clone https://github.com/ZhaoChaoqun/typeless.git
-cd typeless
+git clone https://github.com/ZhaoChaoqun/nano-typeless.git
+cd nano-typeless
 
 # Open in Xcode
 open Typeless.xcodeproj
