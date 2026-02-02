@@ -1,5 +1,27 @@
 import Foundation
 
+/// 下载源
+enum DownloadSource: CaseIterable {
+    case modelScope
+    case github
+
+    var url: String {
+        switch self {
+        case .modelScope:
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17.tar.bz2"
+        case .github:
+            return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17.tar.bz2"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .modelScope: return "ModelScope"
+        case .github: return "GitHub"
+        }
+    }
+}
+
 /// FunASR Nano 模型管理器
 class SherpaOnnxManager: NSObject {
     static let shared = SherpaOnnxManager()
@@ -12,11 +34,15 @@ class SherpaOnnxManager: NSObject {
     private var currentModelName: String?
     /// 当前下载任务
     private var currentDownloadTask: URLSessionDownloadTask?
+    /// 当前下载源
+    private var currentSource: DownloadSource?
+    /// 备用下载源
+    private var fallbackSource: DownloadSource?
 
     /// 模型存储根目录
     private let modelsDirectory: URL = {
         let appSupportPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("Typeless/models")
+            .appendingPathComponent("Nano Typeless/models")
         try? FileManager.default.createDirectory(at: appSupportPath, withIntermediateDirectories: true)
         return appSupportPath
     }()
@@ -24,7 +50,6 @@ class SherpaOnnxManager: NSObject {
     /// 模型配置
     static let modelId = "sense-voice-funasr-nano"
     static let folderName = "sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17"
-    static let downloadURL = "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17.tar.bz2"
     static let displayName = "SenseVoice FunASR Nano"
 
     /// 获取模型路径
@@ -46,9 +71,81 @@ class SherpaOnnxManager: NSObject {
         return getModelPath() != nil
     }
 
+    /// 选择最快的下载源
+    private func selectFastestSource() async -> DownloadSource {
+        print("[SherpaOnnx] 正在检测最快下载源...")
+
+        return await withTaskGroup(of: (DownloadSource, Bool).self) { group in
+            let timeout: TimeInterval = 5.0
+
+            for source in DownloadSource.allCases {
+                group.addTask {
+                    guard let url = URL(string: source.url) else {
+                        return (source, false)
+                    }
+                    var request = URLRequest(url: url, timeoutInterval: timeout)
+                    request.httpMethod = "HEAD"
+
+                    do {
+                        let (_, response) = try await URLSession.shared.data(for: request)
+                        if let httpResponse = response as? HTTPURLResponse,
+                           (200...399).contains(httpResponse.statusCode) {
+                            print("[SherpaOnnx] \(source.displayName) 响应成功")
+                            return (source, true)
+                        }
+                    } catch {
+                        print("[SherpaOnnx] \(source.displayName) 请求失败: \(error.localizedDescription)")
+                    }
+                    return (source, false)
+                }
+            }
+
+            // 返回第一个成功的
+            for await (source, success) in group {
+                if success {
+                    print("[SherpaOnnx] 选择下载源: \(source.displayName)")
+                    group.cancelAll()
+                    return source
+                }
+            }
+
+            // 都失败，默认 ModelScope
+            print("[SherpaOnnx] 检测失败，默认使用 ModelScope")
+            return .modelScope
+        }
+    }
+
     /// 下载模型
     func downloadModel(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
-        guard let url = URL(string: Self.downloadURL) else {
+        Task {
+            // 1. 检测最快源
+            await MainActor.run {
+                progress("正在检测最佳下载源...")
+            }
+
+            let primarySource = await selectFastestSource()
+            let fallback: DownloadSource = primarySource == .modelScope ? .github : .modelScope
+
+            // 2. 开始下载
+            await MainActor.run {
+                self.startDownload(
+                    from: primarySource,
+                    fallback: fallback,
+                    progress: progress,
+                    completion: completion
+                )
+            }
+        }
+    }
+
+    /// 从指定源开始下载
+    private func startDownload(
+        from source: DownloadSource,
+        fallback: DownloadSource,
+        progress: @escaping (String) -> Void,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        guard let url = URL(string: source.url) else {
             completion(false, "无效的下载地址")
             return
         }
@@ -56,8 +153,10 @@ class SherpaOnnxManager: NSObject {
         self.progressCallback = progress
         self.completionCallback = completion
         self.currentModelName = Self.displayName
+        self.currentSource = source
+        self.fallbackSource = fallback
 
-        progress("正在下载 \(Self.displayName)...")
+        progress("正在从 \(source.displayName) 下载 \(Self.displayName)...")
 
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
@@ -99,16 +198,17 @@ class SherpaOnnxManager: NSObject {
 extension SherpaOnnxManager: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         let modelName = currentModelName ?? "模型"
+        let sourceName = currentSource?.displayName ?? ""
 
         if totalBytesExpectedToWrite > 0 {
             let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
             let percentage = Int(progress * 100)
             let downloaded = formatBytes(totalBytesWritten)
             let total = formatBytes(totalBytesExpectedToWrite)
-            progressCallback?("正在下载 \(modelName)... \(percentage)% (\(downloaded) / \(total))")
+            progressCallback?("正在从 \(sourceName) 下载 \(modelName)... \(percentage)% (\(downloaded) / \(total))")
         } else {
             let downloaded = formatBytes(totalBytesWritten)
-            progressCallback?("正在下载 \(modelName)... \(downloaded)")
+            progressCallback?("正在从 \(sourceName) 下载 \(modelName)... \(downloaded)")
         }
     }
 
@@ -123,20 +223,33 @@ extension SherpaOnnxManager: URLSessionDownloadDelegate {
             completionCallback?(false, "解压失败")
         }
 
-        currentModelName = nil
-        currentDownloadTask = nil
-        progressCallback = nil
-        completionCallback = nil
+        cleanup()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
-            completionCallback?(false, "下载失败: \(error.localizedDescription)")
+            // 如果有备用源，尝试回退
+            if let fallback = fallbackSource,
+               let progress = progressCallback,
+               let completion = completionCallback {
+                print("[SherpaOnnx] 下载失败，尝试备用源: \(fallback.displayName)")
+                progress("下载失败，正在尝试备用源...")
+                fallbackSource = nil  // 清除，避免无限重试
+                startDownload(from: fallback, fallback: fallback, progress: progress, completion: completion)
+                return
+            }
 
-            currentModelName = nil
-            currentDownloadTask = nil
-            progressCallback = nil
-            completionCallback = nil
+            completionCallback?(false, "下载失败: \(error.localizedDescription)")
+            cleanup()
         }
+    }
+
+    private func cleanup() {
+        currentModelName = nil
+        currentDownloadTask = nil
+        currentSource = nil
+        fallbackSource = nil
+        progressCallback = nil
+        completionCallback = nil
     }
 }

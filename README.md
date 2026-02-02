@@ -2,7 +2,7 @@
   <img src="https://img.icons8.com/fluency/96/microphone.png" width="80" />
 </p>
 
-<h1 align="center">Typeless</h1>
+<h1 align="center">Nano Typeless</h1>
 
 <p align="center">
   <strong>按下即说，语音秒变文字</strong><br>
@@ -61,14 +61,14 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 
 ```bash
 # 安装
-brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless && xattr -cr /Applications/Typeless.app
+brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
 ```
 
 ### 升级
 
 ```bash
 # 升级到最新版本
-brew update && brew upgrade nano-typeless && xattr -cr /Applications/Typeless.app
+brew update && brew upgrade nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
 ```
 
 ### 从源码编译
@@ -104,7 +104,7 @@ xcodebuild -project Typeless.xcodeproj -scheme Typeless build
 
 ### 快速开始
 
-1. **启动** Typeless - 出现在菜单栏
+1. **启动** Nano Typeless - 出现在菜单栏
 2. **按住** `Fn` 键开始说话
 3. **松开** `Fn` 键完成录音
 4. **文字** 自动插入到光标位置
@@ -245,14 +245,14 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 
 ```bash
 # Install
-brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless && xattr -cr /Applications/Typeless.app
+brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
 ```
 
 ### Upgrade
 
 ```bash
 # Upgrade to latest version
-brew update && brew upgrade nano-typeless && xattr -cr /Applications/Typeless.app
+brew update && brew upgrade nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
 ```
 
 ### Build from Source
@@ -288,7 +288,7 @@ On first launch, you'll need to grant two permissions:
 
 ### Quick Start
 
-1. **Launch** Typeless - it appears in your menu bar
+1. **Launch** Nano Typeless - it appears in your menu bar
 2. **Hold** the `Fn` key and start speaking
 3. **Release** the `Fn` key when done
 4. **Text** is automatically inserted at cursor position

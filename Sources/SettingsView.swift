@@ -113,7 +113,7 @@ struct SettingsView: View {
             } header: {
                 Text("权限")
             } footer: {
-                Text("Typeless 需要辅助功能权限来监听全局按键，需要麦克风权限来录制语音。")
+                Text("Nano Typeless 需要辅助功能权限来监听全局按键，需要麦克风权限来录制语音。")
             }
         }
         .formStyle(.grouped)

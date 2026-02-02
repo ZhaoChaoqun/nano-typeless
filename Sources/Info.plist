@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Typeless 需要使用麦克风来录制您的语音并转换为文字</string>
+    <string>Nano Typeless 需要使用麦克风来录制您的语音并转换为文字</string>
     <key>LSUIElement</key>
     <true/>
     <key>CFBundleName</key>
-    <string>Typeless</string>
+    <string>Nano Typeless</string>
     <key>CFBundleDisplayName</key>
-    <string>Typeless</string>
+    <string>Nano Typeless</string>
     <key>CFBundleIdentifier</key>
     <string>com.typeless.app</string>
     <key>CFBundleVersion</key>

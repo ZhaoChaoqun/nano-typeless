@@ -62,11 +62,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Typeless")
+            button.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Nano Typeless")
         }
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Typeless - 语音输入", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Nano Typeless - 语音输入", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "长按 Fn 键开始录音", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
@@ -91,7 +91,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPermissionAlert(for permission: String) {
         let alert = NSAlert()
         alert.messageText = "需要\(permission)权限"
-        alert.informativeText = "请在系统设置中授予 Typeless \(permission)访问权限"
+        alert.informativeText = "请在系统设置中授予 Nano Typeless \(permission)访问权限"
         alert.alertStyle = .warning
         alert.addButton(withTitle: "打开系统设置")
         alert.addButton(withTitle: "取消")
@@ -135,7 +135,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: settingsView)
 
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "Typeless 设置"
+        window.title = "Nano Typeless 设置"
         window.styleMask = [.titled, .closable]
         window.setContentSize(NSSize(width: 400, height: 380))
         window.center()
