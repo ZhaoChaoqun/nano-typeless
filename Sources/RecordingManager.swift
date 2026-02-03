@@ -5,11 +5,18 @@ import AVFoundation
 class RecordingManager {
     static let shared = RecordingManager()
 
-    private var audioRecorder: AVAudioRecorder?
+    private var audioEngine: AVAudioEngine?
     private var recognizer: SherpaOnnxRecognizer?
-    private var recordingURL: URL?
+    private var vad: SherpaOnnxVAD?
     private var isRecording = false
     private var isInitializing = false
+
+    /// 部分识别结果回调
+    var onPartialResult: ((String) -> Void)?
+    /// 累积的识别文字
+    private var accumulatedText: String = ""
+    /// 用于识别的队列
+    private let recognitionQueue = DispatchQueue(label: "com.typeless.recognition", qos: .userInitiated)
 
     init() {
         Task { await initializeRecognizer() }
@@ -35,74 +42,201 @@ class RecordingManager {
         } else {
             print("========== 模型加载失败 ==========")
         }
+
+        // 初始化 VAD
+        await initializeVAD()
+    }
+
+    private func initializeVAD() async {
+        // 先检查 VAD 模型是否存在
+        if let vadPath = SherpaOnnxManager.shared.getVADModelPath() {
+            vad = SherpaOnnxVAD(modelPath: vadPath)
+            if vad != nil {
+                print("========== VAD 加载成功 ==========")
+            }
+        } else {
+            print("⚠️ VAD 模型未下载，正在下载...")
+            // 异步下载 VAD 模型
+            await withCheckedContinuation { continuation in
+                SherpaOnnxManager.shared.downloadVADModel(progress: { progress in
+                    print("[VAD] \(progress)")
+                }, completion: { [weak self] success, error in
+                    if success, let vadPath = SherpaOnnxManager.shared.getVADModelPath() {
+                        self?.vad = SherpaOnnxVAD(modelPath: vadPath)
+                        print("========== VAD 下载并加载成功 ==========")
+                    } else {
+                        print("⚠️ VAD 下载失败: \(error ?? "未知错误")")
+                    }
+                    continuation.resume()
+                })
+            }
+        }
     }
 
     func startRecording() {
         guard !isRecording else { return }
 
-        let tempDir = FileManager.default.temporaryDirectory
-        recordingURL = tempDir.appendingPathComponent("typeless_recording_\(UUID().uuidString).wav")
+        // 重置状态
+        accumulatedText = ""
+        vad?.reset()
 
-        guard let url = recordingURL else { return }
+        // 创建音频引擎
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else { return }
 
-        let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatLinearPCM),
-            AVSampleRateKey: 16000.0,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsBigEndianKey: false
-        ]
+        let inputNode = audioEngine.inputNode
+        let inputFormat = inputNode.outputFormat(forBus: 0)
+
+        // 目标格式：16kHz, mono, float32
+        let targetSampleRate: Double = 16000
+        guard let targetFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: targetSampleRate, channels: 1, interleaved: false) else {
+            print("无法创建目标音频格式")
+            return
+        }
+
+        // 创建格式转换器
+        guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
+            print("无法创建音频转换器")
+            return
+        }
+
+        // 安装音频 tap
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] (buffer, time) in
+            self?.processAudioBuffer(buffer, converter: converter, targetFormat: targetFormat)
+        }
 
         do {
-            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
-            audioRecorder?.prepareToRecord()
-            audioRecorder?.record()
+            try audioEngine.start()
             isRecording = true
-            print("开始录音: \(url.path)")
+            print("开始流式录音")
         } catch {
-            print("录音启动失败: \(error)")
+            print("启动音频引擎失败: \(error)")
         }
+    }
+
+    private func processAudioBuffer(_ buffer: AVAudioPCMBuffer, converter: AVAudioConverter, targetFormat: AVAudioFormat) {
+        guard let vad = vad else { return }
+
+        // 计算输出缓冲区大小
+        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputFrameCapacity) else { return }
+
+        // 转换音频格式
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
+
+        if let error = error {
+            print("音频转换错误: \(error)")
+            return
+        }
+
+        // 提取浮点样本
+        guard let floatData = outputBuffer.floatChannelData else { return }
+        let samples = Array(UnsafeBufferPointer(start: floatData[0], count: Int(outputBuffer.frameLength)))
+
+        // 送入 VAD
+        vad.acceptWaveform(samples: samples)
+
+        // 检查是否有完整的语音段
+        while vad.hasSegment() {
+            if let segment = vad.popSegment() {
+                recognitionQueue.async { [weak self] in
+                    self?.transcribeSegment(segment)
+                }
+            }
+        }
+    }
+
+    private func transcribeSegment(_ samples: [Float]) {
+        guard let recognizer = recognizer else { return }
+
+        if let text = recognizer.transcribe(samples: samples) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+
+                // 智能拼接文字（去除重叠）
+                self.accumulatedText = self.mergeTexts(self.accumulatedText, text)
+
+                print(">>> 分段识别结果: \(text)")
+                print(">>> 累积文字: \(self.accumulatedText)")
+
+                // 通知 UI 更新
+                self.onPartialResult?(self.accumulatedText)
+            }
+        }
+    }
+
+    /// 智能拼接文字，去除重叠部分
+    private func mergeTexts(_ existing: String, _ new: String) -> String {
+        guard !existing.isEmpty, !new.isEmpty else {
+            return existing + new
+        }
+
+        // 查找最长重叠（最多检查 10 个字符）
+        let maxOverlap = min(existing.count, new.count, 10)
+
+        for overlapLen in stride(from: maxOverlap, through: 1, by: -1) {
+            let suffix = String(existing.suffix(overlapLen))
+            let prefix = String(new.prefix(overlapLen))
+
+            if suffix == prefix {
+                // 找到重叠，去除 new 的重叠前缀
+                print(">>> 检测到重叠: \"\(suffix)\"，已去除")
+                return existing + String(new.dropFirst(overlapLen))
+            }
+        }
+
+        // 无重叠，直接拼接（无空格，因为中文不需要）
+        return existing + new
     }
 
     func stopRecording(completion: @escaping (String?) -> Void) {
-        guard isRecording, let recorder = audioRecorder else {
+        guard isRecording else {
             completion(nil)
             return
         }
 
-        recorder.stop()
+        // 停止音频引擎
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
+        audioEngine = nil
         isRecording = false
         print("停止录音")
 
-        guard let url = recordingURL else {
-            completion(nil)
-            return
-        }
+        // 刷新 VAD，处理剩余音频
+        vad?.flush()
 
-        Task {
-            let text = await transcribe(audioURL: url)
-            try? FileManager.default.removeItem(at: url)
-            await MainActor.run { completion(text) }
-        }
-    }
+        // 处理剩余的语音段
+        recognitionQueue.async { [weak self] in
+            guard let self = self else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
 
-    private func transcribe(audioURL: URL) async -> String? {
-        while isInitializing {
-            try? await Task.sleep(nanoseconds: 500_000_000)
-        }
+            while self.vad?.hasSegment() == true {
+                if let segment = self.vad?.popSegment() {
+                    if let text = self.recognizer?.transcribe(samples: segment) {
+                        DispatchQueue.main.sync {
+                            // 智能拼接文字（去除重叠）
+                            self.accumulatedText = self.mergeTexts(self.accumulatedText, text)
+                        }
+                    }
+                }
+            }
 
-        guard let recognizer = recognizer else {
-            print(">>> 识别器未初始化")
-            return nil
+            // 返回最终结果
+            let finalText = self.accumulatedText.isEmpty ? nil : self.accumulatedText
+            DispatchQueue.main.async {
+                print(">>> 最终识别结果: \(finalText ?? "（无）")")
+                completion(finalText)
+            }
         }
-
-        print(">>> 开始转录...")
-        let text = recognizer.transcribe(audioURL: audioURL)
-        if let text = text {
-            print("转录结果: \(text)")
-        }
-        return text
     }
 
     var isInitialized: Bool {
@@ -112,6 +246,7 @@ class RecordingManager {
     /// 重新加载模型（下载完成后调用）
     func reloadModel() {
         recognizer = nil
+        vad = nil
         Task { await initializeRecognizer() }
     }
 }

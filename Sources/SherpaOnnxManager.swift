@@ -52,6 +52,69 @@ class SherpaOnnxManager: NSObject {
     static let folderName = "sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17"
     static let displayName = "SenseVoice FunASR Nano"
 
+    /// VAD 模型配置
+    static let vadModelName = "silero_vad.onnx"
+    static let vadDownloadURL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx"
+
+    /// 获取 VAD 模型路径
+    func getVADModelPath() -> String? {
+        let vadPath = modelsDirectory.appendingPathComponent(Self.vadModelName)
+        guard FileManager.default.fileExists(atPath: vadPath.path) else {
+            return nil
+        }
+        return vadPath.path
+    }
+
+    /// 检查 VAD 模型是否已下载
+    func isVADModelDownloaded() -> Bool {
+        return getVADModelPath() != nil
+    }
+
+    /// 下载 VAD 模型
+    func downloadVADModel(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
+        guard let url = URL(string: Self.vadDownloadURL) else {
+            completion(false, "无效的下载地址")
+            return
+        }
+
+        let destPath = modelsDirectory.appendingPathComponent(Self.vadModelName)
+
+        // 如果已存在，直接返回成功
+        if FileManager.default.fileExists(atPath: destPath.path) {
+            completion(true, nil)
+            return
+        }
+
+        progress("正在下载 VAD 模型...")
+
+        let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(false, "下载失败: \(error.localizedDescription)")
+                    return
+                }
+
+                guard let tempURL = tempURL else {
+                    completion(false, "下载失败: 无法获取临时文件")
+                    return
+                }
+
+                do {
+                    // 移动到目标位置
+                    if FileManager.default.fileExists(atPath: destPath.path) {
+                        try FileManager.default.removeItem(at: destPath)
+                    }
+                    try FileManager.default.moveItem(at: tempURL, to: destPath)
+                    print("[SherpaOnnx] VAD 模型下载完成: \(destPath.path)")
+                    completion(true, nil)
+                } catch {
+                    completion(false, "保存失败: \(error.localizedDescription)")
+                }
+            }
+        }
+        task.resume()
+    }
+
     /// 获取模型路径
     func getModelPath() -> (modelPath: String, tokensPath: String)? {
         let modelDir = modelsDirectory.appendingPathComponent(Self.folderName)

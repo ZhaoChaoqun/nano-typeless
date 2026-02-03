@@ -106,6 +106,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func startRecording() {
         DispatchQueue.main.async {
             self.overlayWindow?.show()
+
+            // 设置部分结果回调
+            RecordingManager.shared.onPartialResult = { [weak self] text in
+                DispatchQueue.main.async {
+                    self?.overlayWindow?.updateRecognizedText(text)
+                }
+            }
+
             RecordingManager.shared.startRecording()
         }
     }
@@ -115,6 +123,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.overlayWindow?.showProcessing()
             RecordingManager.shared.stopRecording { [weak self] text in
                 DispatchQueue.main.async {
+                    // 清除部分结果回调
+                    RecordingManager.shared.onPartialResult = nil
                     self?.overlayWindow?.hide()
                     if let text = text, !text.isEmpty {
                         TextInserter.insertText(text)

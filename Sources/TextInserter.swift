@@ -30,6 +30,34 @@ struct TextInserter {
         }
     }
 
+    /// 插入文字（不保存/恢复剪贴板，用于流式输入）
+    static func insertTextDirect(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        simulatePaste()
+    }
+
+    /// 删除指定数量的字符（模拟 Backspace）
+    static func deleteCharacters(_ count: Int) {
+        guard count > 0 else { return }
+
+        let source = CGEventSource(stateID: .hidSystemState)
+        let backspaceKeyCode: CGKeyCode = 51  // Backspace 键码
+
+        for _ in 0..<count {
+            guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: backspaceKeyCode, keyDown: true),
+                  let keyUp = CGEvent(keyboardEventSource: source, virtualKey: backspaceKeyCode, keyDown: false) else {
+                continue
+            }
+            keyDown.post(tap: .cghidEventTap)
+            keyUp.post(tap: .cghidEventTap)
+
+            // 短暂延迟确保按键被处理
+            usleep(5000)  // 5ms
+        }
+    }
+
     /// 模拟 Cmd+V 粘贴操作
     private static func simulatePaste() {
         let source = CGEventSource(stateID: .hidSystemState)

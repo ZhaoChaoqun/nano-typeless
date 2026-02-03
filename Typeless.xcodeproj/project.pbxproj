@@ -18,6 +18,7 @@
 		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
 		1A000040 /* SherpaOnnxRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000041 /* SherpaOnnxRecognizer.swift */; };
 		1A000042 /* SherpaOnnxManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000043 /* SherpaOnnxManager.swift */; };
+		1A000044 /* SherpaOnnxVAD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000045 /* SherpaOnnxVAD.swift */; };
 		1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; };
 		1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; };
 		1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -37,6 +38,7 @@
 		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1A000041 /* SherpaOnnxRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxRecognizer.swift; sourceTree = "<group>"; };
 		1A000043 /* SherpaOnnxManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxManager.swift; sourceTree = "<group>"; };
+		1A000045 /* SherpaOnnxVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxVAD.swift; sourceTree = "<group>"; };
 		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
 		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libonnxruntime.1.17.1.dylib"; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
 		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 				1A000016 /* SettingsView.swift */,
 				1A000041 /* SherpaOnnxRecognizer.swift */,
 				1A000043 /* SherpaOnnxManager.swift */,
+				1A000045 /* SherpaOnnxVAD.swift */,
 				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
@@ -202,6 +205,7 @@
 				1A000006 /* SettingsView.swift in Sources */,
 				1A000040 /* SherpaOnnxRecognizer.swift in Sources */,
 				1A000042 /* SherpaOnnxManager.swift in Sources */,
+				1A000044 /* SherpaOnnxVAD.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -353,7 +357,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 				);
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -389,7 +393,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 				);
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.2.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
