@@ -17,7 +17,7 @@ class OverlayWindowController {
 
         // 创建一个无边框的悬浮窗口
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 80),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 200),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -112,12 +112,17 @@ class OverlayViewModel: ObservableObject {
     }
 }
 
-/// 悬浮窗口视图 - 类似截图中的样式
+/// 悬浮窗口视图 - 自适应宽度与滚动效果
 struct OverlayView: View {
     @ObservedObject var viewModel: OverlayViewModel
 
+    // 布局常量
+    private let maxWidth: CGFloat = 400      // 最大宽度
+    private let maxLines: Int = 5            // 最大行数
+    private let lineHeight: CGFloat = 20     // 每行高度
+
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             // 主状态指示器
             HStack(spacing: 12) {
                 // 左侧图标区域 - 固定宽度
@@ -146,26 +151,60 @@ struct OverlayView: View {
                     .foregroundColor(.white)
                     .frame(width: 75, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, alignment: .center)
 
             // 识别结果显示（当有文字时）
             if !viewModel.recognizedText.isEmpty {
-                Text(viewModel.recognizedText)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.9))
-                    .lineLimit(2)
-                    .truncationMode(.head)
-                    .frame(maxWidth: 280)
-                    .multilineTextAlignment(.center)
+                textContentView
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+        .frame(maxWidth: maxWidth)
         .background(
-            Capsule()
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color.black.opacity(0.75))
         )
-        .animation(.easeInOut(duration: 0.1), value: viewModel.animationPhase)
+        .animation(.easeInOut(duration: 0.15), value: viewModel.animationPhase)
         .animation(.easeInOut(duration: 0.2), value: viewModel.recognizedText)
+    }
+
+    @ViewBuilder
+    private var textContentView: some View {
+        let textHeight = calculateTextHeight(viewModel.recognizedText)
+        let displayHeight = min(textHeight, CGFloat(maxLines) * lineHeight)
+        let needsScroll = textHeight > displayHeight
+
+        if needsScroll {
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    Text(viewModel.recognizedText)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.9))
+                        .frame(width: maxWidth - 48, alignment: .leading)
+                        .id("bottom")
+                }
+                .frame(width: maxWidth - 32, height: displayHeight)
+                .onChange(of: viewModel.recognizedText) { _, _ in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+            }
+        } else {
+            Text(viewModel.recognizedText)
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.9))
+                .frame(maxWidth: maxWidth - 32, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func calculateTextHeight(_ text: String) -> CGFloat {
+        // 估算文字行数（简化计算）
+        let avgCharsPerLine = 25  // 每行大约25个字符
+        let lines = max(1, (text.count + avgCharsPerLine - 1) / avgCharsPerLine)
+        return CGFloat(lines) * lineHeight
     }
 
     private func waveHeight(for index: Int) -> CGFloat {
