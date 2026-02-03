@@ -10,6 +10,7 @@ class KeyMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var isFnPressed = false
+    private var permissionCheckTimer: Timer?
 
     func startMonitoring() {
         // 需要辅助功能权限
@@ -19,6 +20,16 @@ class KeyMonitor {
         guard trusted else {
             print("需要辅助功能权限")
             requestAccessibilityPermission()
+            startPermissionPolling()
+            return
+        }
+
+        // 权限已授予，停止轮询
+        stopPermissionPolling()
+
+        // 避免重复创建监听器
+        guard eventTap == nil else {
+            print("事件监听器已存在")
             return
         }
 
@@ -99,6 +110,8 @@ class KeyMonitor {
     }
 
     func stopMonitoring() {
+        stopPermissionPolling()
+
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
         }
@@ -107,6 +120,30 @@ class KeyMonitor {
         }
         eventTap = nil
         runLoopSource = nil
+    }
+
+    /// 开始轮询辅助功能权限状态
+    private func startPermissionPolling() {
+        stopPermissionPolling()
+
+        print("开始轮询辅助功能权限状态...")
+
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            if AXIsProcessTrusted() {
+                print("✓ 辅助功能权限已授予，重新启动监听")
+                timer.invalidate()
+                self?.permissionCheckTimer = nil
+                DispatchQueue.main.async {
+                    self?.startMonitoring()
+                }
+            }
+        }
+    }
+
+    /// 停止权限轮询
+    private func stopPermissionPolling() {
+        permissionCheckTimer?.invalidate()
+        permissionCheckTimer = nil
     }
 
     private func requestAccessibilityPermission() {
