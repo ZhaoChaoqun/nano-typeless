@@ -14,6 +14,7 @@ class OnboardingViewModel: ObservableObject {
     @Published var isVisible: Bool = false
 
     private var downloadObserver: NSObjectProtocol?
+    private var pollTimer: Timer?
     private var autoDismissTimer: Timer?
 
     init() {
@@ -21,10 +22,17 @@ class OnboardingViewModel: ObservableObject {
     }
 
     deinit {
+        cleanup()
+    }
+
+    private func cleanup() {
         if let observer = downloadObserver {
             NotificationCenter.default.removeObserver(observer)
         }
+        pollTimer?.invalidate()
+        pollTimer = nil
         autoDismissTimer?.invalidate()
+        autoDismissTimer = nil
     }
 
     private func setupObservers() {
@@ -50,18 +58,19 @@ class OnboardingViewModel: ObservableObject {
                 startAutoDismissTimer()
             } else {
                 state = .loading
-                // 轮询检查模型加载状态
-                pollModelLoadingStatus()
+                startPolling()
             }
         } else {
             // 无模型，等待下载
             state = .downloading(progress: "正在下载语音识别模型...")
-            pollDownloadStatus()
+            startPolling()
         }
     }
 
-    private func pollDownloadStatus() {
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
+    /// 统一轮询逻辑：检查下载和加载状态
+    private func startPolling() {
+        pollTimer?.invalidate()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
                 return
@@ -69,31 +78,24 @@ class OnboardingViewModel: ObservableObject {
 
             let downloadManager = ModelDownloadManager.shared
 
-            // 更新下载进度
+            // 如果正在下载，更新进度
             if downloadManager.isDownloading {
                 self.state = .downloading(progress: downloadManager.downloadProgress)
-            }
-
-            // 检查是否已有模型下载完成
-            if downloadManager.isDownloaded {
-                timer.invalidate()
-                self.state = .loading
-                self.pollModelLoadingStatus()
-            }
-        }
-    }
-
-    private func pollModelLoadingStatus() {
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
                 return
             }
 
-            if RecordingManager.shared.isInitialized {
-                timer.invalidate()
-                self.state = .ready
-                self.startAutoDismissTimer()
+            // 如果已下载但未加载
+            if downloadManager.isDownloaded {
+                if RecordingManager.shared.isInitialized {
+                    // 加载完成
+                    timer.invalidate()
+                    self.pollTimer = nil
+                    self.state = .ready
+                    self.startAutoDismissTimer()
+                } else if case .downloading = self.state {
+                    // 从下载状态切换到加载状态
+                    self.state = .loading
+                }
             }
         }
     }
@@ -113,17 +115,9 @@ class OnboardingWindowController {
     private var hostingView: NSHostingView<OnboardingBubbleView>?
     private var viewModel = OnboardingViewModel()
     private var statusItemFrame: NSRect = .zero
+    private var visibilityTimer: Timer?
 
     private let hasShownOnboardingKey = "hasShownOnboarding"
-
-    init() {
-        setupObservers()
-    }
-
-    private func setupObservers() {
-        // 监听 viewModel 的 isVisible 变化
-        // 使用 KVO 或直接在 show/dismiss 中控制
-    }
 
     private func setupWindow() {
         let contentView = OnboardingBubbleView(viewModel: viewModel) { [weak self] in
@@ -170,19 +164,15 @@ class OnboardingWindowController {
         viewModel.checkModelStatus()
 
         // 监听 isVisible 变化来自动关闭
-        observeVisibility()
+        startVisibilityObserver()
 
         positionWindow()
         window?.orderFront(nil)
     }
 
-    /// 监听 isVisible 变化
-    private var visibilityObserver: NSKeyValueObservation?
-    private var cancellable: Any?
-
-    private func observeVisibility() {
-        // 使用 Timer 轮询检查 isVisible 状态
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
+    private func startVisibilityObserver() {
+        visibilityTimer?.invalidate()
+        visibilityTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
                 return
@@ -216,6 +206,8 @@ class OnboardingWindowController {
 
     /// 关闭引导气泡
     func dismiss() {
+        visibilityTimer?.invalidate()
+        visibilityTimer = nil
         viewModel.isVisible = false
         window?.orderOut(nil)
 
