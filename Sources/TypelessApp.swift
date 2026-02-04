@@ -78,14 +78,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func checkPermissions() {
+        // 请求麦克风权限
         AVCaptureDevice.requestAccess(for: .audio) { granted in
             if !granted {
                 DispatchQueue.main.async { self.showPermissionAlert(for: "麦克风") }
             }
         }
-
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        _ = AXIsProcessTrustedWithOptions(options)
+        // 辅助功能权限已在 KeyMonitor.startMonitoring() 中请求
     }
 
     private func showPermissionAlert(for permission: String) {
