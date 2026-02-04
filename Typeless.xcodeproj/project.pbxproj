@@ -357,7 +357,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -393,7 +393,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 				);
-				MARKETING_VERSION = 1.2.4;
+				MARKETING_VERSION = 1.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
