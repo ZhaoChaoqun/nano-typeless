@@ -172,27 +172,8 @@ class RecordingManager {
         }
     }
 
-    /// 智能拼接文字，去除重叠部分
+    /// 拼接文字
     private func mergeTexts(_ existing: String, _ new: String) -> String {
-        guard !existing.isEmpty, !new.isEmpty else {
-            return existing + new
-        }
-
-        // 查找最长重叠（最多检查 10 个字符）
-        let maxOverlap = min(existing.count, new.count, 10)
-
-        for overlapLen in stride(from: maxOverlap, through: 1, by: -1) {
-            let suffix = String(existing.suffix(overlapLen))
-            let prefix = String(new.prefix(overlapLen))
-
-            if suffix == prefix {
-                // 找到重叠，去除 new 的重叠前缀
-                print(">>> 检测到重叠: \"\(suffix)\"，已去除")
-                return existing + String(new.dropFirst(overlapLen))
-            }
-        }
-
-        // 无重叠，信任模型输出的标点，直接拼接
         return existing + new
     }
 

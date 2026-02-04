@@ -1,5 +1,17 @@
 # Nano Typeless 项目开发备忘
 
+## GitHub 账号
+
+本机有两个 GitHub 账号：
+- `chaoqunzhao_microsoft` - 公司账号
+- `ZhaoChaoqun` - 个人账号
+
+**typeless 是个人项目**，使用 `gh` 命令时如果遇到权限错误，请先切换到个人账号：
+
+```bash
+gh auth switch -u ZhaoChaoqun
+```
+
 ## Release 构建流程
 
 构建 Release 版本后，需要重新签名才能在本地运行：
