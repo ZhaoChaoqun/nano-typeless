@@ -20,7 +20,7 @@ class RecordingManager {
                let model = ASRModelType(rawValue: rawValue) {
                 return model
             }
-            return .funasrNano
+            return .streamingParaformer
         }
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: "selectedASRModel")

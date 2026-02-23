@@ -2,8 +2,8 @@ import Foundation
 
 /// ASR 模型类型
 enum ASRModelType: String, CaseIterable, Identifiable {
-    case funasrNano = "funasr-nano"
     case streamingParaformer = "streaming-paraformer"
+    case funasrNano = "funasr-nano"
 
     var id: String { rawValue }
 

@@ -56,6 +56,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print(">>> 首次启动，自动下载默认模型...")
             downloadManager.downloadModel()
         }
+        if !downloadManager.punctuationDownloaded {
+            print(">>> 自动下载标点模型...")
+            downloadManager.downloadPunctuationModel()
+        }
     }
 
     private func setupStatusBar() {

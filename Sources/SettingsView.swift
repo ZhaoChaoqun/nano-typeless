@@ -19,7 +19,7 @@ class ModelDownloadManager: ObservableObject {
            let model = ASRModelType(rawValue: rawValue) {
             selectedModel = model
         } else {
-            selectedModel = .funasrNano
+            selectedModel = .streamingParaformer
         }
         checkModelsExist()
     }
