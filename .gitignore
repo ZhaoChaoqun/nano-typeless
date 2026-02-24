@@ -44,3 +44,7 @@ promo-video/out/
 # FunASR CoreML conversion scripts (contains large model files)
 funasr-coreml/
 .cache/
+
+# QwenASR build artifacts
+Frameworks/qwen-asr/lib/*.a
+scripts/.qwen-asr-build/

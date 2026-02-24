@@ -8,6 +8,7 @@ class RecordingManager {
     private var audioEngine: AVAudioEngine?
     private var offlineRecognizer: SherpaOnnxRecognizer?       // FunASR Nano
     private var onlineRecognizer: SherpaOnnxOnlineRecognizer?  // Streaming Paraformer
+    private var qwenStreamRecognizer: QwenASRStreamRecognizer? // QwenASR (streaming)
     private var punctuator: SherpaOnnxPunctuation?             // 标点处理器
     private var vad: SherpaOnnxVAD?
     private var isRecording = false
@@ -55,6 +56,7 @@ class RecordingManager {
         // 清理旧的识别器
         offlineRecognizer = nil
         onlineRecognizer = nil
+        qwenStreamRecognizer = nil
         vad = nil
 
         switch currentModel {
@@ -62,6 +64,8 @@ class RecordingManager {
             await initializeFunASR()
         case .streamingParaformer:
             await initializeStreamingParaformer()
+        case .qwenASR:
+            await initializeQwenASR()
         }
     }
 
@@ -111,6 +115,25 @@ class RecordingManager {
 
         // 初始化标点处理器
         await initializePunctuation()
+    }
+
+    /// 初始化 QwenASR（流式模式，无需 VAD，不需要标点模型）
+    private func initializeQwenASR() async {
+        guard SherpaOnnxManager.shared.isQwenASRModelDownloaded(),
+              let modelDir = SherpaOnnxManager.shared.getQwenASRModelDir() else {
+            print("⚠️ QwenASR 模型未下载")
+            return
+        }
+
+        qwenStreamRecognizer = QwenASRStreamRecognizer(modelDir: modelDir)
+
+        if qwenStreamRecognizer != nil {
+            print("========== QwenASR 流式模型加载成功 ==========")
+        } else {
+            print("========== QwenASR 流式模型加载失败 ==========")
+            return
+        }
+        // 流式模式无需 VAD 和标点模型
     }
 
     /// 初始化标点处理器
@@ -172,6 +195,7 @@ class RecordingManager {
         // 重置状态
         accumulatedText = ""
         vad?.reset()
+        qwenStreamRecognizer?.reset()
 
         // 创建音频引擎
         audioEngine = AVAudioEngine()
@@ -237,6 +261,8 @@ class RecordingManager {
             processWithVAD(samples: samples)
         case .streamingParaformer:
             processWithStreaming(samples: samples)
+        case .qwenASR:
+            processWithQwenStreaming(samples: samples)
         }
     }
 
@@ -275,6 +301,25 @@ class RecordingManager {
             DispatchQueue.main.async { [weak self] in
                 self?.accumulatedText = text
                 self?.onPartialResult?(text)
+            }
+        }
+    }
+
+    /// 使用流式识别（QwenASR Streaming）
+    private func processWithQwenStreaming(samples: [Float]) {
+        guard let recognizer = qwenStreamRecognizer else { return }
+
+        // 在识别队列同步推送音频（stream_push_audio 内部跟踪 cursor，按 chunk 处理）
+        recognitionQueue.async { [weak self] in
+            if let delta = recognizer.pushAudio(samples: samples) {
+                let fullText = recognizer.getResult()
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    // 使用 getResult() 获得完整文本，避免 delta 拼接时的 UTF-8 截断问题
+                    self.accumulatedText = fullText
+                    print(">>> [QwenASR Stream] delta: \(delta)")
+                    self.onPartialResult?(fullText)
+                }
             }
         }
     }
@@ -324,6 +369,16 @@ class RecordingManager {
         case .streamingParaformer:
             let rawText = flushStreaming()
             finalizeAndComplete(rawText: rawText, completion: completion)
+        case .qwenASR:
+            flushQwenStreaming { rawText in
+                guard !rawText.isEmpty else {
+                    print(">>> [QwenASR] 最终识别结果: （无）")
+                    completion(nil)
+                    return
+                }
+                print(">>> [QwenASR] 最终结果: \(rawText)")
+                completion(rawText)
+            }
         }
     }
 
@@ -370,6 +425,30 @@ class RecordingManager {
         return text
     }
 
+    /// 刷新 QwenASR 流式识别器并获取最终文本
+    private func flushQwenStreaming(completion: @escaping (String) -> Void) {
+        guard let recognizer = qwenStreamRecognizer else {
+            completion("")
+            return
+        }
+
+        // 在 recognitionQueue 中排队执行 finalize，确保之前的 pushAudio 全部完成
+        recognitionQueue.async { [weak self] in
+            // 注入静音 padding（2 秒 = 1 个 chunk），确保尾部音频被处理
+            // 类似 Streaming Paraformer 的 flushStreaming 策略
+            let silencePadding = [Float](repeating: 0.0, count: 32000)
+            _ = recognizer.pushAudio(samples: silencePadding, finalize: true)
+
+            let result = recognizer.getResult()
+            recognizer.reset()
+
+            DispatchQueue.main.async {
+                let finalText = result.isEmpty ? (self?.accumulatedText ?? "") : result
+                completion(finalText)
+            }
+        }
+    }
+
     /// 统一的最终处理：添加标点并回调
     private func finalizeAndComplete(rawText: String, completion: @escaping (String?) -> Void) {
         guard !rawText.isEmpty else {
@@ -390,6 +469,8 @@ class RecordingManager {
             return offlineRecognizer != nil
         case .streamingParaformer:
             return onlineRecognizer != nil
+        case .qwenASR:
+            return qwenStreamRecognizer != nil
         }
     }
 
@@ -397,6 +478,7 @@ class RecordingManager {
     func reloadModel() {
         offlineRecognizer = nil
         onlineRecognizer = nil
+        qwenStreamRecognizer = nil
         vad = nil
         Task { await initializeRecognizer() }
     }

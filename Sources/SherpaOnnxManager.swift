@@ -4,6 +4,7 @@ import Foundation
 enum ASRModelType: String, CaseIterable, Identifiable {
     case streamingParaformer = "streaming-paraformer"
     case funasrNano = "funasr-nano"
+    case qwenASR = "qwen-asr"
 
     var id: String { rawValue }
 
@@ -13,6 +14,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "SenseVoice FunASR Nano"
         case .streamingParaformer:
             return "Streaming Paraformer"
+        case .qwenASR:
+            return "Qwen3-ASR"
         }
     }
 
@@ -22,6 +25,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "中英文混合识别，支持方言，需要 VAD 分段"
         case .streamingParaformer:
             return "原生流式识别，中英文混合，无需 VAD"
+        case .qwenASR:
+            return "Qwen3 大模型 ASR，中英文混合，自带标点，需要 VAD 分段"
         }
     }
 
@@ -31,6 +36,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17"
         case .streamingParaformer:
             return "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
+        case .qwenASR:
+            return "Qwen3-ASR-0.6B"
         }
     }
 
@@ -38,8 +45,18 @@ enum ASRModelType: String, CaseIterable, Identifiable {
         switch self {
         case .funasrNano:
             return true
-        case .streamingParaformer:
+        case .streamingParaformer, .qwenASR:
             return false
+        }
+    }
+
+    /// 是否需要外部标点模型（Qwen3-ASR 自带标点）
+    var needsPunctuation: Bool {
+        switch self {
+        case .qwenASR:
+            return false
+        default:
+            return true
         }
     }
 
@@ -49,6 +66,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "~179MB"
         case .streamingParaformer:
             return "~216MB"
+        case .qwenASR:
+            return "~1.2GB"
         }
     }
 }
@@ -68,6 +87,11 @@ enum DownloadSource: CaseIterable {
             return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2"
         case (.github, .streamingParaformer):
             return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2"
+        case (.modelScope, .qwenASR):
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
+        case (.github, .qwenASR):
+            // GitHub 备用源暂无，使用 ModelScope
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
         }
     }
 
@@ -176,6 +200,38 @@ class SherpaOnnxManager: NSObject {
         return getStreamingParaformerPath() != nil
     }
 
+    // MARK: - QwenASR 模型路径
+
+    /// 获取 QwenASR 模型目录路径
+    func getQwenASRModelDir() -> String? {
+        let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.qwenASR.folderName)
+
+        // 检查关键文件：safetensors 权重和 vocab.json
+        let vocabPath = modelDir.appendingPathComponent("vocab.json")
+        guard FileManager.default.fileExists(atPath: vocabPath.path) else {
+            return nil
+        }
+
+        // 检查 safetensors 权重文件（可能是单文件或分片）
+        let singlePath = modelDir.appendingPathComponent("model.safetensors")
+        if FileManager.default.fileExists(atPath: singlePath.path) {
+            return modelDir.path
+        }
+
+        // 分片模型：检查 model-00001-of-*.safetensors
+        let indexPath = modelDir.appendingPathComponent("model.safetensors.index.json")
+        if FileManager.default.fileExists(atPath: indexPath.path) {
+            return modelDir.path
+        }
+
+        return nil
+    }
+
+    /// 检查 QwenASR 模型是否已下载
+    func isQwenASRModelDownloaded() -> Bool {
+        return getQwenASRModelDir() != nil
+    }
+
     // MARK: - 通用模型检查
 
     /// 检查指定模型是否已下载
@@ -185,6 +241,8 @@ class SherpaOnnxManager: NSObject {
             return isFunASRModelDownloaded()
         case .streamingParaformer:
             return isStreamingParaformerDownloaded()
+        case .qwenASR:
+            return isQwenASRModelDownloaded()
         }
     }
 

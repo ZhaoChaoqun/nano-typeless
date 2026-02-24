@@ -25,6 +25,9 @@
 		1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; };
 		1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		1AQ00001 /* QwenASRRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00010 /* QwenASRRecognizer.swift */; };
+		1AQ00002 /* libqwen_asr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; };
+		1AQ00003 /* libqwen_asr.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +50,8 @@
 		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libonnxruntime.1.17.1.dylib"; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
 		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
 		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
+		1AQ00010 /* QwenASRRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenASRRecognizer.swift; sourceTree = "<group>"; };
+		1AQ00011 /* libqwen_asr.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libqwen_asr.dylib"; path = "Frameworks/qwen-asr/lib/libqwen_asr.dylib"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +62,7 @@
 				1A000020 /* WhisperKit in Frameworks */,
 				1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */,
 				1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */,
+				1AQ00002 /* libqwen_asr.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +77,7 @@
 			files = (
 				1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */,
 				1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */,
+				1AQ00003 /* libqwen_asr.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -120,6 +127,7 @@
 				1A000049 /* SherpaOnnxPunctuation.swift */,
 				1A000043 /* SherpaOnnxManager.swift */,
 				1A000045 /* SherpaOnnxVAD.swift */,
+				1AQ00010 /* QwenASRRecognizer.swift */,
 				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
@@ -133,6 +141,7 @@
 			children = (
 				1A000051 /* libsherpa-onnx-c-api.dylib */,
 				1A000053 /* libonnxruntime.1.17.1.dylib */,
+				1AQ00011 /* libqwen_asr.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -214,6 +223,7 @@
 				1A000048 /* SherpaOnnxPunctuation.swift in Sources */,
 				1A000042 /* SherpaOnnxManager.swift in Sources */,
 				1A000044 /* SherpaOnnxVAD.swift in Sources */,
+				1AQ00001 /* QwenASRRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,6 +362,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/Sources/CSherpaOnnx",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
+					"$(SRCROOT)/Frameworks/qwen-asr/include",
 				);
 				INFOPLIST_FILE = Sources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -364,6 +375,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
+					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 				);
 				MARKETING_VERSION = 1.2.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
@@ -388,6 +400,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/Sources/CSherpaOnnx",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
+					"$(SRCROOT)/Frameworks/qwen-asr/include",
 				);
 				INFOPLIST_FILE = Sources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -400,6 +413,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
+					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 				);
 				MARKETING_VERSION = 1.2.13;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;

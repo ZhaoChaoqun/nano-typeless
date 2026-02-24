@@ -7,6 +7,7 @@ class ModelDownloadManager: ObservableObject {
     @Published var selectedModel: ASRModelType
     @Published var funasrDownloaded: Bool = false
     @Published var streamingParaformerDownloaded: Bool = false
+    @Published var qwenASRDownloaded: Bool = false
     @Published var punctuationDownloaded: Bool = false
     @Published var isDownloading: Bool = false
     @Published var downloadProgress: String = ""
@@ -27,6 +28,7 @@ class ModelDownloadManager: ObservableObject {
     func checkModelsExist() {
         funasrDownloaded = SherpaOnnxManager.shared.isFunASRModelDownloaded()
         streamingParaformerDownloaded = SherpaOnnxManager.shared.isStreamingParaformerDownloaded()
+        qwenASRDownloaded = SherpaOnnxManager.shared.isQwenASRModelDownloaded()
         punctuationDownloaded = SherpaOnnxManager.shared.isPunctuationModelDownloaded()
     }
 
@@ -37,6 +39,8 @@ class ModelDownloadManager: ObservableObject {
             return funasrDownloaded
         case .streamingParaformer:
             return streamingParaformerDownloaded
+        case .qwenASR:
+            return qwenASRDownloaded
         }
     }
 
@@ -151,8 +155,8 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                // 标点模型状态（仅 Streaming Paraformer 需要）
-                if downloadManager.selectedModel == .streamingParaformer {
+                // 标点模型状态（仅需要外部标点模型的引擎显示）
+                if downloadManager.selectedModel.needsPunctuation {
                     punctuationModelStatusView()
 
                     if downloadManager.isPunctuationDownloading {
@@ -164,7 +168,7 @@ struct SettingsView: View {
             } header: {
                 Text("模型状态")
             } footer: {
-                Text("FunASR Nano 约 179MB，Streaming Paraformer 约 216MB + 标点模型 62MB。")
+                Text("FunASR Nano 约 179MB，Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 1.2GB（自带标点）。")
             }
 
             Section("快捷键") {
@@ -187,19 +191,30 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 480)
+        .frame(width: 420, height: 520)
     }
 
     @ViewBuilder
     private func modelStatusView(for model: ASRModelType) -> some View {
-        let isDownloaded = model == .funasrNano ? downloadManager.funasrDownloaded : downloadManager.streamingParaformerDownloaded
+        let isDownloaded: Bool = {
+            switch model {
+            case .funasrNano: return downloadManager.funasrDownloaded
+            case .streamingParaformer: return downloadManager.streamingParaformerDownloaded
+            case .qwenASR: return downloadManager.qwenASRDownloaded
+            }
+        }()
 
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(model == .funasrNano ? "FunASR Nano" : "Streaming Paraformer")
+                Text(model.displayName)
                     .fontWeight(.medium)
                 if model.needsVAD {
                     Text("需要额外下载 VAD 模型")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                if !model.needsPunctuation {
+                    Text("自带标点，无需标点模型")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

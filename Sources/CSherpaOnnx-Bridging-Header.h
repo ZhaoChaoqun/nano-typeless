@@ -9,5 +9,6 @@
 #define CSherpaOnnx_Bridging_Header_h
 
 #include "sherpa-onnx/c-api/c-api.h"
+#include "qwen_asr.h"
 
 #endif /* CSherpaOnnx_Bridging_Header_h */
