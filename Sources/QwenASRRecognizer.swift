@@ -74,3 +74,5 @@ class QwenASRStreamRecognizer {
         qwen_asr_stream_reset(state)
     }
 }
+
+extension QwenASRStreamRecognizer: ASRStreamRecognizing {}

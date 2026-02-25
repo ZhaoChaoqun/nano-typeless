@@ -8,7 +8,7 @@ class RecordingManager {
     private var audioEngine: AVAudioEngine?
     private var offlineRecognizer: SherpaOnnxRecognizer?       // FunASR Nano
     private var onlineRecognizer: SherpaOnnxOnlineRecognizer?  // Streaming Paraformer
-    private var qwenStreamRecognizer: QwenASRStreamRecognizer? // QwenASR (streaming)
+    private var qwenStreamRecognizer: ASRStreamRecognizing?    // QwenASR (streaming)
     private var punctuator: SherpaOnnxPunctuation?             // 标点处理器
     private var vad: SherpaOnnxVAD?
     private var isRecording = false
@@ -482,4 +482,31 @@ class RecordingManager {
         vad = nil
         Task { await initializeRecognizer() }
     }
+
+    // MARK: - Test Support
+
+    #if DEBUG
+    /// 创建可测试的实例（注入 Mock 识别器）
+    static func testable(withQwenRecognizer recognizer: ASRStreamRecognizing?) -> RecordingManager {
+        let manager = RecordingManager()
+        manager.qwenStreamRecognizer = recognizer
+        return manager
+    }
+
+    /// 暴露给测试的 QwenASR 流式处理入口
+    func testableProcessWithQwenStreaming(samples: [Float]) {
+        processWithQwenStreaming(samples: samples)
+    }
+
+    /// 暴露给测试的 QwenASR flush 入口
+    func testableFlushQwenStreaming(completion: @escaping (String) -> Void) {
+        flushQwenStreaming(completion: completion)
+    }
+
+    /// 暴露给测试的累积文本
+    var testableAccumulatedText: String {
+        get { accumulatedText }
+        set { accumulatedText = newValue }
+    }
+    #endif
 }
