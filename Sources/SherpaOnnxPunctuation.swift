@@ -6,6 +6,7 @@ import CSherpaOnnx
 /// Sherpa-ONNX 离线标点处理器（CT-Transformer）
 class SherpaOnnxPunctuation {
     private var punctuator: OpaquePointer?
+    private let cStrings = CStringLifetime()
 
     /// 初始化标点处理器
     init?(modelPath: String) {
@@ -18,10 +19,10 @@ class SherpaOnnxPunctuation {
         }
 
         var config = SherpaOnnxOfflinePunctuationConfig()
-        config.model.ct_transformer = toCString(modelPath)
+        config.model.ct_transformer = cStrings.makeCString(modelPath)
         config.model.num_threads = 2
         config.model.debug = 0
-        config.model.provider = toCString("cpu")
+        config.model.provider = cStrings.makeCString("cpu")
 
         punctuator = SherpaOnnxCreateOfflinePunctuation(&config)
 
@@ -51,11 +52,5 @@ class SherpaOnnxPunctuation {
         defer { SherpaOfflinePunctuationFreeText(result) }
 
         return String(cString: result)
-    }
-
-    // MARK: - Private
-
-    private func toCString(_ string: String) -> UnsafePointer<CChar>? {
-        return UnsafePointer(strdup(string))
     }
 }

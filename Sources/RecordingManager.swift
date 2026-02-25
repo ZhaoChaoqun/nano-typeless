@@ -11,8 +11,28 @@ class RecordingManager {
     private var qwenStreamRecognizer: ASRStreamRecognizing?    // QwenASR (streaming)
     private var punctuator: SherpaOnnxPunctuation?             // 标点处理器
     private var vad: SherpaOnnxVAD?
-    private var isRecording = false
-    private var isInitializing = false
+
+    /// 用于保护共享可变状态的串行队列
+    private let stateQueue = DispatchQueue(label: "com.typeless.state")
+    private var _isRecording = false
+    private var _isInitializing = false
+    private var _accumulatedText: String = ""
+
+    private var isRecording: Bool {
+        get { stateQueue.sync { _isRecording } }
+        set { stateQueue.sync { _isRecording = newValue } }
+    }
+
+    private var isInitializing: Bool {
+        get { stateQueue.sync { _isInitializing } }
+        set { stateQueue.sync { _isInitializing = newValue } }
+    }
+
+    /// 线程安全的累积文本访问
+    private var accumulatedText: String {
+        get { stateQueue.sync { _accumulatedText } }
+        set { stateQueue.sync { _accumulatedText = newValue } }
+    }
 
     /// 当前选择的 ASR 模型
     private(set) var currentModel: ASRModelType {
@@ -30,8 +50,6 @@ class RecordingManager {
 
     /// 部分识别结果回调
     var onPartialResult: ((String) -> Void)?
-    /// 累积的识别文字
-    private var accumulatedText: String = ""
     /// 用于识别的队列
     private let recognitionQueue = DispatchQueue(label: "com.typeless.recognition", qos: .userInitiated)
 
@@ -287,20 +305,23 @@ class RecordingManager {
     private func processWithStreaming(samples: [Float]) {
         guard let recognizer = onlineRecognizer else { return }
 
-        // 送入流式识别器
-        recognizer.acceptWaveform(samples: samples)
+        // 在识别队列中执行解码，避免阻塞 Core Audio 实时线程
+        recognitionQueue.async { [weak self] in
+            // 送入流式识别器
+            recognizer.acceptWaveform(samples: samples)
 
-        // 检查是否可以解码
-        while recognizer.isReady() {
-            recognizer.decode()
-        }
+            // 检查是否可以解码
+            while recognizer.isReady() {
+                recognizer.decode()
+            }
 
-        // 获取识别结果
-        let text = recognizer.getResult()
-        if !text.isEmpty {
-            DispatchQueue.main.async { [weak self] in
-                self?.accumulatedText = text
-                self?.onPartialResult?(text)
+            // 获取识别结果
+            let text = recognizer.getResult()
+            if !text.isEmpty {
+                DispatchQueue.main.async {
+                    self?.accumulatedText = text
+                    self?.onPartialResult?(text)
+                }
             }
         }
     }
@@ -311,7 +332,7 @@ class RecordingManager {
 
         // 在识别队列同步推送音频（stream_push_audio 内部跟踪 cursor，按 chunk 处理）
         recognitionQueue.async { [weak self] in
-            if let delta = recognizer.pushAudio(samples: samples) {
+            if let delta = recognizer.pushAudio(samples: samples, finalize: false) {
                 let fullText = recognizer.getResult()
                 DispatchQueue.main.async {
                     guard let self = self else { return }
@@ -328,21 +349,21 @@ class RecordingManager {
         guard let recognizer = offlineRecognizer else { return }
 
         if let text = recognizer.transcribe(samples: segment.samples) {
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-
-                // 拼接文字（不添加标点，最后由 CT-Transformer 统一处理）
-                if self.accumulatedText.isEmpty {
-                    self.accumulatedText = text
+            let newAccumulated: String = stateQueue.sync {
+                if _accumulatedText.isEmpty {
+                    _accumulatedText = text
                 } else {
-                    self.accumulatedText += text
+                    _accumulatedText += text
                 }
+                return _accumulatedText
+            }
 
-                print(">>> 分段识别结果: \(text)")
-                print(">>> 累积文字: \(self.accumulatedText)")
+            print(">>> 分段识别结果: \(text)")
+            print(">>> 累积文字: \(newAccumulated)")
 
+            DispatchQueue.main.async { [weak self] in
                 // 通知 UI 更新
-                self.onPartialResult?(self.accumulatedText)
+                self?.onPartialResult?(newAccumulated)
             }
         }
     }
@@ -367,8 +388,9 @@ class RecordingManager {
                 self?.finalizeAndComplete(rawText: rawText, completion: completion)
             }
         case .streamingParaformer:
-            let rawText = flushStreaming()
-            finalizeAndComplete(rawText: rawText, completion: completion)
+            flushStreaming { [weak self] rawText in
+                self?.finalizeAndComplete(rawText: rawText, completion: completion)
+            }
         case .qwenASR:
             flushQwenStreaming { rawText in
                 guard !rawText.isEmpty else {
@@ -395,8 +417,8 @@ class RecordingManager {
             while self.vad?.hasSegment() == true {
                 if let segment = self.vad?.popSegmentWithTime(),
                    let text = self.offlineRecognizer?.transcribe(samples: segment.samples) {
-                    DispatchQueue.main.sync {
-                        self.accumulatedText += text
+                    self.stateQueue.sync {
+                        self._accumulatedText += text
                     }
                 }
             }
@@ -409,20 +431,30 @@ class RecordingManager {
     }
 
     /// 刷新 Streaming Paraformer 并获取原始文本
-    private func flushStreaming() -> String {
-        guard let recognizer = onlineRecognizer else { return "" }
-
-        // 注入 0.3 秒静音触发剩余帧解码
-        let silencePadding = [Float](repeating: 0.0, count: 4800)
-        recognizer.acceptWaveform(samples: silencePadding)
-
-        while recognizer.isReady() {
-            recognizer.decode()
+    private func flushStreaming(completion: @escaping (String) -> Void) {
+        guard let recognizer = onlineRecognizer else {
+            completion("")
+            return
         }
 
-        let text = recognizer.getResult()
-        recognizer.reset()
-        return text
+        // 在识别队列中完成刷新，确保不阻塞主线程
+        recognitionQueue.async { [weak self] in
+            // 注入 0.3 秒静音触发剩余帧解码
+            let silencePadding = [Float](repeating: 0.0, count: 4800)
+            recognizer.acceptWaveform(samples: silencePadding)
+
+            while recognizer.isReady() {
+                recognizer.decode()
+            }
+
+            let text = recognizer.getResult()
+            recognizer.reset()
+
+            DispatchQueue.main.async {
+                let finalText = text.isEmpty ? (self?.accumulatedText ?? "") : text
+                completion(finalText)
+            }
+        }
     }
 
     /// 刷新 QwenASR 流式识别器并获取最终文本

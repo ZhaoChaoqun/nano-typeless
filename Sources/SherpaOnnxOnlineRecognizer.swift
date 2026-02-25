@@ -7,6 +7,7 @@ import CSherpaOnnx
 class SherpaOnnxOnlineRecognizer {
     private var recognizer: OpaquePointer?
     private var stream: OpaquePointer?
+    private let cStrings = CStringLifetime()
 
     /// 初始化流式识别器
     init?(encoderPath: String, decoderPath: String, tokensPath: String) {
@@ -29,16 +30,16 @@ class SherpaOnnxOnlineRecognizer {
         config.feat_config.feature_dim = 80
 
         // Paraformer 模型配置
-        config.model_config.paraformer.encoder = toCString(encoderPath)
-        config.model_config.paraformer.decoder = toCString(decoderPath)
-        config.model_config.tokens = toCString(tokensPath)
+        config.model_config.paraformer.encoder = cStrings.makeCString(encoderPath)
+        config.model_config.paraformer.decoder = cStrings.makeCString(decoderPath)
+        config.model_config.tokens = cStrings.makeCString(tokensPath)
         config.model_config.num_threads = 2
         config.model_config.debug = 0
-        config.model_config.provider = toCString("cpu")
-        config.model_config.model_type = toCString("paraformer")
+        config.model_config.provider = cStrings.makeCString("cpu")
+        config.model_config.model_type = cStrings.makeCString("paraformer")
 
         // 解码配置
-        config.decoding_method = toCString("greedy_search")
+        config.decoding_method = cStrings.makeCString("greedy_search")
         config.max_active_paths = 4
 
         // 端点检测配置
@@ -147,11 +148,5 @@ class SherpaOnnxOnlineRecognizer {
     func inputFinished() {
         guard let stream = stream else { return }
         SherpaOnnxOnlineStreamInputFinished(stream)
-    }
-
-    // MARK: - Private
-
-    private func toCString(_ string: String) -> UnsafePointer<CChar>? {
-        return UnsafePointer(strdup(string))
     }
 }

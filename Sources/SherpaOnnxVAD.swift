@@ -11,6 +11,7 @@ struct SpeechSegment {
 class SherpaOnnxVAD {
     private var vad: OpaquePointer?
     private let sampleRate: Int32 = 16000
+    private let cStrings = CStringLifetime()
 
     /// 初始化 VAD
     init?(modelPath: String) {
@@ -25,7 +26,7 @@ class SherpaOnnxVAD {
         var config = SherpaOnnxVadModelConfig()
 
         // Silero VAD 配置
-        config.silero_vad.model = toCString(modelPath)
+        config.silero_vad.model = cStrings.makeCString(modelPath)
         config.silero_vad.threshold = 0.5           // 语音检测阈值
         config.silero_vad.min_silence_duration = 0.5 // 最小静音时长（秒），用于分段
         config.silero_vad.min_speech_duration = 0.1  // 最小语音时长（秒），过滤噪音
@@ -34,7 +35,7 @@ class SherpaOnnxVAD {
 
         config.sample_rate = sampleRate
         config.num_threads = 2
-        config.provider = toCString("cpu")
+        config.provider = cStrings.makeCString("cpu")
         config.debug = 0
 
         // 创建 VAD 检测器，5秒缓冲区
@@ -129,11 +130,5 @@ class SherpaOnnxVAD {
     func clear() {
         guard let vad = vad else { return }
         SherpaOnnxVoiceActivityDetectorClear(vad)
-    }
-
-    // MARK: - Private
-
-    private func toCString(_ string: String) -> UnsafePointer<CChar>? {
-        return UnsafePointer(strdup(string))
     }
 }
