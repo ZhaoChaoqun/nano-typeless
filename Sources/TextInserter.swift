@@ -10,9 +10,11 @@ struct TextInserter {
         // 使用剪贴板 + 粘贴命令的方式插入文字
         // 这是最可靠的方式，因为直接模拟键盘输入对中文支持不好
 
-        // 保存当前剪贴板内容
         let pasteboard = NSPasteboard.general
-        let previousContents = pasteboard.string(forType: .string)
+
+        // 保存完整的剪贴板内容（所有类型）
+        let savedItems = savePasteboardContents(pasteboard)
+        let changeCountBefore = pasteboard.changeCount
 
         // 设置新文字到剪贴板
         pasteboard.clearContents()
@@ -22,10 +24,13 @@ struct TextInserter {
         simulatePaste()
 
         // 恢复原来的剪贴板内容（延迟执行，确保粘贴完成）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if let previous = previousContents {
-                pasteboard.clearContents()
-                pasteboard.setString(previous, forType: .string)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // 只有在我们的粘贴操作后剪贴板没有被外部修改过时才恢复
+            // changeCount 在每次 clearContents/setString 后递增
+            // 我们做了 clearContents + setString = +2，如果外部又修改了则 > changeCountBefore + 2
+            let expectedCount = changeCountBefore + 2
+            if pasteboard.changeCount == expectedCount {
+                restorePasteboardContents(pasteboard, items: savedItems)
             }
         }
     }
@@ -57,6 +62,37 @@ struct TextInserter {
             usleep(5000)  // 5ms
         }
     }
+
+    // MARK: - Pasteboard Save/Restore
+
+    /// 保存剪贴板中所有 item 的所有类型数据
+    private static func savePasteboardContents(_ pasteboard: NSPasteboard) -> [[(NSPasteboard.PasteboardType, Data)]] {
+        guard let items = pasteboard.pasteboardItems else { return [] }
+
+        return items.map { item in
+            item.types.compactMap { type in
+                guard let data = item.data(forType: type) else { return nil }
+                return (type, data)
+            }
+        }
+    }
+
+    /// 恢复剪贴板内容
+    private static func restorePasteboardContents(_ pasteboard: NSPasteboard, items: [[(NSPasteboard.PasteboardType, Data)]]) {
+        guard !items.isEmpty else { return }
+
+        pasteboard.clearContents()
+        let pasteboardItems = items.map { typesAndData -> NSPasteboardItem in
+            let item = NSPasteboardItem()
+            for (type, data) in typesAndData {
+                item.setData(data, forType: type)
+            }
+            return item
+        }
+        pasteboard.writeObjects(pasteboardItems)
+    }
+
+    // MARK: - Key Simulation
 
     /// 模拟 Cmd+V 粘贴操作
     private static func simulatePaste() {

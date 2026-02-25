@@ -50,6 +50,8 @@ class RecordingManager {
 
     /// 部分识别结果回调
     var onPartialResult: ((String) -> Void)?
+    /// 实时音频电平回调（0.0 ~ 1.0）
+    var onAudioLevel: ((Float) -> Void)?
     /// 用于识别的队列
     private let recognitionQueue = DispatchQueue(label: "com.typeless.recognition", qos: .userInitiated)
 
@@ -272,6 +274,19 @@ class RecordingManager {
         // 提取浮点样本
         guard let floatData = outputBuffer.floatChannelData else { return }
         let samples = Array(UnsafeBufferPointer(start: floatData[0], count: Int(outputBuffer.frameLength)))
+
+        // 计算 RMS 音频电平并通知 UI
+        if let onAudioLevel = onAudioLevel {
+            var sum: Float = 0
+            for s in samples { sum += s * s }
+            let rms = sqrt(sum / max(Float(samples.count), 1))
+            // 归一化到 0~1 范围（-60dB ~ 0dB 映射）
+            let db = 20 * log10(max(rms, 1e-6))
+            let normalized = max(0, min(1, (db + 50) / 50))
+            DispatchQueue.main.async {
+                onAudioLevel(normalized)
+            }
+        }
 
         // 根据模型类型处理
         switch currentModel {

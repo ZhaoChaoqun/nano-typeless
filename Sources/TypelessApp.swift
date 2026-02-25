@@ -117,16 +117,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
 
+            // 设置音频电平回调
+            RecordingManager.shared.onAudioLevel = { [weak self] level in
+                self?.overlayWindow?.updateAudioLevel(level)
+            }
+
             RecordingManager.shared.startRecording()
         }
     }
 
     private func stopRecordingAndTranscribe() {
         DispatchQueue.main.async {
+            // 切换到 "识别中" 状态，保持窗口可见
+            self.overlayWindow?.showProcessing()
+
             RecordingManager.shared.stopRecording { [weak self] text in
                 DispatchQueue.main.async {
-                    // 清除部分结果回调
+                    // 清除回调
                     RecordingManager.shared.onPartialResult = nil
+                    RecordingManager.shared.onAudioLevel = nil
                     self?.overlayWindow?.hide()
                     if let text = text, !text.isEmpty {
                         TextInserter.insertText(text)

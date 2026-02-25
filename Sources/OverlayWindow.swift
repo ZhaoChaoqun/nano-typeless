@@ -1,6 +1,12 @@
 import SwiftUI
 import AppKit
 
+/// 悬浮窗口的显示状态
+enum OverlayState: Equatable {
+    case listening
+    case processing
+}
+
 /// 悬浮窗口控制器 - 显示录音状态
 class OverlayWindowController {
     private var window: NSWindow?
@@ -75,6 +81,7 @@ class OverlayWindowController {
 
     func show() {
         viewModel.reset()
+        viewModel.state = .listening
         viewModel.startAnimation()
         positionWindow()
         window?.orderFront(nil)
@@ -82,6 +89,16 @@ class OverlayWindowController {
 
     func updateRecognizedText(_ text: String) {
         viewModel.recognizedText = text
+    }
+
+    /// 更新实时音频电平（0.0 ~ 1.0）
+    func updateAudioLevel(_ level: Float) {
+        viewModel.audioLevel = CGFloat(level)
+    }
+
+    /// 切换到处理中状态（停止录音后、识别完成前）
+    func showProcessing() {
+        viewModel.state = .processing
     }
 
     func hide() {
@@ -94,13 +111,16 @@ class OverlayWindowController {
 class OverlayViewModel: ObservableObject {
     @Published var animationPhase: CGFloat = 0
     @Published var recognizedText: String = ""
+    @Published var state: OverlayState = .listening
+    /// 实时音频电平（0.0 ~ 1.0），由 RecordingManager 驱动
+    @Published var audioLevel: CGFloat = 0
 
     private var animationTimer: Timer?
 
     func startAnimation() {
         animationTimer?.invalidate()
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.animationPhase += 0.3
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            self?.animationPhase += 0.15
         }
     }
 
@@ -111,6 +131,8 @@ class OverlayViewModel: ObservableObject {
 
     func reset() {
         recognizedText = ""
+        audioLevel = 0
+        state = .listening
     }
 }
 
@@ -126,21 +148,7 @@ struct OverlayView: View {
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             // 状态指示器 - 始终居中
-            HStack(spacing: 12) {
-                // 录音动画 - 竖纹声波
-                HStack(spacing: 3) {
-                    ForEach(0..<7, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 1.5)
-                            .fill(Color.white.opacity(0.9))
-                            .frame(width: 3, height: waveHeight(for: index))
-                    }
-                }
-                .frame(width: 30, height: 18)
-
-                Text("正在聆听...")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-            }
+            statusIndicator
 
             // 识别结果显示
             if !viewModel.recognizedText.isEmpty {
@@ -157,6 +165,38 @@ struct OverlayView: View {
                 .fill(Color.black.opacity(0.75))
         )
         .animation(.easeInOut(duration: 0.15), value: viewModel.animationPhase)
+    }
+
+    @ViewBuilder
+    private var statusIndicator: some View {
+        switch viewModel.state {
+        case .listening:
+            HStack(spacing: 12) {
+                // 录音动画 - 竖纹声波（由真实音量驱动）
+                HStack(spacing: 3) {
+                    ForEach(0..<7, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 1.5)
+                            .fill(Color.white.opacity(0.9))
+                            .frame(width: 3, height: waveHeight(for: index))
+                    }
+                }
+                .frame(width: 30, height: 18)
+
+                Text("正在聆听...")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+            }
+        case .processing:
+            HStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                    .colorScheme(.dark)
+
+                Text("识别中...")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+            }
+        }
     }
 
     @ViewBuilder
@@ -203,8 +243,12 @@ struct OverlayView: View {
 
     private func waveHeight(for index: Int) -> CGFloat {
         let phase = viewModel.animationPhase + CGFloat(index) * 0.6
-        let baseHeight: CGFloat = 6
-        let amplitude: CGFloat = 10
-        return baseHeight + abs(sin(phase)) * amplitude
+        // 基础高度 + 音量驱动的动态幅度
+        let baseHeight: CGFloat = 4
+        // 使用 audioLevel 驱动主幅度，sin(phase) 添加视觉错落
+        let level = viewModel.audioLevel
+        let dynamicAmplitude: CGFloat = 12 * level
+        let jitter = abs(sin(phase)) * (2 + 4 * level)
+        return baseHeight + dynamicAmplitude + jitter
     }
 }
