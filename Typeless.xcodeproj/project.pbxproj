@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,7 +13,6 @@
 		1A000004 /* OverlayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000014 /* OverlayWindow.swift */; };
 		1A000005 /* TextInserter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000015 /* TextInserter.swift */; };
 		1A000006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000016 /* SettingsView.swift */; };
-		1A000071 /* OnboardingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000070 /* OnboardingOverlay.swift */; };
 		1A000020 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A00001F /* WhisperKit */; };
 		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
 		1A000040 /* SherpaOnnxRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000041 /* SherpaOnnxRecognizer.swift */; };
@@ -25,52 +24,24 @@
 		1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; };
 		1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		1A000071 /* OnboardingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000070 /* OnboardingOverlay.swift */; };
 		1AQ00001 /* QwenASRRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00010 /* QwenASRRecognizer.swift */; };
 		1AQ00002 /* libqwen_asr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; };
 		1AQ00003 /* libqwen_asr.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1AQ00004 /* CStringUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00012 /* CStringUtils.swift */; };
 		1AQ00005 /* ASRStreamRecognizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00013 /* ASRStreamRecognizing.swift */; };
+		1AQ00006 /* ASREngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00014 /* ASREngine.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXFileReference section */
-		1A000010 /* Typeless.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Typeless.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1A000011 /* TypelessApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypelessApp.swift; sourceTree = "<group>"; };
-		1A000012 /* KeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyMonitor.swift; sourceTree = "<group>"; };
-		1A000013 /* RecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingManager.swift; sourceTree = "<group>"; };
-		1A000014 /* OverlayWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindow.swift; sourceTree = "<group>"; };
-		1A000015 /* TextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInserter.swift; sourceTree = "<group>"; };
-		1A000016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		1A000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		1A000018 /* Typeless.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Typeless.entitlements; sourceTree = "<group>"; };
-		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
-		1A000041 /* SherpaOnnxRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxRecognizer.swift; sourceTree = "<group>"; };
-		1A000043 /* SherpaOnnxManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxManager.swift; sourceTree = "<group>"; };
-		1A000045 /* SherpaOnnxVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxVAD.swift; sourceTree = "<group>"; };
-		1A000047 /* SherpaOnnxOnlineRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxOnlineRecognizer.swift; sourceTree = "<group>"; };
-		1A000049 /* SherpaOnnxPunctuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxPunctuation.swift; sourceTree = "<group>"; };
-		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
-		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libonnxruntime.1.17.1.dylib"; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
-		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
-		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
-		1AQ00010 /* QwenASRRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenASRRecognizer.swift; sourceTree = "<group>"; };
-		1AQ00011 /* libqwen_asr.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libqwen_asr.dylib"; path = "Frameworks/qwen-asr/lib/libqwen_asr.dylib"; sourceTree = "<group>"; };
-		1AQ00012 /* CStringUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CStringUtils.swift; sourceTree = "<group>"; };
-		1AQ00013 /* ASRStreamRecognizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASRStreamRecognizing.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		1A00000D /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1A000020 /* WhisperKit in Frameworks */,
-				1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */,
-				1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */,
-				1AQ00002 /* libqwen_asr.dylib in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
+/* Begin PBXContainerItemProxy section */
+		060E7E362F4ED32B0088F9A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A000008 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1A00000A;
+			remoteInfo = Typeless;
 		};
-/* End PBXFrameworksBuildPhase section */
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		1A000056 /* CopyFiles */ = {
@@ -87,21 +58,64 @@
 		};
 /* End PBXCopyFilesBuildPhase section */
 
-/* Begin PBXResourcesBuildPhase section */
-		1A000032 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
+/* Begin PBXFileReference section */
+		060E7E322F4ED32A0088F9A6 /* TypelessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypelessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A000010 /* Typeless.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Typeless.app; path = "Nano Typeless.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A000011 /* TypelessApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypelessApp.swift; sourceTree = "<group>"; };
+		1A000012 /* KeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyMonitor.swift; sourceTree = "<group>"; };
+		1A000013 /* RecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingManager.swift; sourceTree = "<group>"; };
+		1A000014 /* OverlayWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindow.swift; sourceTree = "<group>"; };
+		1A000015 /* TextInserter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInserter.swift; sourceTree = "<group>"; };
+		1A000016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1A000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A000018 /* Typeless.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Typeless.entitlements; sourceTree = "<group>"; };
+		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		1A000041 /* SherpaOnnxRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxRecognizer.swift; sourceTree = "<group>"; };
+		1A000043 /* SherpaOnnxManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxManager.swift; sourceTree = "<group>"; };
+		1A000045 /* SherpaOnnxVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxVAD.swift; sourceTree = "<group>"; };
+		1A000047 /* SherpaOnnxOnlineRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxOnlineRecognizer.swift; sourceTree = "<group>"; };
+		1A000049 /* SherpaOnnxPunctuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxPunctuation.swift; sourceTree = "<group>"; };
+		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
+		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libonnxruntime.1.17.1.dylib; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
+		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
+		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
+		1AQ00010 /* QwenASRRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenASRRecognizer.swift; sourceTree = "<group>"; };
+		1AQ00011 /* libqwen_asr.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqwen_asr.dylib; path = "Frameworks/qwen-asr/lib/libqwen_asr.dylib"; sourceTree = "<group>"; };
+		1AQ00012 /* CStringUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CStringUtils.swift; sourceTree = "<group>"; };
+		1AQ00013 /* ASRStreamRecognizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASRStreamRecognizing.swift; sourceTree = "<group>"; };
+		1AQ00014 /* ASREngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASREngine.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		060E7E332F4ED32A0088F9A6 /* TypelessTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TypelessTests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		060E7E2F2F4ED32A0088F9A6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1A000030 /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
+		1A00000D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A000020 /* WhisperKit in Frameworks */,
+				1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */,
+				1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */,
+				1AQ00002 /* libqwen_asr.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1A000007 = {
 			isa = PBXGroup;
 			children = (
+				060E7E332F4ED32A0088F9A6 /* TypelessTests */,
 				1A000057 /* Frameworks */,
 				1A000019 /* Sources */,
 				1A00000F /* Products */,
@@ -112,6 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				1A000010 /* Typeless.app */,
+				060E7E322F4ED32A0088F9A6 /* TypelessTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -134,6 +149,7 @@
 				1AQ00010 /* QwenASRRecognizer.swift */,
 				1AQ00012 /* CStringUtils.swift */,
 				1AQ00013 /* ASRStreamRecognizing.swift */,
+				1AQ00014 /* ASREngine.swift */,
 				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
@@ -155,6 +171,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		060E7E312F4ED32A0088F9A6 /* TypelessTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 060E7E3A2F4ED32B0088F9A6 /* Build configuration list for PBXNativeTarget "TypelessTests" */;
+			buildPhases = (
+				060E7E2E2F4ED32A0088F9A6 /* Sources */,
+				060E7E2F2F4ED32A0088F9A6 /* Frameworks */,
+				060E7E302F4ED32A0088F9A6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				060E7E372F4ED32B0088F9A6 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				060E7E332F4ED32A0088F9A6 /* TypelessTests */,
+			);
+			name = TypelessTests;
+			packageProductDependencies = (
+			);
+			productName = TypelessTests;
+			productReference = 060E7E322F4ED32A0088F9A6 /* TypelessTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		1A00000A /* Typeless */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1A00001C /* Build configuration list for PBXNativeTarget "Typeless" */;
@@ -183,9 +222,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					060E7E312F4ED32A0088F9A6 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 1A00000A;
+					};
 					1A00000A = {
 						CreatedOnToolsVersion = 15.0;
 					};
@@ -208,11 +251,37 @@
 			projectRoot = "";
 			targets = (
 				1A00000A /* Typeless */,
+				060E7E312F4ED32A0088F9A6 /* TypelessTests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		060E7E302F4ED32A0088F9A6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1A000032 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A000030 /* AppIcon.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		060E7E2E2F4ED32A0088F9A6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		1A00000B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,12 +301,63 @@
 				1AQ00001 /* QwenASRRecognizer.swift in Sources */,
 				1AQ00004 /* CStringUtils.swift in Sources */,
 				1AQ00005 /* ASRStreamRecognizing.swift in Sources */,
+				1AQ00006 /* ASREngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		060E7E372F4ED32B0088F9A6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1A00000A /* Typeless */;
+			targetProxy = 060E7E362F4ED32B0088F9A6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		060E7E382F4ED32B0088F9A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BXQ44LYC44;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhaochaoqun.TypelessTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nano Typeless.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nano Typeless";
+			};
+			name = Debug;
+		};
+		060E7E392F4ED32B0088F9A6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BXQ44LYC44;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhaochaoqun.TypelessTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nano Typeless.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nano Typeless";
+			};
+			name = Release;
+		};
 		1A000021 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -435,6 +555,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		060E7E3A2F4ED32B0088F9A6 /* Build configuration list for PBXNativeTarget "TypelessTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				060E7E382F4ED32B0088F9A6 /* Debug */,
+				060E7E392F4ED32B0088F9A6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		1A00001B /* Build configuration list for PBXProject "Typeless" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnxManager")
 
 /// ASR 模型类型
 enum ASRModelType: String, CaseIterable, Identifiable {
@@ -178,7 +181,7 @@ class SherpaOnnxManager: NSObject {
 
         if FileManager.default.fileExists(atPath: encoderINT8.path),
            FileManager.default.fileExists(atPath: decoderINT8.path) {
-            print("[SherpaOnnx] 使用 INT8 版本 Streaming Paraformer（内存占用更小）")
+            logger.info("使用 INT8 版本 Streaming Paraformer（内存占用更小）")
             return (encoderINT8.path, decoderINT8.path, tokensPath.path)
         }
 
@@ -188,7 +191,7 @@ class SherpaOnnxManager: NSObject {
 
         if FileManager.default.fileExists(atPath: encoderFP32.path),
            FileManager.default.fileExists(atPath: decoderFP32.path) {
-            print("[SherpaOnnx] 使用 FP32 版本 Streaming Paraformer")
+            logger.info("使用 FP32 版本 Streaming Paraformer")
             return (encoderFP32.path, decoderFP32.path, tokensPath.path)
         }
 
@@ -246,16 +249,6 @@ class SherpaOnnxManager: NSObject {
         }
     }
 
-    /// 兼容旧接口：获取 FunASR 模型路径
-    func getModelPath() -> (modelPath: String, tokensPath: String)? {
-        return getFunASRModelPath()
-    }
-
-    /// 兼容旧接口：检查模型是否已下载
-    func isModelDownloaded() -> Bool {
-        return isFunASRModelDownloaded()
-    }
-
     // MARK: - VAD 模型
 
     /// 获取 VAD 模型路径
@@ -306,7 +299,7 @@ class SherpaOnnxManager: NSObject {
                         try FileManager.default.removeItem(at: destPath)
                     }
                     try FileManager.default.moveItem(at: tempURL, to: destPath)
-                    print("[SherpaOnnx] VAD 模型下载完成: \(destPath.path)")
+                    logger.info("VAD 模型下载完成: \(destPath.path)")
                     completion(true, nil)
                 } catch {
                     completion(false, "保存失败: \(error.localizedDescription)")
@@ -380,11 +373,11 @@ class SherpaOnnxManager: NSObject {
                         let (_, response) = try await URLSession.shared.data(for: request)
                         if let httpResponse = response as? HTTPURLResponse,
                            (200...399).contains(httpResponse.statusCode) {
-                            print("[SherpaOnnx] 标点模型 \(source.displayName) 响应成功")
+                            logger.info("标点模型 \(source.displayName) 响应成功")
                             return (source, true)
                         }
                     } catch {
-                        print("[SherpaOnnx] 标点模型 \(source.displayName) 请求失败")
+                        logger.debug("标点模型 \(source.displayName) 请求失败")
                     }
                     return (source, false)
                 }
@@ -392,7 +385,7 @@ class SherpaOnnxManager: NSObject {
 
             for await (source, success) in group {
                 if success {
-                    print("[SherpaOnnx] 标点模型选择下载源: \(source.displayName)")
+                    logger.info("标点模型选择下载源: \(source.displayName)")
                     group.cancelAll()
                     return source
                 }
@@ -424,7 +417,7 @@ class SherpaOnnxManager: NSObject {
                 if let error = error {
                     // 尝试备用源
                     if let fallback = fallback {
-                        print("[SherpaOnnx] 标点模型下载失败，尝试备用源: \(fallback.displayName)")
+                        logger.info("标点模型下载失败，尝试备用源: \(fallback.displayName)")
                         progress("下载失败，正在尝试备用源...")
                         self.downloadPunctFromSource(source: fallback, fallback: nil, progress: progress, completion: completion)
                         return
@@ -443,7 +436,7 @@ class SherpaOnnxManager: NSObject {
                 let result = self.extractTarBz2(from: tempURL, to: self.modelsDirectory)
 
                 if result {
-                    print("[SherpaOnnx] 标点模型下载完成")
+                    logger.info("标点模型下载完成")
                     completion(true, nil)
                 } else {
                     completion(false, "解压失败")
@@ -457,7 +450,7 @@ class SherpaOnnxManager: NSObject {
 
     /// 选择最快的下载源
     private func selectFastestSource(for modelType: ASRModelType) async -> DownloadSource {
-        print("[SherpaOnnx] 正在检测最快下载源...")
+        logger.info("正在检测最快下载源...")
 
         return await withTaskGroup(of: (DownloadSource, Bool).self) { group in
             let timeout: TimeInterval = 5.0
@@ -474,11 +467,11 @@ class SherpaOnnxManager: NSObject {
                         let (_, response) = try await URLSession.shared.data(for: request)
                         if let httpResponse = response as? HTTPURLResponse,
                            (200...399).contains(httpResponse.statusCode) {
-                            print("[SherpaOnnx] \(source.displayName) 响应成功")
+                            logger.info("\(source.displayName) 响应成功")
                             return (source, true)
                         }
                     } catch {
-                        print("[SherpaOnnx] \(source.displayName) 请求失败: \(error.localizedDescription)")
+                        logger.debug("\(source.displayName) 请求失败: \(error.localizedDescription)")
                     }
                     return (source, false)
                 }
@@ -487,14 +480,14 @@ class SherpaOnnxManager: NSObject {
             // 返回第一个成功的
             for await (source, success) in group {
                 if success {
-                    print("[SherpaOnnx] 选择下载源: \(source.displayName)")
+                    logger.info("选择下载源: \(source.displayName)")
                     group.cancelAll()
                     return source
                 }
             }
 
             // 都失败，默认 ModelScope
-            print("[SherpaOnnx] 检测失败，默认使用 ModelScope")
+            logger.info("检测失败，默认使用 ModelScope")
             return .modelScope
         }
     }
@@ -519,11 +512,6 @@ class SherpaOnnxManager: NSObject {
                 )
             }
         }
-    }
-
-    /// 兼容旧接口：下载 FunASR 模型
-    func downloadModel(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
-        downloadModel(.funasrNano, progress: progress, completion: completion)
     }
 
     /// 从指定源开始下载
@@ -578,7 +566,7 @@ class SherpaOnnxManager: NSObject {
             process.waitUntilExit()
             return process.terminationStatus == 0
         } catch {
-            print("解压失败: \(error)")
+            logger.error("解压失败: \(error)")
             return false
         }
     }
@@ -623,7 +611,7 @@ extension SherpaOnnxManager: URLSessionDownloadDelegate {
                let modelType = currentDownloadingModel,
                let progress = progressCallback,
                let completion = completionCallback {
-                print("[SherpaOnnx] 下载失败，尝试备用源: \(fallback.displayName)")
+                logger.info("下载失败，尝试备用源: \(fallback.displayName)")
                 progress("下载失败，正在尝试备用源...")
                 fallbackSource = nil  // 清除，避免无限重试
                 startDownload(modelType: modelType, from: fallback, fallback: fallback, progress: progress, completion: completion)

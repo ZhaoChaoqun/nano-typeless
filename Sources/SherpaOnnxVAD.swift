@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnxVAD")
 
 /// 语音段数据结构
 struct SpeechSegment {
@@ -15,11 +18,11 @@ class SherpaOnnxVAD {
 
     /// 初始化 VAD
     init?(modelPath: String) {
-        print(">>> SherpaOnnxVAD: 开始初始化...")
-        print("    模型路径: \(modelPath)")
+        logger.info("SherpaOnnxVAD: 开始初始化...")
+        logger.debug("模型路径: \(modelPath)")
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
-            print(">>> SherpaOnnxVAD: 模型文件不存在")
+            logger.info("SherpaOnnxVAD: 模型文件不存在")
             return nil
         }
 
@@ -42,11 +45,11 @@ class SherpaOnnxVAD {
         vad = SherpaOnnxCreateVoiceActivityDetector(&config, 5.0)
 
         if vad == nil {
-            print(">>> SherpaOnnxVAD: 创建 VAD 失败")
+            logger.info("SherpaOnnxVAD: 创建 VAD 失败")
             return nil
         }
 
-        print(">>> SherpaOnnxVAD: 初始化成功")
+        logger.info("SherpaOnnxVAD: 初始化成功")
     }
 
     deinit {
@@ -68,12 +71,6 @@ class SherpaOnnxVAD {
     func hasSegment() -> Bool {
         guard let vad = vad else { return false }
         return SherpaOnnxVoiceActivityDetectorEmpty(vad) == 0
-    }
-
-    /// 检测当前是否有语音
-    func isDetected() -> Bool {
-        guard let vad = vad else { return false }
-        return SherpaOnnxVoiceActivityDetectorDetected(vad) == 1
     }
 
     /// 获取并移除第一个语音段（包含时间信息）
@@ -109,11 +106,6 @@ class SherpaOnnxVAD {
         return SpeechSegment(samples: samples, startTime: startTime, endTime: endTime)
     }
 
-    /// 获取并移除第一个语音段（仅返回样本，向后兼容）
-    func popSegment() -> [Float]? {
-        return popSegmentWithTime()?.samples
-    }
-
     /// 刷新缓冲区，处理剩余数据
     func flush() {
         guard let vad = vad else { return }
@@ -126,9 +118,4 @@ class SherpaOnnxVAD {
         SherpaOnnxVoiceActivityDetectorReset(vad)
     }
 
-    /// 清空所有语音段
-    func clear() {
-        guard let vad = vad else { return }
-        SherpaOnnxVoiceActivityDetectorClear(vad)
-    }
 }

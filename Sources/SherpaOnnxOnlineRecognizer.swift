@@ -1,7 +1,10 @@
 import Foundation
+import os
 #if SWIFT_PACKAGE
 import CSherpaOnnx
 #endif
+
+private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnxOnlineRecognizer")
 
 /// Sherpa-ONNX 流式语音识别器（Streaming Paraformer）
 class SherpaOnnxOnlineRecognizer {
@@ -11,15 +14,15 @@ class SherpaOnnxOnlineRecognizer {
 
     /// 初始化流式识别器
     init?(encoderPath: String, decoderPath: String, tokensPath: String) {
-        print(">>> SherpaOnnxOnlineRecognizer: 开始初始化...")
-        print("    Encoder路径: \(encoderPath)")
-        print("    Decoder路径: \(decoderPath)")
-        print("    Tokens路径: \(tokensPath)")
+        logger.info("SherpaOnnxOnlineRecognizer: 开始初始化...")
+        logger.debug("Encoder路径: \(encoderPath)")
+        logger.debug("Decoder路径: \(decoderPath)")
+        logger.debug("Tokens路径: \(tokensPath)")
 
         guard FileManager.default.fileExists(atPath: encoderPath),
               FileManager.default.fileExists(atPath: decoderPath),
               FileManager.default.fileExists(atPath: tokensPath) else {
-            print(">>> SherpaOnnxOnlineRecognizer: 模型文件不存在")
+            logger.info("SherpaOnnxOnlineRecognizer: 模型文件不存在")
             return nil
         }
 
@@ -51,20 +54,20 @@ class SherpaOnnxOnlineRecognizer {
         recognizer = SherpaOnnxCreateOnlineRecognizer(&config)
 
         if recognizer == nil {
-            print(">>> SherpaOnnxOnlineRecognizer: 创建识别器失败")
+            logger.info("SherpaOnnxOnlineRecognizer: 创建识别器失败")
             return nil
         }
 
         // 创建初始流
         stream = SherpaOnnxCreateOnlineStream(recognizer)
         if stream == nil {
-            print(">>> SherpaOnnxOnlineRecognizer: 创建流失败")
+            logger.info("SherpaOnnxOnlineRecognizer: 创建流失败")
             SherpaOnnxDestroyOnlineRecognizer(recognizer)
             recognizer = nil
             return nil
         }
 
-        print(">>> SherpaOnnxOnlineRecognizer: 初始化成功")
+        logger.info("SherpaOnnxOnlineRecognizer: 初始化成功")
     }
 
     deinit {
@@ -119,34 +122,9 @@ class SherpaOnnxOnlineRecognizer {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// 检查是否检测到端点（句子结束）
-    func isEndpoint() -> Bool {
-        guard let recognizer = recognizer, let stream = stream else { return false }
-        return SherpaOnnxOnlineStreamIsEndpoint(recognizer, stream) == 1
-    }
-
     /// 重置流状态（用于新的识别会话）
     func reset() {
         guard let recognizer = recognizer, let stream = stream else { return }
         SherpaOnnxOnlineStreamReset(recognizer, stream)
-    }
-
-    /// 重新创建流（在 inputFinished 后必须调用此方法才能开始新的识别）
-    func recreateStream() {
-        // 销毁旧的 stream
-        if let oldStream = stream {
-            SherpaOnnxDestroyOnlineStream(oldStream)
-        }
-        // 创建新的 stream
-        stream = SherpaOnnxCreateOnlineStream(recognizer)
-        if stream == nil {
-            print(">>> SherpaOnnxOnlineRecognizer: 重新创建流失败")
-        }
-    }
-
-    /// 通知输入结束
-    func inputFinished() {
-        guard let stream = stream else { return }
-        SherpaOnnxOnlineStreamInputFinished(stream)
     }
 }

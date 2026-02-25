@@ -1,7 +1,10 @@
 import Foundation
+import os
 #if SWIFT_PACKAGE
 import CSherpaOnnx
 #endif
+
+private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnxPunctuation")
 
 /// Sherpa-ONNX 离线标点处理器（CT-Transformer）
 class SherpaOnnxPunctuation {
@@ -10,11 +13,11 @@ class SherpaOnnxPunctuation {
 
     /// 初始化标点处理器
     init?(modelPath: String) {
-        print(">>> SherpaOnnxPunctuation: 开始初始化...")
-        print("    模型路径: \(modelPath)")
+        logger.info("SherpaOnnxPunctuation: 开始初始化...")
+        logger.debug("模型路径: \(modelPath)")
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
-            print(">>> SherpaOnnxPunctuation: 模型文件不存在")
+            logger.info("SherpaOnnxPunctuation: 模型文件不存在")
             return nil
         }
 
@@ -27,11 +30,11 @@ class SherpaOnnxPunctuation {
         punctuator = SherpaOnnxCreateOfflinePunctuation(&config)
 
         if punctuator == nil {
-            print(">>> SherpaOnnxPunctuation: 创建标点处理器失败")
+            logger.info("SherpaOnnxPunctuation: 创建标点处理器失败")
             return nil
         }
 
-        print(">>> SherpaOnnxPunctuation: 初始化成功")
+        logger.info("SherpaOnnxPunctuation: 初始化成功")
     }
 
     deinit {

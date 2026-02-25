@@ -43,26 +43,6 @@ struct TextInserter {
         simulatePaste()
     }
 
-    /// 删除指定数量的字符（模拟 Backspace）
-    static func deleteCharacters(_ count: Int) {
-        guard count > 0 else { return }
-
-        let source = CGEventSource(stateID: .hidSystemState)
-        let backspaceKeyCode: CGKeyCode = 51  // Backspace 键码
-
-        for _ in 0..<count {
-            guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: backspaceKeyCode, keyDown: true),
-                  let keyUp = CGEvent(keyboardEventSource: source, virtualKey: backspaceKeyCode, keyDown: false) else {
-                continue
-            }
-            keyDown.post(tap: .cghidEventTap)
-            keyUp.post(tap: .cghidEventTap)
-
-            // 短暂延迟确保按键被处理
-            usleep(5000)  // 5ms
-        }
-    }
-
     // MARK: - Pasteboard Save/Restore
 
     /// 保存剪贴板中所有 item 的所有类型数据
@@ -116,26 +96,5 @@ struct TextInserter {
         // 发送事件
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
-    }
-
-    /// 直接通过模拟键盘输入文字（备用方案，对中文支持不好）
-    static func insertTextViaKeyboard(_ text: String) {
-        let source = CGEventSource(stateID: .hidSystemState)
-
-        for char in text.unicodeScalars {
-            guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true) else {
-                continue
-            }
-
-            var unicodeChar = UniChar(char.value)
-            keyDown.keyboardSetUnicodeString(stringLength: 1, unicodeString: &unicodeChar)
-            keyDown.post(tap: .cghidEventTap)
-
-            guard let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else {
-                continue
-            }
-            keyUp.keyboardSetUnicodeString(stringLength: 1, unicodeString: &unicodeChar)
-            keyUp.post(tap: .cghidEventTap)
-        }
     }
 }

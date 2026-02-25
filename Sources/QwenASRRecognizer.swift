@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.typeless.app", category: "QwenASR")
 
 /// QwenASR 流式识别器
 /// 每次推送新音频 chunk，增量返回识别结果
@@ -7,29 +10,29 @@ class QwenASRStreamRecognizer {
     private var streamState: OpaquePointer?  // QwenAsrStreamState*
 
     init?(modelDir: String, numThreads: Int32 = 4) {
-        print(">>> QwenASRStreamRecognizer: 开始初始化...")
-        print("    模型目录: \(modelDir)")
+        logger.info("QwenASRStreamRecognizer: 开始初始化...")
+        logger.debug("模型目录: \(modelDir)")
 
         guard FileManager.default.fileExists(atPath: modelDir) else {
-            print(">>> QwenASRStreamRecognizer: 模型目录不存在")
+            logger.info("QwenASRStreamRecognizer: 模型目录不存在")
             return nil
         }
 
         engine = qwen_asr_load_model(modelDir, numThreads, 0)
         guard engine != nil else {
-            print(">>> QwenASRStreamRecognizer: 创建引擎失败")
+            logger.info("QwenASRStreamRecognizer: 创建引擎失败")
             return nil
         }
 
         streamState = qwen_asr_stream_new()
         guard streamState != nil else {
-            print(">>> QwenASRStreamRecognizer: 创建流式状态失败")
+            logger.info("QwenASRStreamRecognizer: 创建流式状态失败")
             qwen_asr_free(engine)
             engine = nil
             return nil
         }
 
-        print(">>> QwenASRStreamRecognizer: 初始化成功")
+        logger.info("QwenASRStreamRecognizer: 初始化成功")
     }
 
     deinit {

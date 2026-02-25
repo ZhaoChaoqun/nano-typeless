@@ -1,6 +1,9 @@
 import SwiftUI
 import AppKit
 import AVFoundation
+import os
+
+private let logger = Logger(subsystem: "com.typeless.app", category: "TypelessApp")
 
 @main
 struct TypelessApp: App {
@@ -53,11 +56,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func autoDownloadDefaultModelIfNeeded() {
         let downloadManager = ModelDownloadManager.shared
         if !downloadManager.isDownloaded {
-            print(">>> 首次启动，自动下载默认模型...")
+            logger.info("首次启动，自动下载默认模型...")
             downloadManager.downloadModel()
         }
         if !downloadManager.punctuationDownloaded {
-            print(">>> 自动下载标点模型...")
+            logger.info("自动下载标点模型...")
             downloadManager.downloadPunctuationModel()
         }
     }
