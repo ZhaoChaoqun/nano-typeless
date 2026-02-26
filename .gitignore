@@ -48,6 +48,16 @@ funasr-coreml/
 # QwenASR build artifacts
 Frameworks/qwen-asr/lib/*.a
 scripts/.qwen-asr-build/
+scripts/qwen3-asr-onnx/
 
 # Test audio fixtures (generated, large)
 tests/fixtures/audio/
+
+# IDE
+.vscode/
+
+# Debug reports
+DEBUG_UTF8_REPORT.md
+
+# Distribution archives
+Nano-Typeless-*.zip
