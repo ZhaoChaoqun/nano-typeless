@@ -85,6 +85,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func checkPermissions() {
+        // 单元测试环境下跳过权限请求
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return
+        }
+
         // 请求麦克风权限
         AVCaptureDevice.requestAccess(for: .audio) { granted in
             if !granted {

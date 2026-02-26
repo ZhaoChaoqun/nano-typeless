@@ -16,6 +16,12 @@ class KeyMonitor {
     private var permissionCheckTimer: Timer?
 
     func startMonitoring() {
+        // 单元测试环境下跳过监听（避免弹出辅助功能权限窗口）
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            logger.info("检测到单元测试环境，跳过键盘监听")
+            return
+        }
+
         // 需要辅助功能权限
         let trusted = AXIsProcessTrusted()
         logger.info("辅助功能权限状态: \(trusted ? "已授权" : "未授权")")

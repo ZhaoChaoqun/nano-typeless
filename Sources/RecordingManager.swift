@@ -56,6 +56,11 @@ class RecordingManager {
     private let recognitionQueue = DispatchQueue(label: "com.typeless.recognition", qos: .userInitiated)
 
     init() {
+        // 单元测试环境下跳过自动模型加载（测试通过 testable(withEngine:) 注入引擎）
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+            logger.info("检测到单元测试环境，跳过自动模型加载")
+            return
+        }
         Task { await initializeRecognizer() }
     }
 
