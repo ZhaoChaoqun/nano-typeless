@@ -1,0 +1,203 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: 'Run E2E ASR tests'
+        type: boolean
+        default: false
+      run_stress:
+        description: 'Run Stress tests (memory, long audio)'
+        type: boolean
+        default: false
+
+# 取消同一 PR 的重复运行
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+  QWEN_MODEL_VERSION: "Qwen3-ASR-0.6B"
+
+jobs:
+  # ============================================================
+  # Tier 1: Swift Unit Tests (每个 PR 必跑, ~1min)
+  # ============================================================
+  unit-tests:
+    name: "Unit Tests (Swift)"
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build & Run Unit Tests
+        run: |
+          xcodebuild test \
+            -scheme Typeless \
+            -destination 'platform=macOS' \
+            -only-testing:TypelessTests/QwenASRUnitTests \
+            -resultBundlePath TestResults/unit.xcresult \
+            | xcbeautify || true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: TestResults/
+          retention-days: 7
+
+  # ============================================================
+  # Tier 1: Concurrency Tests - Mock only (每个 PR 必跑)
+  # ============================================================
+  concurrency-tests:
+    name: "Concurrency Tests (Mock)"
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Mock Concurrency Tests
+        run: |
+          xcodebuild test \
+            -scheme Typeless \
+            -destination 'platform=macOS' \
+            -only-testing:TypelessTests/QwenASRConcurrencyTests/testEngineRapidProcessAndFlush \
+            -only-testing:TypelessTests/QwenASRConcurrencyTests/testRecordingManagerWithMockEngine \
+            | xcbeautify || true
+
+  # ============================================================
+  # Tier 2: E2E ASR Tests (条件触发)
+  # 触发条件: push to main / PR label "run-e2e" / 手动触发
+  # ============================================================
+  e2e-tests:
+    name: "E2E ASR Tests"
+    runs-on: macos-15
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' && github.event.inputs.run_e2e == 'true' ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 模型缓存 ──
+      - name: Cache Qwen3-ASR Model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Application Support/Nano Typeless/models/Qwen3-ASR-0.6B
+          key: qwen3-asr-model-${{ env.QWEN_MODEL_VERSION }}
+
+      - name: Download Qwen3-ASR Model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          MODEL_DIR="$HOME/Library/Application Support/Nano Typeless/models/Qwen3-ASR-0.6B"
+          mkdir -p "$MODEL_DIR"
+          echo "::warning::Model not in cache. Please manually upload model files or configure download source."
+          echo "Expected path: $MODEL_DIR"
+          # TODO: 替换为实际的模型下载命令
+          # 例如: wget -q -O model.tar.gz "https://your-model-host/Qwen3-ASR-0.6B.tar.gz"
+          #       tar -xzf model.tar.gz -C "$MODEL_DIR"
+
+      # ── 生成测试语料 ──
+      - name: Cache Test Audio Fixtures
+        id: cache-audio
+        uses: actions/cache@v4
+        with:
+          path: tests/fixtures/audio
+          key: test-audio-v2-${{ hashFiles('scripts/generate_extended_corpus.py') }}
+
+      - name: Install uv
+        if: steps.cache-audio.outputs.cache-hit != 'true'
+        uses: astral-sh/setup-uv@v4
+
+      - name: Generate Test Corpus
+        if: steps.cache-audio.outputs.cache-hit != 'true'
+        run: uv run python scripts/generate_extended_corpus.py
+
+      # ── 运行 E2E 测试 ──
+      - name: Run E2E Tests
+        run: |
+          xcodebuild test \
+            -scheme Typeless \
+            -destination 'platform=macOS' \
+            -only-testing:TypelessTests/QwenASRE2ETests \
+            -resultBundlePath TestResults/e2e.xcresult \
+            | xcbeautify || true
+
+      - name: Upload E2E Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: TestResults/
+          retention-days: 14
+
+  # ============================================================
+  # Tier 3: Stress Tests (手动触发 / main push)
+  # 包含: Boundary tests, 内存增长, 长音频, 并发(真实模型)
+  # ============================================================
+  stress-tests:
+    name: "Stress & Boundary Tests"
+    runs-on: macos-15
+    if: >
+      github.event_name == 'workflow_dispatch' && github.event.inputs.run_stress == 'true' ||
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Qwen3-ASR Model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Application Support/Nano Typeless/models/Qwen3-ASR-0.6B
+          key: qwen3-asr-model-${{ env.QWEN_MODEL_VERSION }}
+
+      - name: Download Qwen3-ASR Model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          MODEL_DIR="$HOME/Library/Application Support/Nano Typeless/models/Qwen3-ASR-0.6B"
+          mkdir -p "$MODEL_DIR"
+          echo "::warning::Model not in cache."
+
+      # 语料
+      - name: Cache Test Audio Fixtures
+        id: cache-audio
+        uses: actions/cache@v4
+        with:
+          path: tests/fixtures/audio
+          key: test-audio-v2-${{ hashFiles('scripts/generate_extended_corpus.py') }}
+
+      - name: Install uv
+        if: steps.cache-audio.outputs.cache-hit != 'true'
+        uses: astral-sh/setup-uv@v4
+
+      - name: Generate Test Corpus
+        if: steps.cache-audio.outputs.cache-hit != 'true'
+        run: uv run python scripts/generate_extended_corpus.py
+
+      - name: Run Boundary & Concurrency Tests
+        run: |
+          xcodebuild test \
+            -scheme Typeless \
+            -destination 'platform=macOS' \
+            -only-testing:TypelessTests/QwenASRBoundaryTests \
+            -only-testing:TypelessTests/QwenASRConcurrencyTests \
+            -resultBundlePath TestResults/stress.xcresult \
+            | xcbeautify || true
+
+      - name: Upload Stress Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-results
+          path: TestResults/
+          retention-days: 14
