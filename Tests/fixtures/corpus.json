@@ -1,0 +1,521 @@
+{
+  "version": 2,
+  "generated_at": "2026-02-26T06:34:14.863760+00:00",
+  "sample_rate": 16000,
+  "format": "16-bit PCM WAV, mono",
+  "entries": [
+    {
+      "id": "zh_short_01",
+      "category": "chinese_short",
+      "text_input": "今天天气真好",
+      "expected_text": "今天天气真好",
+      "match_mode": "character_error_rate",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/zh_short_01.wav"
+      },
+      "duration_sec": 1.99,
+      "language": "zh",
+      "match_threshold": 0.15
+    },
+    {
+      "id": "zh_long_01",
+      "category": "chinese_long",
+      "text_input": "人工智能正在深刻地改变我们的生活方式，从语音识别到自动驾驶，从医疗诊断到金融分析",
+      "expected_text": "人工智能正在深刻地改变我们的生活方式，从语音识别到自动驾驶，从医疗诊断到金融分析。",
+      "match_mode": "character_error_rate",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/zh_long_01.wav"
+      },
+      "duration_sec": 9.0,
+      "language": "zh",
+      "match_threshold": 0.15
+    },
+    {
+      "id": "mixed_01",
+      "category": "mixed_zh_en",
+      "text_input": "我今天用Python写了一个API接口",
+      "expected_text": "我今天用Python写了一个API接口",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/mixed_01.wav"
+      },
+      "duration_sec": 3.82,
+      "language": "zh",
+      "match_keywords": [
+        "Python",
+        "API"
+      ]
+    },
+    {
+      "id": "mixed_02",
+      "category": "mixed_technical",
+      "text_input": "MacBook Pro M3芯片性能提升了百分之四十",
+      "expected_text": "MacBook Pro M3芯片性能提升了百分之四十",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/mixed_02.wav"
+      },
+      "duration_sec": 4.61,
+      "language": "zh",
+      "match_keywords": [
+        "MacBook",
+        "芯片"
+      ]
+    },
+    {
+      "id": "en_short_01",
+      "category": "english_short",
+      "text_input": "Hello world",
+      "expected_text": "Hello world",
+      "match_mode": "character_error_rate",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/en_short_01.wav"
+      },
+      "duration_sec": 1.8,
+      "language": "en",
+      "match_threshold": 0.2
+    },
+    {
+      "id": "tech_num_01",
+      "category": "technical_numbers",
+      "text_input": "服务器IP地址是192.168.1.100端口号8080",
+      "expected_text": "服务器IP地址是192.168.1.100端口号8080",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/tech_num_01.wav"
+      },
+      "duration_sec": 7.06,
+      "language": "zh",
+      "match_keywords": [
+        "服务器",
+        "端口"
+      ]
+    },
+    {
+      "id": "silence_01",
+      "category": "silence",
+      "text_input": "",
+      "expected_text": "",
+      "match_mode": "empty_or_whitespace",
+      "audio_files": {
+        "synthetic": "audio/synthetic/silence_01.wav"
+      },
+      "duration_sec": 3.0,
+      "language": "none"
+    },
+    {
+      "id": "silence_02",
+      "category": "silence_short",
+      "text_input": "",
+      "expected_text": "",
+      "match_mode": "empty_or_whitespace",
+      "audio_files": {
+        "synthetic": "audio/synthetic/silence_02.wav"
+      },
+      "duration_sec": 0.1,
+      "language": "none"
+    },
+    {
+      "id": "noise_01",
+      "category": "speech_trailing_silence",
+      "text_input": "你好",
+      "expected_text": "你好",
+      "match_mode": "contains",
+      "audio_files": {
+        "synthetic": "audio/synthetic/noise_01.wav",
+        "edge_tts": "audio/edge_tts/noise_01.wav"
+      },
+      "duration_sec": 6.2,
+      "language": "zh"
+    },
+    {
+      "id": "dev_git_01",
+      "category": "developer_corpus",
+      "text_input": "执行git commit修复登录bug",
+      "expected_text": "执行git commit修复登录bug",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_git_01.wav"
+      },
+      "duration_sec": 3.1,
+      "language": "zh",
+      "match_keywords": [
+        "git",
+        "commit",
+        "bug"
+      ]
+    },
+    {
+      "id": "dev_swift_01",
+      "category": "developer_corpus",
+      "text_input": "定义一个struct叫做UserModel",
+      "expected_text": "定义一个struct叫做UserModel",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_swift_01.wav"
+      },
+      "duration_sec": 3.0,
+      "language": "zh",
+      "match_keywords": [
+        "struct"
+      ]
+    },
+    {
+      "id": "dev_rust_01",
+      "category": "developer_corpus",
+      "text_input": "在Rust里面用async await处理并发",
+      "expected_text": "在Rust里面用async await处理并发",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_rust_01.wav"
+      },
+      "duration_sec": 3.98,
+      "language": "zh",
+      "match_keywords": [
+        "Rust",
+        "async"
+      ]
+    },
+    {
+      "id": "dev_k8s_01",
+      "category": "developer_corpus",
+      "text_input": "Kubernetes的pod状态是CrashLoopBackOff",
+      "expected_text": "Kubernetes的pod状态是CrashLoopBackOff",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_k8s_01.wav"
+      },
+      "duration_sec": 3.94,
+      "language": "zh",
+      "match_keywords": [
+        "crash",
+        "back"
+      ]
+    },
+    {
+      "id": "dev_api_01",
+      "category": "developer_corpus",
+      "text_input": "调用RESTful API返回JSON格式数据",
+      "expected_text": "调用RESTful API返回JSON格式数据",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_api_01.wav"
+      },
+      "duration_sec": 4.7,
+      "language": "zh",
+      "match_keywords": [
+        "API",
+        "JSON"
+      ]
+    },
+    {
+      "id": "dev_db_01",
+      "category": "developer_corpus",
+      "text_input": "执行SQL查询SELECT FROM users WHERE id等于一",
+      "expected_text": "执行SQL查询SELECT FROM users WHERE id等于一",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_db_01.wav"
+      },
+      "duration_sec": 5.06,
+      "language": "zh",
+      "match_keywords": [
+        "SQL",
+        "SELECT",
+        "users"
+      ]
+    },
+    {
+      "id": "dev_url_01",
+      "category": "developer_corpus",
+      "text_input": "访问github点com",
+      "expected_text": "访问github点com",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_url_01.wav"
+      },
+      "duration_sec": 2.18,
+      "language": "zh",
+      "match_keywords": [
+        "访问",
+        "com"
+      ]
+    },
+    {
+      "id": "dev_debug_01",
+      "category": "developer_corpus",
+      "text_input": "在第四十二行设置一个breakpoint",
+      "expected_text": "在第四十二行设置一个breakpoint",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/dev_debug_01.wav"
+      },
+      "duration_sec": 3.62,
+      "language": "zh",
+      "match_keywords": [
+        "breakpoint"
+      ]
+    },
+    {
+      "id": "cs_var_01",
+      "category": "code_switching",
+      "text_input": "把这个variable赋值给constant",
+      "expected_text": "把这个variable赋值给constant",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/cs_var_01.wav"
+      },
+      "duration_sec": 3.19,
+      "language": "zh",
+      "match_keywords": [
+        "variable",
+        "constant"
+      ]
+    },
+    {
+      "id": "cs_build_01",
+      "category": "code_switching",
+      "text_input": "在macOS上运行swift build",
+      "expected_text": "在macOS上运行swift build",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/cs_build_01.wav"
+      },
+      "duration_sec": 3.38,
+      "language": "zh",
+      "match_keywords": [
+        "macOS",
+        "swift",
+        "build"
+      ]
+    },
+    {
+      "id": "cs_error_01",
+      "category": "code_switching",
+      "text_input": "这个error是null pointer exception",
+      "expected_text": "这个error是null pointer exception",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/cs_error_01.wav"
+      },
+      "duration_sec": 3.14,
+      "language": "zh",
+      "match_keywords": [
+        "error",
+        "pointer"
+      ]
+    },
+    {
+      "id": "cs_deploy_01",
+      "category": "code_switching",
+      "text_input": "把Docker image push到registry",
+      "expected_text": "把Docker image push到registry",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/cs_deploy_01.wav"
+      },
+      "duration_sec": 3.02,
+      "language": "zh",
+      "match_keywords": [
+        "push",
+        "registry"
+      ]
+    },
+    {
+      "id": "cs_review_01",
+      "category": "code_switching",
+      "text_input": "帮我review一下这个pull request",
+      "expected_text": "帮我review一下这个pull request",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/cs_review_01.wav"
+      },
+      "duration_sec": 3.14,
+      "language": "zh",
+      "match_keywords": [
+        "review",
+        "pull",
+        "request"
+      ]
+    },
+    {
+      "id": "hal_silence_10s",
+      "category": "hallucination",
+      "text_input": "",
+      "expected_text": "",
+      "match_mode": "empty_or_whitespace",
+      "audio_files": {
+        "synthetic": "audio/synthetic/hal_silence_10s.wav"
+      },
+      "duration_sec": 10.0,
+      "language": "none"
+    },
+    {
+      "id": "hal_silence_30s",
+      "category": "hallucination",
+      "text_input": "",
+      "expected_text": "",
+      "match_mode": "empty_or_whitespace",
+      "audio_files": {
+        "synthetic": "audio/synthetic/hal_silence_30s.wav"
+      },
+      "duration_sec": 30.0,
+      "language": "none"
+    },
+    {
+      "id": "hal_white_noise_01",
+      "category": "hallucination",
+      "text_input": "",
+      "expected_text": "",
+      "match_mode": "empty_or_whitespace",
+      "audio_files": {
+        "synthetic": "audio/synthetic/hal_white_noise_01.wav"
+      },
+      "duration_sec": 3.0,
+      "language": "none"
+    },
+    {
+      "id": "hal_breath_01",
+      "category": "hallucination",
+      "text_input": "",
+      "expected_text": "",
+      "match_mode": "empty_or_whitespace",
+      "audio_files": {
+        "synthetic": "audio/synthetic/hal_breath_01.wav"
+      },
+      "duration_sec": 3.0,
+      "language": "none"
+    },
+    {
+      "id": "punct_question_01",
+      "category": "punctuation",
+      "text_input": "你今天吃饭了吗",
+      "expected_text": "你今天吃饭了吗？",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/punct_question_01.wav"
+      },
+      "duration_sec": 1.92,
+      "language": "zh",
+      "match_keywords": [
+        "吃饭",
+        "？"
+      ]
+    },
+    {
+      "id": "punct_exclaim_01",
+      "category": "punctuation",
+      "text_input": "太好了我成功了",
+      "expected_text": "太好了，我成功了。",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/punct_exclaim_01.wav"
+      },
+      "duration_sec": 2.21,
+      "language": "zh",
+      "match_keywords": [
+        "成功",
+        "，"
+      ]
+    },
+    {
+      "id": "punct_list_01",
+      "category": "punctuation",
+      "text_input": "第一步打开终端，第二步输入命令，第三步确认执行",
+      "expected_text": "第一步打开终端，第二步输入命令，第三步确认执行。",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/punct_list_01.wav"
+      },
+      "duration_sec": 5.3,
+      "language": "zh",
+      "match_keywords": [
+        "终端",
+        "命令",
+        "，"
+      ]
+    },
+    {
+      "id": "rate_fast_01",
+      "category": "speech_rate",
+      "text_input": "快速语音识别测试一二三四五",
+      "expected_text": "快速语音识别测试一二三四五",
+      "match_mode": "character_error_rate",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/rate_fast_01.wav"
+      },
+      "duration_sec": 2.18,
+      "language": "zh",
+      "match_threshold": 0.2
+    },
+    {
+      "id": "rate_slow_01",
+      "category": "speech_rate",
+      "text_input": "慢速语音识别测试",
+      "expected_text": "慢速语音识别测试",
+      "match_mode": "character_error_rate",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/rate_slow_01.wav"
+      },
+      "duration_sec": 4.06,
+      "language": "zh",
+      "match_threshold": 0.15
+    },
+    {
+      "id": "long_30s_01",
+      "category": "long_audio",
+      "text_input": "人工智能技术在过去十年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
+      "expected_text": "人工智能",
+      "match_mode": "contains",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/long_30s_01.wav"
+      },
+      "duration_sec": 43.1,
+      "language": "zh"
+    },
+    {
+      "id": "long_60s_01",
+      "category": "long_audio",
+      "text_input": "软件工程是一门研究用工程化方法构建和维护有效的实用的和高质量的软件的学科。它涉及到程序设计语言、数据库、软件开发工具、系统平台等方面的知识。现代软件开发通常采用敏捷开发方法，强调快速迭代和持续交付。版本控制系统如Git是团队协作开发的基础工具。持续集成和持续部署能够自动化测试和发布流程，提高开发效率。代码审查是保证代码质量的重要实践，团队成员互相审阅代码修改。单元测试和集成测试帮助开发者在早期发现和修复缺陷。微服务架构将大型应用拆分为多个独立的小型服务。容器化技术如Docker简化了应用的部署和运维管理。云计算平台提供了弹性的计算资源，支持应用的快速扩展。DevOps实践将开发和运维紧密结合，促进软件的快速可靠交付。性能优化需要从算法、数据结构、系统架构等多个层面综合考虑。",
+      "expected_text": "软件工程",
+      "match_mode": "contains",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/long_60s_01.wav"
+      },
+      "duration_sec": 74.9,
+      "language": "zh"
+    },
+    {
+      "id": "pause_mid_01",
+      "category": "mid_sentence_pause",
+      "text_input": "打开终端",
+      "expected_text": "打开终端",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/pause_mid_01.wav"
+      },
+      "duration_sec": 4.52,
+      "language": "zh",
+      "match_keywords": [
+        "打开",
+        "终端"
+      ]
+    },
+    {
+      "id": "pause_long_01",
+      "category": "mid_sentence_pause",
+      "text_input": "我想要一杯咖啡",
+      "expected_text": "我想要一杯咖啡",
+      "match_mode": "contains_all",
+      "audio_files": {
+        "edge_tts": "audio/edge_tts/pause_long_01.wav"
+      },
+      "duration_sec": 8.02,
+      "language": "zh",
+      "match_keywords": [
+        "想",
+        "咖啡"
+      ]
+    }
+  ]
+}
