@@ -6,14 +6,14 @@
 
 <p align="center">
   <strong>按下即说，语音秒变文字</strong><br>
-  基于本地 FunASR 的 macOS 原生语音输入工具
+  基于本地 AI 的 macOS 原生语音输入工具
 </p>
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/platform-macOS%2014.0+-blue?logo=apple&logoColor=white" alt="Platform"></a>
   <a href="#"><img src="https://img.shields.io/badge/Swift-5.9-orange?logo=swift&logoColor=white" alt="Swift"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
-  <a href="#"><img src="https://img.shields.io/badge/AI-FunASR-purple" alt="FunASR"></a>
+  <a href="#"><img src="https://img.shields.io/badge/ASR-3%20Engines-purple" alt="ASR Engines"></a>
 </p>
 
 <p align="center">
@@ -39,8 +39,8 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 | 功能 | 描述 |
 |------|------|
 | 🎤 **按键说话** | 按住 `Fn` 键录音，松开即转文字 |
-| 🔒 **完全本地** | FunASR 模型完全在本地运行，数据不出设备 |
-| 🌐 **中英混合** | 原生支持中英文混合输入，方言识别更佳 |
+| 🔒 **完全本地** | 所有模型完全在本地运行，数据不出设备 |
+| 🌐 **中英混合** | 三种引擎均原生支持中英文混合输入 |
 | ⚡ **快速轻量** | 菜单栏应用，资源占用极低 |
 | 🎯 **通用输入** | 任意应用可用 - 光标在哪，文字就输入到哪 |
 | 💻 **通用版本** | **同时支持 Apple Silicon (M1/M2/M3/M4) 和 Intel Mac** |
@@ -137,14 +137,21 @@ xcodebuild -project Typeless.xcodeproj -scheme Typeless build
 ```
 typeless/
 ├── Sources/
-│   ├── TypelessApp.swift      # 应用入口和生命周期
-│   ├── RecordingManager.swift # 音频录制和 FunASR
-│   ├── KeyMonitor.swift       # 全局 Fn 键检测
-│   ├── TextInserter.swift     # 光标文字插入
-│   ├── OverlayWindow.swift    # 录音 UI 遮罩
-│   └── SettingsView.swift     # 偏好设置 UI
-├── Package.swift              # Swift Package 依赖
-└── Typeless.xcodeproj/        # Xcode 项目
+│   ├── TypelessApp.swift          # 应用入口和生命周期
+│   ├── RecordingManager.swift     # 音频录制和引擎调度
+│   ├── ASREngine.swift            # ASR 引擎统一协议
+│   ├── SherpaOnnxRecognizer.swift # FunASR Nano 离线识别
+│   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer 流式识别
+│   ├── QwenASRRecognizer.swift    # Qwen3-ASR 流式识别
+│   ├── KeyMonitor.swift           # 全局 Fn 键检测
+│   ├── TextInserter.swift         # 光标文字插入
+│   ├── OverlayWindow.swift        # 录音 UI 遮罩
+│   └── SettingsView.swift         # 偏好设置 UI
+├── Frameworks/
+│   ├── sherpa-onnx/               # FunASR + Paraformer 推理框架
+│   └── qwen-asr/                  # Qwen3-ASR Rust FFI 库
+├── Package.swift                  # Swift Package 依赖
+└── Typeless.xcodeproj/            # Xcode 项目
 ```
 
 ### 技术栈
@@ -152,7 +159,7 @@ typeless/
 | 组件 | 技术 |
 |------|------|
 | **UI 框架** | SwiftUI |
-| **语音识别** | [FunASR](https://github.com/modelscope/FunASR) (阿里达摩院) via [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) |
+| **语音识别** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (FunASR + Paraformer) / Qwen3-ASR (Rust FFI) |
 | **音频采集** | AVFoundation |
 | **按键监听** | CGEvent Tap API |
 | **文字插入** | CGEvent（键盘模拟） |
@@ -161,7 +168,7 @@ typeless/
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐
-│  Fn 键      │────▶│   录制       │────▶│   FunASR    │────▶│   插入       │
+│  Fn 键      │────▶│   录制       │────▶│   ASR 引擎  │────▶│   插入       │
 │  监听       │     │   音频       │     │   转写      │     │   文字       │
 └─────────────┘     └──────────────┘     └─────────────┘     └──────────────┘
     CGEvent           AVFoundation         本地 AI           CGEvent
@@ -169,12 +176,13 @@ typeless/
 
 ## 🔧 配置说明
 
-应用默认使用 `SenseVoice FunASR Nano` 模型，在速度和准确度之间取得良好平衡，非常适合中英文混合输入。
+应用内置三种 ASR 引擎，可在设置中切换。默认使用 `Streaming Paraformer`。
 
-| 模型 | 大小 | 速度 | 准确度 | 适用场景 |
-|------|------|------|--------|----------|
-| `SenseVoice FunASR Nano` | ~179MB | ⚡⚡⚡ | ⭐⭐⭐ | 日常使用（默认） |
-| `FunASR Nano` | ~716MB | ⚡⚡ | ⭐⭐⭐⭐ | 方言、口音识别 |
+| 引擎 | 大小 | 模式 | 标点 | 适用场景 |
+|------|------|------|------|----------|
+| `Streaming Paraformer` | ~216MB + 标点 62MB | 流式 | 需 CT-Transformer | 日常使用（默认） |
+| `SenseVoice FunASR Nano` | ~179MB | 离线（VAD 分段） | 需 CT-Transformer | 方言、口音识别 |
+| `Qwen3-ASR` | ~1.2GB | 流式 | 自带标点 | 高精度，长文本 |
 
 ## 🤝 参与贡献
 
@@ -194,6 +202,7 @@ typeless/
 
 - [FunASR](https://github.com/modelscope/FunASR) - 阿里达摩院开源语音识别模型
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) - 跨平台语音识别推理框架
+- [Qwen3-ASR](https://github.com/QwenLM/Qwen3) - 通义千问大模型语音识别
 
 ---
 
@@ -201,7 +210,7 @@ typeless/
 
 <p align="center">
   <strong>Press. Speak. Type.</strong><br>
-  A native macOS voice-to-text tool powered by local FunASR AI
+  A native macOS voice-to-text tool powered by local AI
 </p>
 
 <p align="center">
@@ -223,8 +232,8 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 | Feature | Description |
 |---------|-------------|
 | 🎤 **Push-to-Talk** | Hold `Fn` key to record, release to transcribe |
-| 🔒 **100% Local** | FunASR model runs entirely on-device, no data leaves your Mac |
-| 🌐 **Multilingual** | Native support for Chinese-English mixed input with dialect recognition |
+| 🔒 **100% Local** | All models run entirely on-device, no data leaves your Mac |
+| 🌐 **Multilingual** | Three ASR engines with native Chinese-English mixed input support |
 | ⚡ **Fast & Lightweight** | Menu bar app with minimal resource usage |
 | 🎯 **Universal Input** | Works in any app - just position your cursor and speak |
 | 💻 **Universal Binary** | **Runs natively on both Apple Silicon (M1/M2/M3/M4) and Intel Macs - one app, all Macs** |
@@ -321,14 +330,21 @@ On first launch, you'll need to grant two permissions:
 ```
 typeless/
 ├── Sources/
-│   ├── TypelessApp.swift      # App entry & lifecycle
-│   ├── RecordingManager.swift # Audio recording & FunASR
-│   ├── KeyMonitor.swift       # Global Fn key detection
-│   ├── TextInserter.swift     # Cursor text insertion
-│   ├── OverlayWindow.swift    # Recording UI overlay
-│   └── SettingsView.swift     # Preferences UI
-├── Package.swift              # Swift Package dependencies
-└── Typeless.xcodeproj/        # Xcode project
+│   ├── TypelessApp.swift          # App entry & lifecycle
+│   ├── RecordingManager.swift     # Audio recording & engine dispatch
+│   ├── ASREngine.swift            # Unified ASR engine protocol
+│   ├── SherpaOnnxRecognizer.swift # FunASR Nano offline recognition
+│   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer
+│   ├── QwenASRRecognizer.swift    # Qwen3-ASR streaming recognition
+│   ├── KeyMonitor.swift           # Global Fn key detection
+│   ├── TextInserter.swift         # Cursor text insertion
+│   ├── OverlayWindow.swift        # Recording UI overlay
+│   └── SettingsView.swift         # Preferences UI
+├── Frameworks/
+│   ├── sherpa-onnx/               # FunASR + Paraformer inference
+│   └── qwen-asr/                  # Qwen3-ASR Rust FFI library
+├── Package.swift                  # Swift Package dependencies
+└── Typeless.xcodeproj/            # Xcode project
 ```
 
 ### Tech Stack
@@ -336,7 +352,7 @@ typeless/
 | Component | Technology |
 |-----------|------------|
 | **UI Framework** | SwiftUI |
-| **Speech Recognition** | [FunASR](https://github.com/modelscope/FunASR) (Alibaba DAMO Academy) via [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) |
+| **Speech Recognition** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (FunASR + Paraformer) / Qwen3-ASR (Rust FFI) |
 | **Audio Capture** | AVFoundation |
 | **Key Monitoring** | CGEvent Tap API |
 | **Text Insertion** | CGEvent (Keyboard Simulation) |
@@ -345,7 +361,7 @@ typeless/
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐
-│  Fn Key     │────▶│   Record     │────▶│   FunASR    │────▶│   Insert     │
+│  Fn Key     │────▶│   Record     │────▶│  ASR Engine │────▶│   Insert     │
 │  Monitor    │     │   Audio      │     │  Transcribe │     │   Text       │
 └─────────────┘     └──────────────┘     └─────────────┘     └──────────────┘
     CGEvent           AVFoundation         Local AI           CGEvent
@@ -353,12 +369,13 @@ typeless/
 
 ## 🔧 Configuration
 
-The app uses the `SenseVoice FunASR Nano` model by default, offering a good balance between speed and accuracy for Chinese-English mixed content.
+The app includes three built-in ASR engines, switchable in Settings. Default is `Streaming Paraformer`.
 
-| Model | Size | Speed | Accuracy | Best For |
-|-------|------|-------|----------|----------|
-| `SenseVoice FunASR Nano` | ~179MB | ⚡⚡⚡ | ⭐⭐⭐ | Daily use (default) |
-| `FunASR Nano` | ~716MB | ⚡⚡ | ⭐⭐⭐⭐ | Dialects & accents |
+| Engine | Size | Mode | Punctuation | Best For |
+|--------|------|------|-------------|----------|
+| `Streaming Paraformer` | ~216MB + punct 62MB | Streaming | CT-Transformer | Daily use (default) |
+| `SenseVoice FunASR Nano` | ~179MB | Offline (VAD) | CT-Transformer | Dialects & accents |
+| `Qwen3-ASR` | ~1.2GB | Streaming | Built-in | High accuracy, long text |
 
 ## 🤝 Contributing
 
@@ -378,6 +395,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [FunASR](https://github.com/modelscope/FunASR) - Alibaba DAMO Academy's open-source speech recognition model
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) - Cross-platform speech recognition inference framework
+- [Qwen3-ASR](https://github.com/QwenLM/Qwen3) - Qwen large model speech recognition
 
 ---
 
