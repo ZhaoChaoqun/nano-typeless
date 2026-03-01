@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "27608F08-2454-4B86-9BEB-0AD9622AAF07",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "language" : "zh-Hans",
+    "performanceAntipatternCheckerEnabled" : true,
+    "region" : "CN",
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Typeless.xcodeproj",
+      "identifier" : "1A00000A",
+      "name" : "Typeless"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Typeless.xcodeproj",
+        "identifier" : "060E7E312F4ED32A0088F9A6",
+        "name" : "TypelessTests"
+      }
+    }
+  ],
+  "version" : 1
+}

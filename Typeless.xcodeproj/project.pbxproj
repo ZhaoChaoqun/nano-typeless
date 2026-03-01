@@ -25,6 +25,8 @@
 		1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1A000071 /* OnboardingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000070 /* OnboardingOverlay.swift */; };
+		1AC00001 /* BertTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC00010 /* BertTokenizer.swift */; };
+		1AC00002 /* ChineseSpellingCorrector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC00011 /* ChineseSpellingCorrector.swift */; };
 		1AQ00001 /* QwenASRRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00010 /* QwenASRRecognizer.swift */; };
 		1AQ00002 /* libqwen_asr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; };
 		1AQ00003 /* libqwen_asr.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -60,6 +62,7 @@
 
 /* Begin PBXFileReference section */
 		060E7E322F4ED32A0088F9A6 /* TypelessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypelessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		060E7F8D2F5436D10088F9A6 /* Typeless.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Typeless.xctestplan; sourceTree = "<group>"; };
 		1A000010 /* Typeless.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Typeless.app; path = "Nano Typeless.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A000011 /* TypelessApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypelessApp.swift; sourceTree = "<group>"; };
 		1A000012 /* KeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyMonitor.swift; sourceTree = "<group>"; };
@@ -79,6 +82,8 @@
 		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libonnxruntime.1.17.1.dylib; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
 		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
 		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
+		1AC00010 /* BertTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BertTokenizer.swift; sourceTree = "<group>"; };
+		1AC00011 /* ChineseSpellingCorrector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChineseSpellingCorrector.swift; sourceTree = "<group>"; };
 		1AQ00010 /* QwenASRRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenASRRecognizer.swift; sourceTree = "<group>"; };
 		1AQ00011 /* libqwen_asr.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqwen_asr.dylib; path = "Frameworks/qwen-asr/lib/libqwen_asr.dylib"; sourceTree = "<group>"; };
 		1AQ00012 /* CStringUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CStringUtils.swift; sourceTree = "<group>"; };
@@ -115,6 +120,7 @@
 		1A000007 = {
 			isa = PBXGroup;
 			children = (
+				060E7F8D2F5436D10088F9A6 /* Typeless.xctestplan */,
 				060E7E332F4ED32A0088F9A6 /* TypelessTests */,
 				1A000057 /* Frameworks */,
 				1A000019 /* Sources */,
@@ -150,6 +156,8 @@
 				1AQ00012 /* CStringUtils.swift */,
 				1AQ00013 /* ASRStreamRecognizing.swift */,
 				1AQ00014 /* ASREngine.swift */,
+				1AC00010 /* BertTokenizer.swift */,
+				1AC00011 /* ChineseSpellingCorrector.swift */,
 				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
@@ -202,6 +210,7 @@
 				1A00000D /* Frameworks */,
 				1A000032 /* Resources */,
 				1A000056 /* CopyFiles */,
+				1A000099 /* Remove profraw */,
 			);
 			buildRules = (
 			);
@@ -274,6 +283,23 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		1A000099 /* Remove profraw */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove profraw";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Remove LLVM profiling artifacts that break codesign\nfind \"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}\" -name '*.profraw' -delete 2>/dev/null || true\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		060E7E2E2F4ED32A0088F9A6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -302,6 +328,8 @@
 				1AQ00004 /* CStringUtils.swift in Sources */,
 				1AQ00005 /* ASRStreamRecognizing.swift in Sources */,
 				1AQ00006 /* ASREngine.swift in Sources */,
+				1AC00001 /* BertTokenizer.swift in Sources */,
+				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

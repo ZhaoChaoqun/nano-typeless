@@ -14,7 +14,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .funasrNano:
-            return "SenseVoice FunASR Nano"
+            return "SenseVoice Nano"
         case .streamingParaformer:
             return "Streaming Paraformer"
         case .qwenASR:
@@ -29,7 +29,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
         case .streamingParaformer:
             return "原生流式识别，中英文混合，无需 VAD"
         case .qwenASR:
-            return "Qwen3 大模型 ASR，中英文混合，自带标点，需要 VAD 分段"
+            return "Qwen3 大模型 ASR，中英文混合，自带标点，无需 VAD"
         }
     }
 
@@ -142,9 +142,18 @@ class SherpaOnnxManager: NSObject {
     static let punctModelScopeURL = "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8.tar.bz2"
     static let punctGitHubURL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/punctuation-models/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8.tar.bz2"
 
-    // MARK: - FunASR Nano 模型路径
+    /// ITN WFST 模型配置（WeTextProcessing tagger+verbalizer 两阶段中文 ITN）
+    static let itnWfstFolder = "itn"
+    static let itnWfstZipURL = "https://github.com/wenet-e2e/WeTextProcessing/releases/download/1.0.4/release-graph-v1.0.4.1.zip"
 
-    /// 获取 FunASR Nano 模型路径
+    /// CSC 模型配置（中文拼写纠错 macbert4csc）
+    static let cscModelFolder = "macbert4csc-base-chinese"
+    static let cscModelURL = "https://modelscope.cn/models/Xenova/macbert4csc-base-chinese/resolve/master/onnx/model_int8.onnx"
+    static let cscVocabURL = "https://modelscope.cn/models/Xenova/macbert4csc-base-chinese/resolve/master/vocab.txt"
+
+    // MARK: - SenseVoice Nano 模型路径
+
+    /// 获取 SenseVoice Nano 模型路径
     func getFunASRModelPath() -> (modelPath: String, tokensPath: String)? {
         let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.funasrNano.folderName)
         let modelPath = modelDir.appendingPathComponent("model.int8.onnx")
@@ -158,7 +167,7 @@ class SherpaOnnxManager: NSObject {
         return (modelPath.path, tokensPath.path)
     }
 
-    /// 检查 FunASR Nano 模型是否已下载
+    /// 检查 SenseVoice Nano 模型是否已下载
     func isFunASRModelDownloaded() -> Bool {
         return getFunASRModelPath() != nil
     }
@@ -181,7 +190,6 @@ class SherpaOnnxManager: NSObject {
 
         if FileManager.default.fileExists(atPath: encoderINT8.path),
            FileManager.default.fileExists(atPath: decoderINT8.path) {
-            logger.info("使用 INT8 版本 Streaming Paraformer（内存占用更小）")
             return (encoderINT8.path, decoderINT8.path, tokensPath.path)
         }
 
@@ -191,7 +199,6 @@ class SherpaOnnxManager: NSObject {
 
         if FileManager.default.fileExists(atPath: encoderFP32.path),
            FileManager.default.fileExists(atPath: decoderFP32.path) {
-            logger.info("使用 FP32 版本 Streaming Paraformer")
             return (encoderFP32.path, decoderFP32.path, tokensPath.path)
         }
 
@@ -299,13 +306,145 @@ class SherpaOnnxManager: NSObject {
                         try FileManager.default.removeItem(at: destPath)
                     }
                     try FileManager.default.moveItem(at: tempURL, to: destPath)
-                    logger.info("VAD 模型下载完成: \(destPath.path)")
+                    logger.info("VAD 模型下载完成: \(destPath.path, privacy: .public)")
                     completion(true, nil)
                 } catch {
                     completion(false, "保存失败: \(error.localizedDescription)")
                 }
             }
         }
+        task.resume()
+    }
+
+    // MARK: - ITN WFST 模型（WeTextProcessing 中文 ITN）
+
+    /// 获取 ITN WFST 路径（逗号分隔的 tagger + verbalizer 路径，供 sherpa-onnx rule_fsts 使用）
+    func getITNFstPath() -> String? {
+        let itnDir = modelsDirectory.appendingPathComponent(Self.itnWfstFolder)
+        let tagger = itnDir.appendingPathComponent("zh_itn_tagger.fst")
+        let verbalizer = itnDir.appendingPathComponent("zh_itn_verbalizer.fst")
+
+        guard FileManager.default.fileExists(atPath: tagger.path),
+              FileManager.default.fileExists(atPath: verbalizer.path) else {
+            return nil
+        }
+        return "\(tagger.path),\(verbalizer.path)"
+    }
+
+    /// 检查 ITN WFST 模型是否已下载
+    func isITNFstDownloaded() -> Bool {
+        return getITNFstPath() != nil
+    }
+
+    /// 下载 ITN WFST 模型（从 WeTextProcessing GitHub releases 下载 ZIP 并解压）
+    func downloadITNFst(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
+        if isITNFstDownloaded() {
+            completion(true, nil)
+            return
+        }
+
+        guard let url = URL(string: Self.itnWfstZipURL) else {
+            completion(false, "无效的下载地址")
+            return
+        }
+
+        let itnDir = modelsDirectory.appendingPathComponent(Self.itnWfstFolder)
+        try? FileManager.default.createDirectory(at: itnDir, withIntermediateDirectories: true)
+
+        progress("正在下载 ITN 模型...")
+
+        let progressSource = DispatchSource.makeTimerSource(queue: .main)
+
+        let task = URLSession.shared.downloadTask(with: url) { [weak self] tempURL, response, error in
+            progressSource.cancel()
+
+            guard let self = self else { return }
+
+            if let error = error {
+                DispatchQueue.main.async { completion(false, "ITN 模型下载失败: \(error.localizedDescription)") }
+                return
+            }
+
+            guard let tempURL = tempURL else {
+                DispatchQueue.main.async { completion(false, "ITN 模型下载失败: 无法获取临时文件") }
+                return
+            }
+
+            DispatchQueue.main.async { progress("正在解压 ITN 模型...") }
+
+            // 解压 ZIP 到临时目录，然后复制需要的 FST 文件
+            let tmpExtractDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            do {
+                try FileManager.default.createDirectory(at: tmpExtractDir, withIntermediateDirectories: true)
+
+                let unzipProcess = Process()
+                unzipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+                unzipProcess.arguments = ["-o", tempURL.path, "-d", tmpExtractDir.path]
+                try unzipProcess.run()
+                unzipProcess.waitUntilExit()
+
+                guard unzipProcess.terminationStatus == 0 else {
+                    DispatchQueue.main.async { completion(false, "ITN 模型解压失败") }
+                    try? FileManager.default.removeItem(at: tmpExtractDir)
+                    return
+                }
+
+                // 在解压后的目录中递归查找 zh_itn_tagger.fst 和 zh_itn_verbalizer.fst
+                let taggerDest = itnDir.appendingPathComponent("zh_itn_tagger.fst")
+                let verbalizerDest = itnDir.appendingPathComponent("zh_itn_verbalizer.fst")
+
+                let enumerator = FileManager.default.enumerator(at: tmpExtractDir, includingPropertiesForKeys: nil)
+                var foundTagger = false
+                var foundVerbalizer = false
+
+                while let fileURL = enumerator?.nextObject() as? URL {
+                    if fileURL.lastPathComponent == "zh_itn_tagger.fst" {
+                        if FileManager.default.fileExists(atPath: taggerDest.path) {
+                            try FileManager.default.removeItem(at: taggerDest)
+                        }
+                        try FileManager.default.moveItem(at: fileURL, to: taggerDest)
+                        foundTagger = true
+                    } else if fileURL.lastPathComponent == "zh_itn_verbalizer.fst" {
+                        if FileManager.default.fileExists(atPath: verbalizerDest.path) {
+                            try FileManager.default.removeItem(at: verbalizerDest)
+                        }
+                        try FileManager.default.moveItem(at: fileURL, to: verbalizerDest)
+                        foundVerbalizer = true
+                    }
+                    if foundTagger && foundVerbalizer { break }
+                }
+
+                try? FileManager.default.removeItem(at: tmpExtractDir)
+
+                if foundTagger && foundVerbalizer {
+                    logger.info("ITN WFST 模型下载完成")
+                    DispatchQueue.main.async { completion(true, nil) }
+                } else {
+                    logger.error("ITN WFST 解压后未找到 FST 文件")
+                    DispatchQueue.main.async { completion(false, "ITN 模型解压后未找到 FST 文件") }
+                }
+            } catch {
+                try? FileManager.default.removeItem(at: tmpExtractDir)
+                DispatchQueue.main.async { completion(false, "ITN 模型解压失败: \(error.localizedDescription)") }
+            }
+        }
+
+        progressSource.schedule(deadline: .now() + 0.3, repeating: 0.3)
+        progressSource.setEventHandler {
+            let written = task.countOfBytesReceived
+            let expected = task.countOfBytesExpectedToReceive
+            if expected > 0 {
+                let pct = Int(Double(written) / Double(expected) * 100)
+                let downloadedKB = String(format: "%.0f", Double(written) / 1024)
+                let totalKB = String(format: "%.0f", Double(expected) / 1024)
+                progress("正在下载 ITN 模型... \(pct)% (\(downloadedKB)KB / \(totalKB)KB)")
+            } else if written > 0 {
+                let downloadedKB = String(format: "%.0f", Double(written) / 1024)
+                progress("正在下载 ITN 模型... \(downloadedKB)KB")
+            }
+        }
+        progressSource.resume()
+
         task.resume()
     }
 
@@ -355,6 +494,119 @@ class SherpaOnnxManager: NSObject {
         }
     }
 
+    // MARK: - CSC 模型（中文拼写纠错）
+
+    /// 获取 CSC 模型路径
+    func getCSCModelPath() -> (modelPath: String, vocabPath: String)? {
+        let modelDir = modelsDirectory.appendingPathComponent(Self.cscModelFolder)
+        let modelPath = modelDir.appendingPathComponent("model_int8.onnx")
+        let vocabPath = modelDir.appendingPathComponent("vocab.txt")
+
+        guard FileManager.default.fileExists(atPath: modelPath.path),
+              FileManager.default.fileExists(atPath: vocabPath.path) else {
+            return nil
+        }
+        return (modelPath.path, vocabPath.path)
+    }
+
+    /// 检查 CSC 模型是否已下载
+    func isCSCModelDownloaded() -> Bool {
+        return getCSCModelPath() != nil
+    }
+
+    /// 下载 CSC 模型（直接从 ModelScope 下载两个文件）
+    func downloadCSCModel(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
+        if isCSCModelDownloaded() {
+            completion(true, nil)
+            return
+        }
+
+        guard let modelURL = URL(string: Self.cscModelURL),
+              let vocabURL = URL(string: Self.cscVocabURL) else {
+            completion(false, "无效的下载地址")
+            return
+        }
+
+        let modelDir = modelsDirectory.appendingPathComponent(Self.cscModelFolder)
+        try? FileManager.default.createDirectory(at: modelDir, withIntermediateDirectories: true)
+
+        let modelDest = modelDir.appendingPathComponent("model_int8.onnx")
+        let vocabDest = modelDir.appendingPathComponent("vocab.txt")
+
+        // 先下载 vocab.txt（小文件），再下载 model_int8.onnx（大文件）
+        progress("正在下载 CSC 词表...")
+
+        let vocabTask = URLSession.shared.downloadTask(with: vocabURL) { tempURL, _, error in
+
+            if let error = error {
+                DispatchQueue.main.async { completion(false, "CSC 词表下载失败: \(error.localizedDescription)") }
+                return
+            }
+            guard let tempURL = tempURL else {
+                DispatchQueue.main.async { completion(false, "CSC 词表下载失败") }
+                return
+            }
+
+            do {
+                if FileManager.default.fileExists(atPath: vocabDest.path) {
+                    try FileManager.default.removeItem(at: vocabDest)
+                }
+                try FileManager.default.moveItem(at: tempURL, to: vocabDest)
+            } catch {
+                DispatchQueue.main.async { completion(false, "CSC 词表保存失败: \(error.localizedDescription)") }
+                return
+            }
+
+            DispatchQueue.main.async { progress("正在下载 CSC 模型 (约98MB)...") }
+
+            // 使用 GCD 定时器轮询下载进度
+            let progressSource = DispatchSource.makeTimerSource(queue: .main)
+
+            let modelTask = URLSession.shared.downloadTask(with: modelURL) { tempURL, _, error in
+                progressSource.cancel()
+
+                if let error = error {
+                    DispatchQueue.main.async { completion(false, "CSC 模型下载失败: \(error.localizedDescription)") }
+                    return
+                }
+                guard let tempURL = tempURL else {
+                    DispatchQueue.main.async { completion(false, "CSC 模型下载失败") }
+                    return
+                }
+
+                do {
+                    if FileManager.default.fileExists(atPath: modelDest.path) {
+                        try FileManager.default.removeItem(at: modelDest)
+                    }
+                    try FileManager.default.moveItem(at: tempURL, to: modelDest)
+                    logger.info("CSC 模型下载完成")
+                    DispatchQueue.main.async { completion(true, nil) }
+                } catch {
+                    DispatchQueue.main.async { completion(false, "CSC 模型保存失败: \(error.localizedDescription)") }
+                }
+            }
+
+            progressSource.schedule(deadline: .now() + 0.3, repeating: 0.3)
+            progressSource.setEventHandler {
+                let written = modelTask.countOfBytesReceived
+                let expected = modelTask.countOfBytesExpectedToReceive
+                if expected > 0 {
+                    let pct = Int(Double(written) / Double(expected) * 100)
+                    let downloadedMB = String(format: "%.1f", Double(written) / 1024 / 1024)
+                    let totalMB = String(format: "%.1f", Double(expected) / 1024 / 1024)
+                    progress("正在下载 CSC 模型... \(pct)% (\(downloadedMB)MB / \(totalMB)MB)")
+                } else if written > 0 {
+                    let downloadedMB = String(format: "%.1f", Double(written) / 1024 / 1024)
+                    progress("正在下载 CSC 模型... \(downloadedMB)MB")
+                }
+            }
+            progressSource.resume()
+
+            modelTask.resume()
+        }
+        vocabTask.resume()
+    }
+
     /// 检测标点模型最快下载源
     private func selectFastestPunctSource() async -> DownloadSource {
         return await withTaskGroup(of: (DownloadSource, Bool).self) { group in
@@ -373,11 +625,11 @@ class SherpaOnnxManager: NSObject {
                         let (_, response) = try await URLSession.shared.data(for: request)
                         if let httpResponse = response as? HTTPURLResponse,
                            (200...399).contains(httpResponse.statusCode) {
-                            logger.info("标点模型 \(source.displayName) 响应成功")
+                            logger.info("标点模型 \(source.displayName, privacy: .public) 响应成功")
                             return (source, true)
                         }
                     } catch {
-                        logger.debug("标点模型 \(source.displayName) 请求失败")
+                        logger.debug("标点模型 \(source.displayName, privacy: .public) 请求失败")
                     }
                     return (source, false)
                 }
@@ -385,7 +637,7 @@ class SherpaOnnxManager: NSObject {
 
             for await (source, success) in group {
                 if success {
-                    logger.info("标点模型选择下载源: \(source.displayName)")
+                    logger.info("标点模型选择下载源: \(source.displayName, privacy: .public)")
                     group.cancelAll()
                     return source
                 }
@@ -417,7 +669,7 @@ class SherpaOnnxManager: NSObject {
                 if let error = error {
                     // 尝试备用源
                     if let fallback = fallback {
-                        logger.info("标点模型下载失败，尝试备用源: \(fallback.displayName)")
+                        logger.info("标点模型下载失败，尝试备用源: \(fallback.displayName, privacy: .public)")
                         progress("下载失败，正在尝试备用源...")
                         self.downloadPunctFromSource(source: fallback, fallback: nil, progress: progress, completion: completion)
                         return
@@ -467,11 +719,11 @@ class SherpaOnnxManager: NSObject {
                         let (_, response) = try await URLSession.shared.data(for: request)
                         if let httpResponse = response as? HTTPURLResponse,
                            (200...399).contains(httpResponse.statusCode) {
-                            logger.info("\(source.displayName) 响应成功")
+                            logger.info("\(source.displayName, privacy: .public) 响应成功")
                             return (source, true)
                         }
                     } catch {
-                        logger.debug("\(source.displayName) 请求失败: \(error.localizedDescription)")
+                        logger.debug("\(source.displayName, privacy: .public) 请求失败: \(error.localizedDescription, privacy: .public)")
                     }
                     return (source, false)
                 }
@@ -480,7 +732,7 @@ class SherpaOnnxManager: NSObject {
             // 返回第一个成功的
             for await (source, success) in group {
                 if success {
-                    logger.info("选择下载源: \(source.displayName)")
+                    logger.info("选择下载源: \(source.displayName, privacy: .public)")
                     group.cancelAll()
                     return source
                 }
@@ -566,7 +818,7 @@ class SherpaOnnxManager: NSObject {
             process.waitUntilExit()
             return process.terminationStatus == 0
         } catch {
-            logger.error("解压失败: \(error)")
+            logger.error("解压失败: \(error, privacy: .public)")
             return false
         }
     }
@@ -611,7 +863,7 @@ extension SherpaOnnxManager: URLSessionDownloadDelegate {
                let modelType = currentDownloadingModel,
                let progress = progressCallback,
                let completion = completionCallback {
-                logger.info("下载失败，尝试备用源: \(fallback.displayName)")
+                logger.info("下载失败，尝试备用源: \(fallback.displayName, privacy: .public)")
                 progress("下载失败，正在尝试备用源...")
                 fallbackSource = nil  // 清除，避免无限重试
                 startDownload(modelType: modelType, from: fallback, fallback: fallback, progress: progress, completion: completion)

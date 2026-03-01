@@ -9,10 +9,13 @@ class ModelDownloadManager: ObservableObject {
     @Published var streamingParaformerDownloaded: Bool = false
     @Published var qwenASRDownloaded: Bool = false
     @Published var punctuationDownloaded: Bool = false
+    @Published var cscDownloaded: Bool = false
     @Published var isDownloading: Bool = false
     @Published var downloadProgress: String = ""
     @Published var isPunctuationDownloading: Bool = false
     @Published var punctuationDownloadProgress: String = ""
+    @Published var isCSCDownloading: Bool = false
+    @Published var cscDownloadProgress: String = ""
 
     init() {
         // 从 UserDefaults 读取选择的模型
@@ -30,6 +33,7 @@ class ModelDownloadManager: ObservableObject {
         streamingParaformerDownloaded = SherpaOnnxManager.shared.isStreamingParaformerDownloaded()
         qwenASRDownloaded = SherpaOnnxManager.shared.isQwenASRModelDownloaded()
         punctuationDownloaded = SherpaOnnxManager.shared.isPunctuationModelDownloaded()
+        cscDownloaded = SherpaOnnxManager.shared.isCSCModelDownloaded()
     }
 
     /// 兼容旧接口
@@ -116,6 +120,31 @@ class ModelDownloadManager: ObservableObject {
             }
         })
     }
+
+    /// 下载 CSC 纠错模型
+    func downloadCSCModel() {
+        guard !isCSCDownloading else { return }
+
+        isCSCDownloading = true
+        cscDownloadProgress = "正在下载 CSC 纠错模型..."
+
+        SherpaOnnxManager.shared.downloadCSCModel(progress: { [weak self] progressText in
+            DispatchQueue.main.async {
+                self?.cscDownloadProgress = progressText
+            }
+        }, completion: { [weak self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    self?.cscDownloaded = true
+                    self?.cscDownloadProgress = "下载完成"
+                    RecordingManager.shared.reloadModel()
+                } else {
+                    self?.cscDownloadProgress = error ?? "下载失败"
+                }
+                self?.isCSCDownloading = false
+            }
+        })
+    }
 }
 
 /// 设置视图
@@ -164,11 +193,19 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+
+                    cscModelStatusView()
+
+                    if downloadManager.isCSCDownloading {
+                        Text(downloadManager.cscDownloadProgress)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             } header: {
                 Text("模型状态")
             } footer: {
-                Text("FunASR Nano 约 179MB，Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 1.2GB（自带标点）。")
+                Text("SenseVoice Nano 约 179MB，Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 1.2GB（自带标点）。")
             }
 
             Section("快捷键") {
@@ -262,6 +299,43 @@ struct SettingsView: View {
             } else {
                 Button("下载") {
                     downloadManager.downloadPunctuationModel()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func cscModelStatusView() -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("CSC 中文拼写纠错")
+                    .fontWeight(.medium)
+                Text("自动纠正 ASR 中的同音字错误（98MB）")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            if downloadManager.cscDownloaded {
+                Label("已下载", systemImage: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.caption)
+            } else if downloadManager.isCSCDownloading {
+                VStack(alignment: .trailing, spacing: 2) {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                    if !downloadManager.cscDownloadProgress.isEmpty {
+                        Text(downloadManager.cscDownloadProgress)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else {
+                Button("下载") {
+                    downloadManager.downloadCSCModel()
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)

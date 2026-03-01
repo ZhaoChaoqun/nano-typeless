@@ -13,11 +13,14 @@ class SherpaOnnxOnlineRecognizer {
     private let cStrings = CStringLifetime()
 
     /// 初始化流式识别器
-    init?(encoderPath: String, decoderPath: String, tokensPath: String) {
+    init?(encoderPath: String, decoderPath: String, tokensPath: String, ruleFstsPath: String? = nil) {
         logger.info("SherpaOnnxOnlineRecognizer: 开始初始化...")
-        logger.debug("Encoder路径: \(encoderPath)")
-        logger.debug("Decoder路径: \(decoderPath)")
-        logger.debug("Tokens路径: \(tokensPath)")
+        logger.debug("Encoder路径: \(encoderPath, privacy: .public)")
+        logger.debug("Decoder路径: \(decoderPath, privacy: .public)")
+        logger.debug("Tokens路径: \(tokensPath, privacy: .public)")
+        if let ruleFstsPath = ruleFstsPath {
+            logger.debug("ITN FST路径: \(ruleFstsPath, privacy: .public)")
+        }
 
         guard FileManager.default.fileExists(atPath: encoderPath),
               FileManager.default.fileExists(atPath: decoderPath),
@@ -50,6 +53,12 @@ class SherpaOnnxOnlineRecognizer {
         config.rule1_min_trailing_silence = 2.4  // 无语音时的静音阈值（秒）
         config.rule2_min_trailing_silence = 1.2  // 有语音后的静音阈值（秒）
         config.rule3_min_utterance_length = 20   // 最大语句长度（秒）
+
+        // ITN 规则（WeTextProcessing WFST: tagger + verbalizer）
+        if let ruleFstsPath = ruleFstsPath, !ruleFstsPath.isEmpty {
+            config.rule_fsts = cStrings.makeCString(ruleFstsPath)
+            logger.info("SherpaOnnxOnlineRecognizer: 已启用 ITN (rule_fsts)")
+        }
 
         recognizer = SherpaOnnxCreateOnlineRecognizer(&config)
 
@@ -123,8 +132,12 @@ class SherpaOnnxOnlineRecognizer {
     }
 
     /// 重置流状态（用于新的识别会话）
+    /// 销毁旧 stream 并创建新 stream，彻底清除音频特征缓冲区和解码器状态
     func reset() {
-        guard let recognizer = recognizer, let stream = stream else { return }
-        SherpaOnnxOnlineStreamReset(recognizer, stream)
+        guard let recognizer = recognizer else { return }
+        if let stream = stream {
+            SherpaOnnxDestroyOnlineStream(stream)
+        }
+        stream = SherpaOnnxCreateOnlineStream(recognizer)
     }
 }

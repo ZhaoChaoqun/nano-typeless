@@ -11,6 +11,7 @@ class RecordingManager {
     private var audioEngine: AVAudioEngine?
     private var currentEngine: (any ASREngine)?
     private var punctuator: SherpaOnnxPunctuation?
+    private var corrector: ChineseSpellingCorrector?
 
     /// 用于保护共享可变状态的串行队列
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
@@ -74,7 +75,7 @@ class RecordingManager {
         isInitializing = true
         defer { isInitializing = false }
 
-        logger.info("开始加载语音识别模型 (\(self.currentModel.displayName))")
+        logger.info("开始加载语音识别模型 (\(self.currentModel.displayName, privacy: .public))")
 
         // 清理旧的引擎
         currentEngine = nil
@@ -89,22 +90,22 @@ class RecordingManager {
         }
     }
 
-    /// 初始化 FunASR Nano（需要 VAD）
+    /// 初始化 SenseVoice Nano（需要 VAD）
     private func initializeFunASR() async {
         guard SherpaOnnxManager.shared.isFunASRModelDownloaded(),
               let paths = SherpaOnnxManager.shared.getFunASRModelPath() else {
-            logger.warning("FunASR Nano 模型未下载")
+            logger.warning("SenseVoice Nano 模型未下载")
             return
         }
 
         guard let recognizer = SherpaOnnxRecognizer(modelPath: paths.modelPath, tokensPath: paths.tokensPath) else {
-            logger.error("FunASR Nano 模型加载失败")
+            logger.error("SenseVoice Nano 模型加载失败")
             return
         }
 
-        // 初始化 VAD（FunASR 需要）
+        // 初始化 VAD（SenseVoice Nano 需要）
         guard let vad = await loadVAD() else {
-            logger.error("VAD 加载失败，FunASR 无法使用")
+            logger.error("VAD 加载失败，SenseVoice Nano 无法使用")
             return
         }
 
@@ -112,10 +113,11 @@ class RecordingManager {
             recognizer: recognizer, vad: vad,
             recognitionQueue: recognitionQueue, stateQueue: stateQueue
         )
-        logger.info("FunASR Nano 模型加载成功")
+        logger.info("SenseVoice Nano 模型加载成功")
 
-        // 初始化标点处理器
+        // 初始化标点处理器和 CSC 纠错
         await initializePunctuation()
+        initializeCSC()
     }
 
     /// 初始化 Streaming Paraformer（无需 VAD）
@@ -126,10 +128,14 @@ class RecordingManager {
             return
         }
 
+        // 下载 ITN FST（如果尚未下载）
+        let itnFstPath = await loadITNFst()
+
         guard let recognizer = SherpaOnnxOnlineRecognizer(
             encoderPath: paths.encoderPath,
             decoderPath: paths.decoderPath,
-            tokensPath: paths.tokensPath
+            tokensPath: paths.tokensPath,
+            ruleFstsPath: itnFstPath
         ) else {
             logger.error("Streaming Paraformer 模型加载失败")
             return
@@ -140,8 +146,9 @@ class RecordingManager {
         )
         logger.info("Streaming Paraformer 模型加载成功")
 
-        // 初始化标点处理器
+        // 初始化标点处理器和 CSC 纠错
         await initializePunctuation()
+        initializeCSC()
     }
 
     /// 初始化 QwenASR（流式模式，无需 VAD，不需要标点模型）
@@ -174,17 +181,31 @@ class RecordingManager {
             logger.info("标点模型未下载，正在下载...")
             await withCheckedContinuation { continuation in
                 SherpaOnnxManager.shared.downloadPunctuationModel(progress: { progress in
-                    logger.debug("标点模型下载: \(progress)")
+                    logger.debug("标点模型下载: \(progress, privacy: .public)")
                 }, completion: { [weak self] success, error in
                     if success, let punctPath = SherpaOnnxManager.shared.getPunctuationModelPath() {
                         self?.punctuator = SherpaOnnxPunctuation(modelPath: punctPath)
                         logger.info("标点模型下载并加载成功")
                     } else {
-                        logger.error("标点模型下载失败: \(error ?? "未知错误")")
+                        logger.error("标点模型下载失败: \(error ?? "未知错误", privacy: .public)")
                     }
                     continuation.resume()
                 })
             }
+        }
+    }
+
+    /// 初始化 CSC 中文拼写纠错器
+    private func initializeCSC() {
+        if let paths = SherpaOnnxManager.shared.getCSCModelPath() {
+            corrector = ChineseSpellingCorrector(modelPath: paths.modelPath, vocabPath: paths.vocabPath)
+            if corrector != nil {
+                logger.info("CSC 纠错模型加载成功")
+            } else {
+                logger.warning("CSC 纠错模型加载失败")
+            }
+        } else {
+            logger.info("CSC 纠错模型未下载，跳过")
         }
     }
 
@@ -197,12 +218,33 @@ class RecordingManager {
         logger.info("VAD 模型未下载，正在下载...")
         return await withCheckedContinuation { continuation in
             SherpaOnnxManager.shared.downloadVADModel(progress: { progress in
-                logger.debug("VAD 下载: \(progress)")
+                logger.debug("VAD 下载: \(progress, privacy: .public)")
             }, completion: { success, error in
                 if success, let vadPath = SherpaOnnxManager.shared.getVADModelPath() {
                     continuation.resume(returning: SherpaOnnxVAD(modelPath: vadPath))
                 } else {
-                    logger.error("VAD 下载失败: \(error ?? "未知错误")")
+                    logger.error("VAD 下载失败: \(error ?? "未知错误", privacy: .public)")
+                    continuation.resume(returning: nil)
+                }
+            })
+        }
+    }
+
+    /// 加载 ITN WFST 模型（WeTextProcessing tagger+verbalizer 中文 ITN）
+    private func loadITNFst() async -> String? {
+        if let fstPath = SherpaOnnxManager.shared.getITNFstPath() {
+            return fstPath
+        }
+
+        logger.info("ITN FST 模型未下载，正在下载...")
+        return await withCheckedContinuation { continuation in
+            SherpaOnnxManager.shared.downloadITNFst(progress: { progress in
+                logger.debug("ITN FST 下载: \(progress, privacy: .public)")
+            }, completion: { success, error in
+                if success, let fstPath = SherpaOnnxManager.shared.getITNFstPath() {
+                    continuation.resume(returning: fstPath)
+                } else {
+                    logger.error("ITN FST 下载失败: \(error ?? "未知错误", privacy: .public)")
                     continuation.resume(returning: nil)
                 }
             })
@@ -214,7 +256,11 @@ class RecordingManager {
 
         // 重置状态
         accumulatedText = ""
-        currentEngine?.reset()
+
+        // 在 recognitionQueue 上同步执行 reset，确保上一次 flush 已完成
+        recognitionQueue.sync {
+            currentEngine?.reset()
+        }
 
         // 创建音频引擎
         audioEngine = AVAudioEngine()
@@ -244,9 +290,9 @@ class RecordingManager {
         do {
             try audioEngine.start()
             isRecording = true
-            logger.info("开始流式录音 (\(self.currentModel.displayName))")
+            logger.info("开始流式录音 (\(self.currentModel.displayName, privacy: .public))")
         } catch {
-            logger.error("启动音频引擎失败: \(error.localizedDescription)")
+            logger.error("启动音频引擎失败: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -266,7 +312,7 @@ class RecordingManager {
         converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
 
         if let error = error {
-            logger.error("音频转换错误: \(error.localizedDescription)")
+            logger.error("音频转换错误: \(error.localizedDescription, privacy: .public)")
             return
         }
 
@@ -327,14 +373,20 @@ class RecordingManager {
                 return
             }
 
-            // 需要标点处理的引擎走标点后处理
+            // 需要标点处理的引擎走 CSC 纠错 + 标点后处理
             if engine.needsPunctuation {
-                let finalText = self.punctuator?.addPunctuation(text: text) ?? text
-                logger.info("原始文本: \(text)")
-                logger.info("标点处理后: \(finalText)")
+                let correctedText = self.corrector?.correctSpelling(text) ?? text
+                let finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
+                logger.info("原始文本: \(text, privacy: .public)")
+                if correctedText != text {
+                    logger.info("CSC 纠正: \(correctedText, privacy: .public)")
+                } else {
+                    logger.info("CSC 未修改文本")
+                }
+                logger.info("标点处理后: \(finalText, privacy: .public)")
                 completion(finalText)
             } else {
-                logger.info("最终结果: \(text)")
+                logger.info("最终结果: \(text, privacy: .public)")
                 completion(text)
             }
         }
