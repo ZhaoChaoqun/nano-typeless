@@ -14,7 +14,7 @@ class SherpaOnnxPunctuation {
     /// 初始化标点处理器
     init?(modelPath: String) {
         logger.info("SherpaOnnxPunctuation: 开始初始化...")
-        logger.debug("模型路径: \(modelPath)")
+        logger.debug("模型路径: \(modelPath, privacy: .public)")
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             logger.info("SherpaOnnxPunctuation: 模型文件不存在")

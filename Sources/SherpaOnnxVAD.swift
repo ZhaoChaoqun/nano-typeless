@@ -19,7 +19,7 @@ class SherpaOnnxVAD {
     /// 初始化 VAD
     init?(modelPath: String) {
         logger.info("SherpaOnnxVAD: 开始初始化...")
-        logger.debug("模型路径: \(modelPath)")
+        logger.debug("模型路径: \(modelPath, privacy: .public)")
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
             logger.info("SherpaOnnxVAD: 模型文件不存在")

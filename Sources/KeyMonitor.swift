@@ -24,7 +24,7 @@ class KeyMonitor {
 
         // 需要辅助功能权限
         let trusted = AXIsProcessTrusted()
-        logger.info("辅助功能权限状态: \(trusted ? "已授权" : "未授权")")
+        logger.info("辅助功能权限状态: \(trusted ? "已授权" : "未授权", privacy: .public)")
 
         guard trusted else {
             logger.info("需要辅助功能权限")
@@ -44,7 +44,7 @@ class KeyMonitor {
 
         // 监听 flagsChanged 事件（修饰键变化）
         let eventMask: CGEventMask = (1 << CGEventType.flagsChanged.rawValue)
-        logger.debug("事件掩码: \(eventMask)")
+        logger.debug("事件掩码: \(eventMask, privacy: .public)")
 
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
@@ -87,16 +87,14 @@ class KeyMonitor {
 
         if type == .flagsChanged {
             let flags = event.flags
-            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-
-            // 调试输出：显示所有按键修饰符变化
-            logger.debug("FlagsChanged 事件 - keyCode: \(keyCode), flags: \(flags.rawValue)")
+            // let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            // logger.debug("FlagsChanged 事件 - keyCode: \(keyCode, privacy: .public), flags: \(flags.rawValue, privacy: .public)")
 
             // 检测 Fn 键状态
             // Fn 键通过 secondaryFn 标志检测
             let fnPressed = flags.contains(.maskSecondaryFn)
 
-            logger.debug("Fn 键状态: \(fnPressed ? "按下" : "未按下"), 之前状态: \(self.isFnPressed ? "按下" : "未按下")")
+            // logger.debug("Fn 键状态: \(fnPressed ? \"按下\" : \"未按下\", privacy: .public), 之前状态: \(self.isFnPressed ? \"按下\" : \"未按下\", privacy: .public)")
 
             if fnPressed && !isFnPressed {
                 // Fn 键按下

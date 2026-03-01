@@ -14,8 +14,8 @@ class SherpaOnnxRecognizer {
     /// 初始化识别器
     init?(modelPath: String, tokensPath: String) {
         logger.info("SherpaOnnxRecognizer: 开始初始化...")
-        logger.debug("模型路径: \(modelPath)")
-        logger.debug("Tokens路径: \(tokensPath)")
+        logger.debug("模型路径: \(modelPath, privacy: .public)")
+        logger.debug("Tokens路径: \(tokensPath, privacy: .public)")
 
         guard FileManager.default.fileExists(atPath: modelPath),
               FileManager.default.fileExists(atPath: tokensPath) else {
