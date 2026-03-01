@@ -28,17 +28,16 @@ class FunASREngine: ASREngine {
     private let recognizer: SherpaOnnxRecognizer
     private let vad: SherpaOnnxVAD
     private let recognitionQueue: DispatchQueue
-    private let stateQueue: DispatchQueue
+    private let internalQueue = DispatchQueue(label: "com.typeless.funasrengine")
     private var _accumulatedText = ""
 
     let needsPunctuation = true
 
     init(recognizer: SherpaOnnxRecognizer, vad: SherpaOnnxVAD,
-         recognitionQueue: DispatchQueue, stateQueue: DispatchQueue) {
+         recognitionQueue: DispatchQueue) {
         self.recognizer = recognizer
         self.vad = vad
         self.recognitionQueue = recognitionQueue
-        self.stateQueue = stateQueue
     }
 
     func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void) {
@@ -65,13 +64,13 @@ class FunASREngine: ASREngine {
             while self.vad.hasSegment() {
                 if let segment = self.vad.popSegmentWithTime(),
                    let text = self.recognizer.transcribe(samples: segment.samples) {
-                    self.stateQueue.sync {
+                    self.internalQueue.sync {
                         self._accumulatedText += text
                     }
                 }
             }
 
-            let rawText = self.stateQueue.sync { self._accumulatedText }
+            let rawText = self.internalQueue.sync { self._accumulatedText }
             DispatchQueue.main.async {
                 completion(rawText)
             }
@@ -80,12 +79,12 @@ class FunASREngine: ASREngine {
 
     func reset() {
         vad.reset()
-        stateQueue.sync { _accumulatedText = "" }
+        internalQueue.sync { _accumulatedText = "" }
     }
 
     private func transcribeSegment(_ segment: SpeechSegment, onPartialResult: @escaping (String) -> Void) {
         if let text = recognizer.transcribe(samples: segment.samples) {
-            let newAccumulated: String = stateQueue.sync {
+            let newAccumulated: String = internalQueue.sync {
                 if _accumulatedText.isEmpty {
                     _accumulatedText = text
                 } else {

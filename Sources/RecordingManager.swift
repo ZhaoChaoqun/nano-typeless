@@ -4,7 +4,7 @@ import os
 
 private let logger = Logger(subsystem: "com.typeless.app", category: "RecordingManager")
 
-/// 管理音频录制和语音识别
+/// 管理音频录制和语音识别（FSM 驱动）
 class RecordingManager {
     static let shared = RecordingManager()
 
@@ -13,27 +13,9 @@ class RecordingManager {
     private var punctuator: SherpaOnnxPunctuation?
     private var corrector: ChineseSpellingCorrector?
 
-    /// 用于保护共享可变状态的串行队列
+    /// 所有状态变更必须且只能通过此队列
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
-    private var _isRecording = false
-    private var _isInitializing = false
-    private var _accumulatedText: String = ""
-
-    private var isRecording: Bool {
-        get { stateQueue.sync { _isRecording } }
-        set { stateQueue.sync { _isRecording = newValue } }
-    }
-
-    private var isInitializing: Bool {
-        get { stateQueue.sync { _isInitializing } }
-        set { stateQueue.sync { _isInitializing = newValue } }
-    }
-
-    /// 线程安全的累积文本访问
-    private var accumulatedText: String {
-        get { stateQueue.sync { _accumulatedText } }
-        set { stateQueue.sync { _accumulatedText = newValue } }
-    }
+    private var state: RecordingState = .idle
 
     /// 当前选择的 ASR 模型
     private(set) var currentModel: ASRModelType {
@@ -49,20 +31,54 @@ class RecordingManager {
         }
     }
 
+    // MARK: - 公开回调（由 TypelessApp 一次性注册）
+
     /// 部分识别结果回调
     var onPartialResult: ((String) -> Void)?
     /// 实时音频电平回调（0.0 ~ 1.0）
     var onAudioLevel: ((Float) -> Void)?
-    /// 用于识别的队列
+    /// 最终识别结果回调（替代旧的 stopRecording completion）
+    var onFinalResult: ((String?) -> Void)?
+    /// 录音开始时回调（用于显示 overlay）
+    var onRecordingStarted: (() -> Void)?
+    /// 进入处理阶段时回调（用于显示 processing 状态）
+    var onProcessingStarted: (() -> Void)?
+
+    /// 计算密集型操作的队列
     private let recognitionQueue = DispatchQueue(label: "com.typeless.recognition", qos: .userInitiated)
 
     init() {
-        // 单元测试环境下跳过自动模型加载（测试通过 testable(withEngine:) 注入引擎）
+        // 单元测试环境下跳过自动模型加载
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
             logger.info("检测到单元测试环境，跳过自动模型加载")
             return
         }
-        Task { await initializeRecognizer() }
+        handleEvent(.reloadRequested)
+    }
+
+    // MARK: - 公开事件入口
+
+    /// 唯一的公开事件入口，驱动 FSM 状态转换
+    func handleEvent(_ event: RecordingEvent) {
+        stateQueue.async { [weak self] in
+            guard let self = self else { return }
+            let oldState = self.state
+
+            guard let newState = RecordingState.nextState(from: oldState, event: event) else {
+                // 非法/被忽略的事件
+                switch event {
+                case .fnKeyDown, .fnKeyUp:
+                    logger.debug("事件 \(event, privacy: .public) 在状态 \(oldState, privacy: .public) 下被忽略")
+                default:
+                    break
+                }
+                return
+            }
+
+            self.state = newState
+            logger.debug("状态转换: \(oldState, privacy: .public) → \(newState, privacy: .public) [事件: \(event, privacy: .public)]")
+            self.handleSideEffects(from: oldState, to: newState, event: event)
+        }
     }
 
     /// 切换 ASR 模型
@@ -70,14 +86,195 @@ class RecordingManager {
         await initializeRecognizer()
     }
 
-    private func initializeRecognizer() async {
-        guard !isInitializing else { return }
-        isInitializing = true
-        defer { isInitializing = false }
+    var isInitialized: Bool {
+        currentEngine != nil
+    }
 
+    /// 重新加载模型（下载完成后调用）
+    func reloadModel() {
+        handleEvent(.reloadRequested)
+    }
+
+    // MARK: - 副作用处理（在 stateQueue 上调用）
+
+    private func handleSideEffects(from oldState: RecordingState, to newState: RecordingState, event: RecordingEvent) {
+        switch (oldState, newState) {
+
+        // 开始初始化模型
+        case (_, .initializing):
+            currentEngine = nil
+            Task { await self.initializeRecognizer() }
+
+        // 开始录音
+        case (.ready, .recording):
+            DispatchQueue.main.async { self.onRecordingStarted?() }
+            self.startAudioEngine()
+
+        // 部分识别结果
+        case (.recording, .recording):
+            if case .partialResult(let text) = event {
+                DispatchQueue.main.async { self.onPartialResult?(text) }
+            } else if case .audioReceived(let samples) = event {
+                self.processAudioSamples(samples)
+            }
+
+        // 停止录音，开始 flush
+        case (.recording, .flushing(let accText)):
+            DispatchQueue.main.async { self.onProcessingStarted?() }
+            self.stopAudioEngine()
+            self.flushEngine(fallbackText: accText)
+
+        // flush 完成，开始后处理
+        case (.flushing, .postProcessing(let rawText)):
+            self.performPostProcessing(rawText: rawText)
+
+        // 后处理完成
+        case (.postProcessing, .ready):
+            if case .postProcessComplete(let finalText) = event {
+                DispatchQueue.main.async { self.onFinalResult?(finalText) }
+            }
+
+        default:
+            break
+        }
+    }
+
+    // MARK: - 音频引擎管理
+
+    private func startAudioEngine() {
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else { return }
+
+        let inputNode = audioEngine.inputNode
+        let inputFormat = inputNode.outputFormat(forBus: 0)
+
+        let targetSampleRate: Double = 16000
+        guard let targetFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: targetSampleRate, channels: 1, interleaved: false) else {
+            logger.error("无法创建目标音频格式")
+            return
+        }
+
+        guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
+            logger.error("无法创建音频转换器")
+            return
+        }
+
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] (buffer, time) in
+            guard let self = self else { return }
+            let samples = self.extractSamples(buffer: buffer, converter: converter, targetFormat: targetFormat)
+            if let samples = samples {
+                self.handleEvent(.audioReceived(samples: samples))
+            }
+        }
+
+        do {
+            try audioEngine.start()
+            logger.info("开始流式录音 (\(self.currentModel.displayName, privacy: .public))")
+        } catch {
+            logger.error("启动音频引擎失败: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func stopAudioEngine() {
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
+        audioEngine = nil
+        logger.info("停止录音")
+    }
+
+    /// 从 AVAudioPCMBuffer 提取 16kHz Float32 样本
+    private func extractSamples(buffer: AVAudioPCMBuffer, converter: AVAudioConverter, targetFormat: AVAudioFormat) -> [Float]? {
+        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputFrameCapacity) else { return nil }
+
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
+
+        if let error = error {
+            logger.error("音频转换错误: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+
+        guard let floatData = outputBuffer.floatChannelData else { return nil }
+        return Array(UnsafeBufferPointer(start: floatData[0], count: Int(outputBuffer.frameLength)))
+    }
+
+    /// 处理音频样本：计算电平 + 发送到 ASR 引擎
+    private func processAudioSamples(_ samples: [Float]) {
+        // 计算 RMS 音频电平并通知 UI
+        if let onAudioLevel = onAudioLevel {
+            var sum: Float = 0
+            for s in samples { sum += s * s }
+            let rms = sqrt(sum / max(Float(samples.count), 1))
+            let db = 20 * log10(max(rms, 1e-6))
+            let normalized = max(0, min(1, (db + 50) / 50))
+            DispatchQueue.main.async {
+                onAudioLevel(normalized)
+            }
+        }
+
+        // 通过引擎处理音频
+        currentEngine?.processAudio(samples: samples) { [weak self] text in
+            self?.handleEvent(.partialResult(text: text))
+        }
+    }
+
+    // MARK: - Flush & Post-Processing
+
+    private func flushEngine(fallbackText: String) {
+        guard let engine = currentEngine else {
+            handleEvent(.flushComplete(rawText: ""))
+            return
+        }
+
+        engine.flush { [weak self] rawText in
+            guard let self = self else { return }
+            let text = rawText.isEmpty ? fallbackText : rawText
+            self.handleEvent(.flushComplete(rawText: text))
+        }
+    }
+
+    private func performPostProcessing(rawText: String) {
+        recognitionQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            guard !rawText.isEmpty else {
+                logger.info("最终识别结果: （无）")
+                self.handleEvent(.postProcessComplete(finalText: nil))
+                return
+            }
+
+            guard let engine = self.currentEngine, engine.needsPunctuation else {
+                logger.info("最终结果: \(rawText, privacy: .public)")
+                self.handleEvent(.postProcessComplete(finalText: rawText))
+                return
+            }
+
+            // CSC 纠错 + 标点后处理
+            let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
+            let finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
+            logger.info("原始文本: \(rawText, privacy: .public)")
+            if correctedText != rawText {
+                logger.info("CSC 纠正: \(correctedText, privacy: .public)")
+            } else {
+                logger.info("CSC 未修改文本")
+            }
+            logger.info("标点处理后: \(finalText, privacy: .public)")
+            self.handleEvent(.postProcessComplete(finalText: finalText))
+        }
+    }
+
+    // MARK: - 模型加载（保留 async/await）
+
+    private func initializeRecognizer() async {
         logger.info("开始加载语音识别模型 (\(self.currentModel.displayName, privacy: .public))")
 
-        // 清理旧的引擎
         currentEngine = nil
 
         switch currentModel {
@@ -88,9 +285,14 @@ class RecordingManager {
         case .qwenASR:
             await initializeQwenASR()
         }
+
+        if currentEngine != nil {
+            handleEvent(.modelLoaded)
+        } else {
+            handleEvent(.modelLoadFailed)
+        }
     }
 
-    /// 初始化 SenseVoice Nano（需要 VAD）
     private func initializeFunASR() async {
         guard SherpaOnnxManager.shared.isFunASRModelDownloaded(),
               let paths = SherpaOnnxManager.shared.getFunASRModelPath() else {
@@ -103,7 +305,6 @@ class RecordingManager {
             return
         }
 
-        // 初始化 VAD（SenseVoice Nano 需要）
         guard let vad = await loadVAD() else {
             logger.error("VAD 加载失败，SenseVoice Nano 无法使用")
             return
@@ -111,16 +312,14 @@ class RecordingManager {
 
         currentEngine = FunASREngine(
             recognizer: recognizer, vad: vad,
-            recognitionQueue: recognitionQueue, stateQueue: stateQueue
+            recognitionQueue: recognitionQueue
         )
         logger.info("SenseVoice Nano 模型加载成功")
 
-        // 初始化标点处理器和 CSC 纠错
         await initializePunctuation()
         initializeCSC()
     }
 
-    /// 初始化 Streaming Paraformer（无需 VAD）
     private func initializeStreamingParaformer() async {
         guard SherpaOnnxManager.shared.isStreamingParaformerDownloaded(),
               let paths = SherpaOnnxManager.shared.getStreamingParaformerPath() else {
@@ -128,7 +327,6 @@ class RecordingManager {
             return
         }
 
-        // 下载 ITN FST（如果尚未下载）
         let itnFstPath = await loadITNFst()
 
         guard let recognizer = SherpaOnnxOnlineRecognizer(
@@ -146,12 +344,10 @@ class RecordingManager {
         )
         logger.info("Streaming Paraformer 模型加载成功")
 
-        // 初始化标点处理器和 CSC 纠错
         await initializePunctuation()
         initializeCSC()
     }
 
-    /// 初始化 QwenASR（流式模式，无需 VAD，不需要标点模型）
     private func initializeQwenASR() async {
         guard SherpaOnnxManager.shared.isQwenASRModelDownloaded(),
               let modelDir = SherpaOnnxManager.shared.getQwenASRModelDir() else {
@@ -170,7 +366,6 @@ class RecordingManager {
         logger.info("QwenASR 流式模型加载成功")
     }
 
-    /// 初始化标点处理器
     private func initializePunctuation() async {
         if let punctPath = SherpaOnnxManager.shared.getPunctuationModelPath() {
             punctuator = SherpaOnnxPunctuation(modelPath: punctPath)
@@ -195,7 +390,6 @@ class RecordingManager {
         }
     }
 
-    /// 初始化 CSC 中文拼写纠错器
     private func initializeCSC() {
         if let paths = SherpaOnnxManager.shared.getCSCModelPath() {
             corrector = ChineseSpellingCorrector(modelPath: paths.modelPath, vocabPath: paths.vocabPath)
@@ -209,7 +403,6 @@ class RecordingManager {
         }
     }
 
-    /// 加载 VAD 模型
     private func loadVAD() async -> SherpaOnnxVAD? {
         if let vadPath = SherpaOnnxManager.shared.getVADModelPath() {
             return SherpaOnnxVAD(modelPath: vadPath)
@@ -230,7 +423,6 @@ class RecordingManager {
         }
     }
 
-    /// 加载 ITN WFST 模型（WeTextProcessing tagger+verbalizer 中文 ITN）
     private func loadITNFst() async -> String? {
         if let fstPath = SherpaOnnxManager.shared.getITNFstPath() {
             return fstPath
@@ -251,157 +443,6 @@ class RecordingManager {
         }
     }
 
-    func startRecording() {
-        guard !isRecording else { return }
-
-        // 重置状态
-        accumulatedText = ""
-
-        // 在 recognitionQueue 上同步执行 reset，确保上一次 flush 已完成
-        recognitionQueue.sync {
-            currentEngine?.reset()
-        }
-
-        // 创建音频引擎
-        audioEngine = AVAudioEngine()
-        guard let audioEngine = audioEngine else { return }
-
-        let inputNode = audioEngine.inputNode
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-
-        // 目标格式：16kHz, mono, float32
-        let targetSampleRate: Double = 16000
-        guard let targetFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: targetSampleRate, channels: 1, interleaved: false) else {
-            logger.error("无法创建目标音频格式")
-            return
-        }
-
-        // 创建格式转换器
-        guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
-            logger.error("无法创建音频转换器")
-            return
-        }
-
-        // 安装音频 tap
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] (buffer, time) in
-            self?.processAudioBuffer(buffer, converter: converter, targetFormat: targetFormat)
-        }
-
-        do {
-            try audioEngine.start()
-            isRecording = true
-            logger.info("开始流式录音 (\(self.currentModel.displayName, privacy: .public))")
-        } catch {
-            logger.error("启动音频引擎失败: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    private func processAudioBuffer(_ buffer: AVAudioPCMBuffer, converter: AVAudioConverter, targetFormat: AVAudioFormat) {
-        // 计算输出缓冲区大小
-        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
-        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
-        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputFrameCapacity) else { return }
-
-        // 转换音频格式
-        var error: NSError?
-        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
-            outStatus.pointee = .haveData
-            return buffer
-        }
-
-        converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
-
-        if let error = error {
-            logger.error("音频转换错误: \(error.localizedDescription, privacy: .public)")
-            return
-        }
-
-        // 提取浮点样本
-        guard let floatData = outputBuffer.floatChannelData else { return }
-        let samples = Array(UnsafeBufferPointer(start: floatData[0], count: Int(outputBuffer.frameLength)))
-
-        // 计算 RMS 音频电平并通知 UI
-        if let onAudioLevel = onAudioLevel {
-            var sum: Float = 0
-            for s in samples { sum += s * s }
-            let rms = sqrt(sum / max(Float(samples.count), 1))
-            let db = 20 * log10(max(rms, 1e-6))
-            let normalized = max(0, min(1, (db + 50) / 50))
-            DispatchQueue.main.async {
-                onAudioLevel(normalized)
-            }
-        }
-
-        // 统一通过引擎 protocol 处理音频
-        currentEngine?.processAudio(samples: samples) { [weak self] text in
-            guard let self = self else { return }
-            self.accumulatedText = text
-            DispatchQueue.main.async {
-                self.onPartialResult?(text)
-            }
-        }
-    }
-
-    func stopRecording(completion: @escaping (String?) -> Void) {
-        guard isRecording else {
-            completion(nil)
-            return
-        }
-
-        // 停止音频引擎
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-        audioEngine = nil
-        isRecording = false
-        logger.info("停止录音")
-
-        guard let engine = currentEngine else {
-            completion(nil)
-            return
-        }
-
-        engine.flush { [weak self] rawText in
-            guard let self = self else {
-                completion(nil)
-                return
-            }
-
-            let text = rawText.isEmpty ? self.accumulatedText : rawText
-            guard !text.isEmpty else {
-                logger.info("最终识别结果: （无）")
-                completion(nil)
-                return
-            }
-
-            // 需要标点处理的引擎走 CSC 纠错 + 标点后处理
-            if engine.needsPunctuation {
-                let correctedText = self.corrector?.correctSpelling(text) ?? text
-                let finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
-                logger.info("原始文本: \(text, privacy: .public)")
-                if correctedText != text {
-                    logger.info("CSC 纠正: \(correctedText, privacy: .public)")
-                } else {
-                    logger.info("CSC 未修改文本")
-                }
-                logger.info("标点处理后: \(finalText, privacy: .public)")
-                completion(finalText)
-            } else {
-                logger.info("最终结果: \(text, privacy: .public)")
-                completion(text)
-            }
-        }
-    }
-
-    var isInitialized: Bool {
-        currentEngine != nil
-    }
-
-    /// 重新加载模型（下载完成后调用）
-    func reloadModel() {
-        currentEngine = nil
-        Task { await initializeRecognizer() }
-    }
-
     // MARK: - Test Support
 
     #if DEBUG
@@ -409,13 +450,16 @@ class RecordingManager {
     static func testable(withEngine engine: (any ASREngine)?) -> RecordingManager {
         let manager = RecordingManager()
         manager.currentEngine = engine
+        if engine != nil {
+            manager.stateQueue.sync { manager.state = .ready }
+        }
         return manager
     }
 
-    /// 暴露给测试的累积文本
-    var testableAccumulatedText: String {
-        get { accumulatedText }
-        set { accumulatedText = newValue }
+    /// 暴露给测试的当前状态
+    var testableState: RecordingState {
+        get { stateQueue.sync { state } }
+        set { stateQueue.sync { state = newValue } }
     }
     #endif
 }
