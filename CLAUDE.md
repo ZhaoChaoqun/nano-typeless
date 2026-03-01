@@ -87,7 +87,32 @@ api.upload_file(
 
 | 模型 | 用途 | GitHub 源 |
 |-----|------|----------|
-| sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17 | FunASR Nano ASR | k2-fsa/sherpa-onnx |
+| sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17 | SenseVoice Nano ASR | k2-fsa/sherpa-onnx |
 | sherpa-onnx-streaming-paraformer-bilingual-zh-en | Streaming Paraformer ASR | k2-fsa/sherpa-onnx |
 | sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8 | CT-Transformer 标点模型 (INT8) | k2-fsa/sherpa-onnx |
 | silero_vad.onnx | VAD 语音活动检测 | k2-fsa/sherpa-onnx |
+
+## Documentation Guidelines
+
+所有 markdown 文档（报告、分析、设计、调研等）**必须**存放在 `/docs/` 的对应子目录中，**禁止**放置在项目根目录。仅 `README.md` 和 `CLAUDE.md` 保留在根目录。
+
+### 目录分类规则
+
+| 目录 | 存放内容 | 示例 |
+|------|---------|------|
+| `docs/architecture/` | 系统设计、集成方案、架构决策记录 (ADR) | ASR 流水线架构、Sherpa-ONNX 集成设计 |
+| `docs/research/` | 模型调研、技术评估、方案对比分析 | ASR 模型选型报告、量化方案调研 |
+| `docs/guides/` | 算法教程、参数配置指南、技术原理讲解 | BPE 算法指南、流式参数详解 |
+| `docs/issues_and_bugs/` | Bug 根因分析、Post-Mortem、问题修复记录 | UTF-8 乱码分析、热词功能回滚复盘 |
+| `docs/testing/` | 测试覆盖文档、测试计划、质量保障 | 测试用例清单、E2E 测试报告 |
+
+### 命名规范
+
+- 使用 `kebab-case` 小写连字符命名（如 `qwen3-asr-optimization-report.md`）
+- 不使用 `SCREAMING_CASE` 大写下划线命名
+
+### 新文档流程
+
+1. 根据内容类型选择对应子目录
+2. 如果现有目录不合适，创建新的子目录
+3. 更新 `docs/README.md` 索引，添加新文档的链接和说明
