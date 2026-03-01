@@ -2,7 +2,7 @@ import Foundation
 
 /// 统一的 ASR 引擎接口
 ///
-/// 封装了不同 ASR 后端（FunASR、Streaming Paraformer、QwenASR）的差异，
+/// 封装了不同 ASR 后端（SenseVoice Nano、Streaming Paraformer、QwenASR）的差异，
 /// 让 RecordingManager 无需关心具体引擎类型。
 protocol ASREngine: AnyObject {
     /// 将新的音频采样送入引擎
@@ -21,9 +21,9 @@ protocol ASREngine: AnyObject {
     var needsPunctuation: Bool { get }
 }
 
-// MARK: - FunASR Nano Engine (VAD + Offline)
+// MARK: - SenseVoice Nano Engine (VAD + Offline)
 
-/// FunASR Nano 引擎：使用 VAD 分段 + 离线识别
+/// SenseVoice Nano 引擎：使用 VAD 分段 + 离线识别
 class FunASREngine: ASREngine {
     private let recognizer: SherpaOnnxRecognizer
     private let vad: SherpaOnnxVAD
@@ -173,11 +173,10 @@ class QwenASREngine: ASREngine {
     func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void) {
         recognitionQueue.async { [weak self] in
             guard let self = self else { return }
-            if let _ = self.recognizer.pushAudio(samples: samples, finalize: false) {
-                let fullText = self.recognizer.getResult()
-                if !fullText.isEmpty {
-                    onPartialResult(fullText)
-                }
+            _ = self.recognizer.pushAudio(samples: samples, finalize: false)
+            let fullText = self.recognizer.getResult()
+            if !fullText.isEmpty {
+                onPartialResult(fullText)
             }
         }
     }
@@ -189,8 +188,9 @@ class QwenASREngine: ASREngine {
                 return
             }
 
-            let silencePadding = [Float](repeating: 0.0, count: 32000)
-            _ = self.recognizer.pushAudio(samples: silencePadding, finalize: true)
+            // finalize=true 刷出 rollback 区域的剩余 token，不需要额外静音 padding
+            // （推送静音会被追加到累积 buffer，导致模型在静音段产生重复幻觉）
+            _ = self.recognizer.pushAudio(samples: [], finalize: true)
 
             let result = self.recognizer.getResult()
             self.recognizer.reset()
