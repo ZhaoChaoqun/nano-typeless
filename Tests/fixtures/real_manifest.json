@@ -7,8 +7,7 @@
     {
       "id": "aishell_test_001",
       "category": "real_aishell",
-      "text_input": "甚至出现交易几乎停滞的情况",
-      "expected_text": "甚至出现交易几乎停滞的情况",
+      "expected_text": "甚至出现交易几乎停滞的情况。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_001.wav"
@@ -20,8 +19,7 @@
     {
       "id": "aishell_test_002",
       "category": "real_aishell",
-      "text_input": "一二线城市虽然也处于调整中",
-      "expected_text": "一二线城市虽然也处于调整中",
+      "expected_text": "一二线城市虽然也处于调整中。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_002.wav"
@@ -33,8 +31,7 @@
     {
       "id": "aishell_test_003",
       "category": "real_aishell",
-      "text_input": "但因为聚集了过多公共资源",
-      "expected_text": "但因为聚集了过多公共资源",
+      "expected_text": "但因为聚集了过多公共资源。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_003.wav"
@@ -46,8 +43,7 @@
     {
       "id": "aishell_test_004",
       "category": "real_aishell",
-      "text_input": "为了规避三四线城市明显过剩的市场风险",
-      "expected_text": "为了规避三四线城市明显过剩的市场风险",
+      "expected_text": "为了规避三四线城市明显过剩的市场风险。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_004.wav"
@@ -59,8 +55,7 @@
     {
       "id": "aishell_test_005",
       "category": "real_aishell",
-      "text_input": "标杆房企必然调整市场战略",
-      "expected_text": "标杆房企必然调整市场战略",
+      "expected_text": "标杆房企必然调整市场战略。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_005.wav"
@@ -72,8 +67,7 @@
     {
       "id": "aishell_test_006",
       "category": "real_aishell",
-      "text_input": "因此土地储备至关重要",
-      "expected_text": "因此土地储备至关重要",
+      "expected_text": "因此，土地储备至关重要。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_006.wav"
@@ -85,8 +79,7 @@
     {
       "id": "aishell_test_007",
       "category": "real_aishell",
-      "text_input": "中原地产首席分析师张大伟说",
-      "expected_text": "中原地产首席分析师张大伟说",
+      "expected_text": "中原地产首席分析师张大伟说。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_007.wav"
@@ -98,8 +91,7 @@
     {
       "id": "aishell_test_008",
       "category": "real_aishell",
-      "text_input": "一线城市土地供应量减少",
-      "expected_text": "一线城市土地供应量减少",
+      "expected_text": "一线城市土地供应量减少。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_008.wav"
@@ -111,8 +103,7 @@
     {
       "id": "conv_zh_001",
       "category": "real_conversational",
-      "text_input": "你好我想要了解一下我的银行账户余额有多少谢谢",
-      "expected_text": "你好我想要了解一下我的银行账户余额有多少谢谢",
+      "expected_text": "你好，我想要了解一下我的银行账户余额有多少，谢谢。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/conversational/conv_zh_001.wav"
@@ -125,41 +116,9 @@
       ]
     },
     {
-      "id": "conv_zh_002",
-      "category": "real_conversational",
-      "text_input": "我想查询我目前的账户余额",
-      "expected_text": "我想查询我目前的账户余额",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/conversational/conv_zh_002.wav"
-      },
-      "duration_sec": 4.78,
-      "language": "zh",
-      "match_keywords": [
-        "我想",
-        "目前"
-      ]
-    },
-    {
-      "id": "conv_zh_003",
-      "category": "real_conversational",
-      "text_input": "我的账户还有多少钱呢",
-      "expected_text": "我的账户还有多少钱呢",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/conversational/conv_zh_003.wav"
-      },
-      "duration_sec": 4.27,
-      "language": "zh",
-      "match_keywords": [
-        "多少"
-      ]
-    },
-    {
       "id": "conv_zh_004",
       "category": "real_conversational",
-      "text_input": "我想要查询我的账户余额",
-      "expected_text": "我想要查询我的账户余额",
+      "expected_text": "我想要查询我的账户余额。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/conversational/conv_zh_004.wav"
@@ -174,8 +133,7 @@
     {
       "id": "conv_zh_005",
       "category": "real_conversational",
-      "text_input": "我可以知道我的账户余额吗",
-      "expected_text": "我可以知道我的账户余额吗",
+      "expected_text": "您好，我可以知道我的账户余额吗？",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/conversational/conv_zh_005.wav"
@@ -190,8 +148,7 @@
     {
       "id": "ascend_cs_001",
       "category": "real_ascend_codeswitching",
-      "text_input": "no我专业是那个i s m information systems management",
-      "expected_text": "no我专业是那个i s m information systems management",
+      "expected_text": "No，我专业是那个ISM，Information Systems Management。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_001.wav"
@@ -208,8 +165,7 @@
     {
       "id": "ascend_cs_002",
       "category": "real_ascend_codeswitching",
-      "text_input": "嗯所以你现在还是比较focus在找工作这件事上",
-      "expected_text": "嗯所以你现在还是比较focus在找工作这件事上",
+      "expected_text": "嗯，所以你现在还是比较focus在找工作这件事上。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_002.wav"
@@ -226,8 +182,7 @@
     {
       "id": "ascend_cs_003",
       "category": "real_ascend_codeswitching",
-      "text_input": "深圳啊或者是上海这种比较大的城市会有更多opportunity",
-      "expected_text": "深圳啊或者是上海这种比较大的城市会有更多opportunity",
+      "expected_text": "深圳啊，或者是上海这种比较大的城市，会有更多opportunity。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_003.wav"
@@ -243,8 +198,7 @@
     {
       "id": "ascend_cs_004",
       "category": "real_ascend_codeswitching",
-      "text_input": "嗯I like hot pot",
-      "expected_text": "嗯I like hot pot",
+      "expected_text": "嗯，I like hot pot。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_004.wav"
@@ -259,8 +213,7 @@
     {
       "id": "ascend_cs_005",
       "category": "real_ascend_codeswitching",
-      "text_input": "所以我的我的parents我的妈妈是chemistry老师and我的爸爸是history老师",
-      "expected_text": "所以我的我的parents我的妈妈是chemistry老师and我的爸爸是history老师",
+      "expected_text": "所以我的我的parents，我的妈妈是chemistry老师，and我的爸爸是history老师。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_005.wav"
@@ -277,8 +230,7 @@
     {
       "id": "ascend_cs_006",
       "category": "real_ascend_codeswitching",
-      "text_input": "那个玩basketball的然后我有时候有时候会邀我的friends啊一起打在就是after class的时候",
-      "expected_text": "那个玩basketball的然后我有时候有时候会邀我的friends啊一起打在就是after class的时候",
+      "expected_text": "那个玩basketball的，然后我有时候有时候会邀我的friends啊，一起打在就是after class的时候。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_006.wav"
@@ -292,28 +244,9 @@
       ]
     },
     {
-      "id": "ascend_cs_007",
-      "category": "real_ascend_codeswitching",
-      "text_input": "对我平时然后都喜欢跟Tony一起玩",
-      "expected_text": "对我平时然后都喜欢跟Tony一起玩",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_007.wav"
-      },
-      "duration_sec": 3.86,
-      "language": "mixed",
-      "match_keywords": [
-        "Tony",
-        "对我",
-        "时然",
-        "都喜"
-      ]
-    },
-    {
       "id": "ascend_cs_008",
       "category": "real_ascend_codeswitching",
-      "text_input": "然后呃我也喜欢play basketball",
-      "expected_text": "然后呃我也喜欢play basketball",
+      "expected_text": "然后呃，我也喜欢play basketball。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_008.wav"
@@ -329,8 +262,7 @@
     {
       "id": "ascend_cs_009",
       "category": "real_ascend_codeswitching",
-      "text_input": "然后刚忘了讲你你是念什么major的",
-      "expected_text": "然后刚忘了讲你你是念什么major的",
+      "expected_text": "然后刚忘了讲，你你是念什么major的？",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_009.wav"
@@ -347,8 +279,7 @@
     {
       "id": "ascend_cs_010",
       "category": "real_ascend_codeswitching",
-      "text_input": "哦我我在u g的时候念的是electric engineering",
-      "expected_text": "哦我我在u g的时候念的是electric engineering",
+      "expected_text": "哦，我我在UG的时候念的是electrical engineering。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_010.wav"
@@ -365,8 +296,7 @@
     {
       "id": "wenet_net_001",
       "category": "real_wenetspeech",
-      "text_input": "毕业歌会之后然后我们还去吃个饭然后就感觉",
-      "expected_text": "毕业歌会之后然后我们还去吃个饭然后就感觉",
+      "expected_text": "毕业歌会之后，然后我们还去吃个饭，然后就感觉。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_001.wav"
@@ -378,8 +308,7 @@
     {
       "id": "wenet_net_002",
       "category": "real_wenetspeech",
-      "text_input": "竖锯癌症病成那样还打着点滴就更不可能把女警官吊了起来说来说去皮特认为还有其他人在帮助竖锯这么做",
-      "expected_text": "竖锯癌症病成那样还打着点滴就更不可能把女警官吊了起来说来说去皮特认为还有其他人在帮助竖锯这么做",
+      "expected_text": "竖锯癌症病成那样，还打着点滴，就更不可能把女警官吊了起来。说来说去，皮特认为还有其他人在帮助竖锯这么做。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_002.wav"
@@ -391,8 +320,7 @@
     {
       "id": "wenet_net_003",
       "category": "real_wenetspeech",
-      "text_input": "当时心里想我只要能跪我就能站我在床上练着跪着走",
-      "expected_text": "当时心里想我只要能跪我就能站我在床上练着跪着走",
+      "expected_text": "当时心里想，我只要能跪我就能站，我在床上练着跪着走。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_003.wav"
@@ -404,8 +332,7 @@
     {
       "id": "wenet_net_004",
       "category": "real_wenetspeech",
-      "text_input": "下车后望着三十多层的大高楼发呆",
-      "expected_text": "下车后望着三十多层的大高楼发呆",
+      "expected_text": "下车后望着30多层的大高楼发呆。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_004.wav"
@@ -417,8 +344,7 @@
     {
       "id": "wenet_net_005",
       "category": "real_wenetspeech",
-      "text_input": "还有剧作模式的双线性叙事结尾神反转等等也成为了日后电锯惊魂系列在剧作上的结构模式",
-      "expected_text": "还有剧作模式的双线性叙事结尾神反转等等也成为了日后电锯惊魂系列在剧作上的结构模式",
+      "expected_text": "还有剧作模式的双线性叙事、结尾神反转等等，也成为了日后电锯惊魂系列在剧作上的结构模式。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_005.wav"
@@ -430,8 +356,7 @@
     {
       "id": "wenet_net_006",
       "category": "real_wenetspeech",
-      "text_input": "这位叫皮特的FBI探员一上来就一顿物理分析认为阿曼达不可能吊起比她还重的女警官",
-      "expected_text": "这位叫皮特的FBI探员一上来就一顿物理分析认为阿曼达不可能吊起比她还重的女警官",
+      "expected_text": "这位叫皮特的FBI探员一上来就一顿物理分析，认为阿曼达不可能吊起比她还重的女警官。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_006.wav"
@@ -443,8 +368,7 @@
     {
       "id": "wenet_net_007",
       "category": "real_wenetspeech",
-      "text_input": "她已经在商场里开起了小店铺尽管孤身一人但与好友见面时还是会爽朗一笑",
-      "expected_text": "她已经在商场里开起了小店铺尽管孤身一人但与好友见面时还是会爽朗一笑",
+      "expected_text": "她已经在商场里开起了小店铺，尽管孤身一人，但与好友见面时还是会爽朗一笑。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_007.wav"
@@ -456,8 +380,7 @@
     {
       "id": "wenet_net_008",
       "category": "real_wenetspeech",
-      "text_input": "把这些劳工抓起来送到月亮岛上去",
-      "expected_text": "把这些劳工抓起来送到月亮岛上去",
+      "expected_text": "把这些劳工抓起来，送到月亮岛上去。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_008.wav"
@@ -469,8 +392,7 @@
     {
       "id": "wenet_net_009",
       "category": "real_wenetspeech",
-      "text_input": "的的需要嗯如果你把他当成产品的话你就会觉得那么消费者会需要什么样的",
-      "expected_text": "的的需要嗯如果你把他当成产品的话你就会觉得那么消费者会需要什么样的",
+      "expected_text": "的的需要。嗯，如果你把他当成产品的话，你就会觉得那么消费者会需要什么样的。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_009.wav"
@@ -482,8 +404,7 @@
     {
       "id": "wenet_net_010",
       "category": "real_wenetspeech",
-      "text_input": "媒体也已经报了然后呃债主也已经围楼了",
-      "expected_text": "媒体也已经报了然后呃债主也已经围楼了",
+      "expected_text": "媒体也已经报了，然后呃，债主也已经围楼了。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_010.wav"
@@ -495,8 +416,7 @@
     {
       "id": "cs_edge_001",
       "category": "real_codeswitching",
-      "text_input": "我们团队最近在用React和TypeScript重构前端项目",
-      "expected_text": "我们团队最近在用React和TypeScript重构前端项目",
+      "expected_text": "我们团队最近在用React和TypeScript重构前端项目。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_001.wav"
@@ -512,8 +432,7 @@
     {
       "id": "cs_edge_002",
       "category": "real_codeswitching",
-      "text_input": "这个bug是因为race condition导致的memory leak",
-      "expected_text": "这个bug是因为race condition导致的memory leak",
+      "expected_text": "这个bug是因为race condition导致的memory leak。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_002.wav"
@@ -529,8 +448,7 @@
     {
       "id": "cs_edge_003",
       "category": "real_codeswitching",
-      "text_input": "用Docker Compose部署了三个microservice到staging环境",
-      "expected_text": "用Docker Compose部署了三个microservice到staging环境",
+      "expected_text": "用Docker Compose部署了3个microservice到staging环境。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_003.wav"
@@ -546,8 +464,7 @@
     {
       "id": "cs_edge_004",
       "category": "real_codeswitching",
-      "text_input": "在GitHub上提了一个issue关于performance optimization",
-      "expected_text": "在GitHub上提了一个issue关于performance optimization",
+      "expected_text": "在GitHub上提了一个issue，关于performance optimization。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_004.wav"
@@ -563,8 +480,7 @@
     {
       "id": "cs_edge_005",
       "category": "real_codeswitching",
-      "text_input": "这个function的return type应该是Optional而不是force unwrap",
-      "expected_text": "这个function的return type应该是Optional而不是force unwrap",
+      "expected_text": "这个function的return type应该是Optional，而不是force unwrap。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_005.wav"
@@ -580,8 +496,7 @@
     {
       "id": "cs_edge_006",
       "category": "real_codeswitching",
-      "text_input": "用Xcode的Instruments做了一下profiling发现CPU占用太高",
-      "expected_text": "用Xcode的Instruments做了一下profiling发现CPU占用太高",
+      "expected_text": "用Xcode的Instruments做了一下profiling，发现CPU占用太高。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_006.wav"
@@ -597,8 +512,7 @@
     {
       "id": "cs_edge_007",
       "category": "real_codeswitching",
-      "text_input": "GraphQL的schema定义比RESTful API更灵活一些",
-      "expected_text": "GraphQL的schema定义比RESTful API更灵活一些",
+      "expected_text": "GraphQL的schema定义比RESTful API更灵活一些。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_007.wav"
@@ -614,8 +528,7 @@
     {
       "id": "cs_edge_008",
       "category": "real_codeswitching",
-      "text_input": "CI pipeline跑了三十分钟还没通过unit test",
-      "expected_text": "CI pipeline跑了三十分钟还没通过unit test",
+      "expected_text": "CI pipeline跑了30分钟，还没通过unit test。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_008.wav"

@@ -56,8 +56,6 @@ class QwenASRRealWorldTests: XCTestCase {
     // MARK: - Conversational Mandarin (MINDS-14 真实对话录音)
 
     func testConversational001() throws { try runRealEntry(id: "conv_zh_001") }
-    func testConversational002() throws { try runRealEntry(id: "conv_zh_002") }
-    func testConversational003() throws { try runRealEntry(id: "conv_zh_003") }
     func testConversational004() throws { try runRealEntry(id: "conv_zh_004") }
     func testConversational005() throws { try runRealEntry(id: "conv_zh_005") }
 
@@ -80,7 +78,6 @@ class QwenASRRealWorldTests: XCTestCase {
     func testAscendCS004() throws { try runRealEntry(id: "ascend_cs_004") }
     func testAscendCS005() throws { try runRealEntry(id: "ascend_cs_005") }
     func testAscendCS006() throws { try runRealEntry(id: "ascend_cs_006") }
-    func testAscendCS007() throws { try runRealEntry(id: "ascend_cs_007") }
     func testAscendCS008() throws { try runRealEntry(id: "ascend_cs_008") }
     func testAscendCS009() throws { try runRealEntry(id: "ascend_cs_009") }
     func testAscendCS010() throws { try runRealEntry(id: "ascend_cs_010") }

@@ -303,7 +303,6 @@ def download_aishell_samples(n_samples: int = 8) -> list[dict]:
                 {
                     "id": entry_id,
                     "category": "real_aishell",
-                    "text_input": text,
                     "expected_text": text,
                     "match_mode": "character_error_rate",
                     "audio_files": {"real": f"audio/real/aishell/{entry_id}.wav"},
@@ -408,7 +407,6 @@ def download_conversational_samples(n_samples: int = 5) -> list[dict]:
                 {
                     "id": entry_id,
                     "category": "real_conversational",
-                    "text_input": text,
                     "expected_text": text,
                     "match_mode": "contains_all",
                     "audio_files": {"real": f"audio/real/conversational/{entry_id}.wav"},
@@ -493,7 +491,6 @@ def generate_codeswitching_samples() -> list[dict]:
                 {
                     "id": entry_id,
                     "category": "real_codeswitching",
-                    "text_input": text,
                     "expected_text": text,
                     "match_mode": "contains_all",
                     "audio_files": {"real": f"audio/real/codeswitching/{entry_id}.wav"},
@@ -593,7 +590,6 @@ def download_ascend_samples(n_samples: int = 10) -> list[dict]:
                 {
                     "id": entry_id,
                     "category": "real_ascend_codeswitching",
-                    "text_input": text,
                     "expected_text": text,
                     "match_mode": "contains_all",
                     "audio_files": {"real": f"audio/real/ascend/{entry_id}.wav"},
@@ -761,7 +757,6 @@ def download_wenetspeech_samples(n_samples: int = 10) -> list[dict]:
                     {
                         "id": entry_id,
                         "category": "real_wenetspeech",
-                        "text_input": text,
                         "expected_text": text,
                         "match_mode": "character_error_rate",
                         "audio_files": {

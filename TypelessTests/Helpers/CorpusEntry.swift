@@ -4,7 +4,6 @@ import Foundation
 struct CorpusEntry: Codable {
     let id: String
     let category: String
-    let textInput: String
     let expectedText: String
     let matchMode: String
     let audioFiles: [String: String]
@@ -15,7 +14,6 @@ struct CorpusEntry: Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, category, language
-        case textInput = "text_input"
         case expectedText = "expected_text"
         case matchMode = "match_mode"
         case audioFiles = "audio_files"
