@@ -191,10 +191,11 @@ class ASRPipelineBenchmarkTests: XCTestCase {
                 _ = recognizer.pushAudio(samples: chunk, finalize: false)
                 offset = end
             }
-            // 追加 1s silence padding 后 finalize，确保尾部解码完成
-            let silencePadding = [Float](repeating: 0.0, count: 16000)
-            _ = recognizer.pushAudio(samples: silencePadding, finalize: true)
-            return recognizer.getResult()
+            // 直接取 stable + unfixed 作为最终结果，与产品代码 QwenASREngine.flush() 一致
+            // 避免推送 silence+finalize 导致 decoder 在静音上 hallucinate 重复文本
+            let stableText = recognizer.getResult()
+            let unfixedText = recognizer.getUnfixed() ?? ""
+            return stableText + unfixedText
         }
 
         Self.allResults.append(PipelineResult(pipelineName: "Qwen3-ASR (流式)", results: results))
