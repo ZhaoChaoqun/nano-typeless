@@ -32,6 +32,10 @@ class MockASRStreamRecognizer: ASRStreamRecognizing {
         return getResultText
     }
 
+    func getUnfixed() -> String? {
+        return nil
+    }
+
     func reset() {
         resetCallCount += 1
     }

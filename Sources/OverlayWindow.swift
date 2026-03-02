@@ -87,8 +87,9 @@ class OverlayWindowController {
         window?.orderFront(nil)
     }
 
-    func updateRecognizedText(_ text: String) {
-        viewModel.recognizedText = text
+    func updateRecognizedText(_ stableText: String, unfixedText: String? = nil) {
+        viewModel.stableText = stableText
+        viewModel.unfixedText = unfixedText ?? ""
     }
 
     /// 更新实时音频电平（0.0 ~ 1.0）
@@ -110,10 +111,16 @@ class OverlayWindowController {
 /// 悬浮窗口视图模型
 class OverlayViewModel: ObservableObject {
     @Published var animationPhase: CGFloat = 0
-    @Published var recognizedText: String = ""
+    @Published var stableText: String = ""
+    @Published var unfixedText: String = ""
     @Published var state: OverlayState = .listening
     /// 实时音频电平（0.0 ~ 1.0），由 RecordingManager 驱动
     @Published var audioLevel: CGFloat = 0
+
+    /// 是否有任何识别文本
+    var hasText: Bool {
+        !stableText.isEmpty || !unfixedText.isEmpty
+    }
 
     private var animationTimer: Timer?
 
@@ -130,7 +137,8 @@ class OverlayViewModel: ObservableObject {
     }
 
     func reset() {
-        recognizedText = ""
+        stableText = ""
+        unfixedText = ""
         audioLevel = 0
         state = .listening
     }
@@ -151,7 +159,7 @@ struct OverlayView: View {
             statusIndicator
 
             // 识别结果显示
-            if !viewModel.recognizedText.isEmpty {
+            if viewModel.hasText {
                 textContentView
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -201,7 +209,8 @@ struct OverlayView: View {
 
     @ViewBuilder
     private var textContentView: some View {
-        let textHeight = calculateTextHeight(viewModel.recognizedText)
+        let fullText = viewModel.stableText + viewModel.unfixedText
+        let textHeight = calculateTextHeight(fullText)
         let displayHeight = min(textHeight, CGFloat(maxLines) * lineHeight)
         let needsScroll = textHeight > displayHeight
         let textWidth = maxWidth - 32  // 文本区域宽度
@@ -209,29 +218,44 @@ struct OverlayView: View {
         if needsScroll {
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
-                    Text(viewModel.recognizedText)
+                    styledText
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.9))
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(width: textWidth - 16, alignment: .leading)
                         .id("bottom")
                 }
                 .frame(width: textWidth, height: displayHeight)
-                .onChange(of: viewModel.recognizedText) { _, _ in
+                .onChange(of: viewModel.stableText) { _, _ in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+                .onChange(of: viewModel.unfixedText) { _, _ in
                     withAnimation(.easeOut(duration: 0.15)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
             }
         } else {
-            Text(viewModel.recognizedText)
+            styledText
                 .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.9))
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(width: textWidth, alignment: .leading)
         }
+    }
+
+    /// 渲染 stable（白色）+ unfixed（灰色）文本
+    private var styledText: Text {
+        let stable = Text(viewModel.stableText)
+            .foregroundColor(.white.opacity(0.9))
+        if viewModel.unfixedText.isEmpty {
+            return stable
+        }
+        let unfixed = Text(viewModel.unfixedText)
+            .foregroundColor(.white.opacity(0.45))
+        return stable + unfixed
     }
 
     private func calculateTextHeight(_ text: String) -> CGFloat {

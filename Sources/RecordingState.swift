@@ -44,10 +44,8 @@ enum RecordingState: Equatable, CustomStringConvertible {
         // 录音生命周期
         case (.ready, .fnKeyDown):
             return .recording(accumulatedText: "")
-        case (.recording, .partialResult(let text)):
+        case (.recording, .partialResult(let text, _)):
             return .recording(accumulatedText: text)
-        case (.recording, .audioReceived):
-            return state  // 状态不变，仅触发副作用
         case (.recording, .fnKeyUp):
             if case .recording(let accText) = state {
                 return .flushing(accumulatedText: accText)
@@ -70,8 +68,7 @@ enum RecordingEvent: CustomStringConvertible {
     case modelLoadFailed
     case fnKeyDown
     case fnKeyUp
-    case audioReceived(samples: [Float])
-    case partialResult(text: String)
+    case partialResult(text: String, unfixedText: String?)
     case flushComplete(rawText: String)
     case postProcessComplete(finalText: String?)
     case reloadRequested
@@ -82,7 +79,6 @@ enum RecordingEvent: CustomStringConvertible {
         case .modelLoadFailed: return "modelLoadFailed"
         case .fnKeyDown: return "fnKeyDown"
         case .fnKeyUp: return "fnKeyUp"
-        case .audioReceived: return "audioReceived"
         case .partialResult: return "partialResult"
         case .flushComplete: return "flushComplete"
         case .postProcessComplete: return "postProcessComplete"

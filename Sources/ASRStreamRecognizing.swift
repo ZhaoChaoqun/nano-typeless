@@ -7,6 +7,8 @@ protocol ASRStreamRecognizing: AnyObject {
     func pushAudio(samples: [Float], finalize: Bool) -> String?
     /// 获取当前累积的完整识别结果
     func getResult() -> String
+    /// 获取当前已解码但尚未稳定的投机文本
+    func getUnfixed() -> String?
     /// 重置流式状态，开始新一轮识别
     func reset()
 }
