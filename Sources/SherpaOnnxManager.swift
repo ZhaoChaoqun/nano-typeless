@@ -68,7 +68,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
         case .streamingParaformer:
             return "~216MB"
         case .qwenASR:
-            return "~1.2GB"
+            return "~834MB"
         case .funasrNanoLLM:
             return "~716MB"
         }

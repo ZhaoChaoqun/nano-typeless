@@ -205,7 +205,7 @@ struct SettingsView: View {
             } header: {
                 Text("模型状态")
             } footer: {
-                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 1.2GB（自带标点），FunASR Nano LLM 约 716MB（自带标点）。")
+                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 834MB（INT8，自带标点），FunASR Nano LLM 约 716MB（自带标点）。")
             }
 
             Section("快捷键") {
