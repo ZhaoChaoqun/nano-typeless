@@ -140,9 +140,9 @@ typeless/
 │   ├── TypelessApp.swift          # 应用入口和生命周期
 │   ├── RecordingManager.swift     # 音频录制和引擎调度
 │   ├── ASREngine.swift            # ASR 引擎统一协议
-│   ├── SherpaOnnxRecognizer.swift # SenseVoice Nano 离线识别
 │   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer 流式识别
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR 流式识别
+│   ├── FunASRNanoLLMRecognizer.swift    # FunASR Nano LLM 离线识别
 │   ├── KeyMonitor.swift           # 全局 Fn 键检测
 │   ├── TextInserter.swift         # 光标文字插入
 │   ├── OverlayWindow.swift        # 录音 UI 遮罩
@@ -159,7 +159,7 @@ typeless/
 | 组件 | 技术 |
 |------|------|
 | **UI 框架** | SwiftUI |
-| **语音识别** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (SenseVoice Nano + Paraformer) / Qwen3-ASR (Rust FFI) |
+| **语音识别** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Streaming Paraformer + FunASR Nano LLM) / Qwen3-ASR (Rust FFI) |
 | **音频采集** | AVFoundation |
 | **按键监听** | CGEvent Tap API |
 | **文字插入** | CGEvent（键盘模拟） |
@@ -181,8 +181,8 @@ typeless/
 | 引擎 | 大小 | 模式 | 标点 | 适用场景 |
 |------|------|------|------|----------|
 | `Streaming Paraformer` | ~216MB + 标点 62MB | 流式 | 需 CT-Transformer | 日常使用（默认） |
-| `SenseVoice Nano` | ~179MB | 离线（VAD 分段） | 需 CT-Transformer | 方言、口音识别 |
 | `Qwen3-ASR` | ~1.2GB | 流式 | 自带标点 | 高精度，长文本 |
+| `FunASR Nano LLM` | ~716MB | 离线（VAD 分段） | 自带标点 | 高质量输出 |
 
 ## 🤝 参与贡献
 
@@ -333,9 +333,9 @@ typeless/
 │   ├── TypelessApp.swift          # App entry & lifecycle
 │   ├── RecordingManager.swift     # Audio recording & engine dispatch
 │   ├── ASREngine.swift            # Unified ASR engine protocol
-│   ├── SherpaOnnxRecognizer.swift # SenseVoice Nano offline recognition
 │   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR streaming recognition
+│   ├── FunASRNanoLLMRecognizer.swift    # FunASR Nano LLM offline recognition
 │   ├── KeyMonitor.swift           # Global Fn key detection
 │   ├── TextInserter.swift         # Cursor text insertion
 │   ├── OverlayWindow.swift        # Recording UI overlay
@@ -352,7 +352,7 @@ typeless/
 | Component | Technology |
 |-----------|------------|
 | **UI Framework** | SwiftUI |
-| **Speech Recognition** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (SenseVoice Nano + Paraformer) / Qwen3-ASR (Rust FFI) |
+| **Speech Recognition** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Streaming Paraformer + FunASR Nano LLM) / Qwen3-ASR (Rust FFI) |
 | **Audio Capture** | AVFoundation |
 | **Key Monitoring** | CGEvent Tap API |
 | **Text Insertion** | CGEvent (Keyboard Simulation) |
@@ -374,8 +374,8 @@ The app includes three built-in ASR engines, switchable in Settings. Default is 
 | Engine | Size | Mode | Punctuation | Best For |
 |--------|------|------|-------------|----------|
 | `Streaming Paraformer` | ~216MB + punct 62MB | Streaming | CT-Transformer | Daily use (default) |
-| `SenseVoice Nano` | ~179MB | Offline (VAD) | CT-Transformer | Dialects & accents |
 | `Qwen3-ASR` | ~1.2GB | Streaming | Built-in | High accuracy, long text |
+| `FunASR Nano LLM` | ~716MB | Offline (VAD) | Built-in | High quality output |
 
 ## 🤝 Contributing
 

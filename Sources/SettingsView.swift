@@ -5,9 +5,9 @@ class ModelDownloadManager: ObservableObject {
     static let shared = ModelDownloadManager()
 
     @Published var selectedModel: ASRModelType
-    @Published var funasrDownloaded: Bool = false
     @Published var streamingParaformerDownloaded: Bool = false
     @Published var qwenASRDownloaded: Bool = false
+    @Published var funasrNanoLLMDownloaded: Bool = false
     @Published var punctuationDownloaded: Bool = false
     @Published var cscDownloaded: Bool = false
     @Published var isDownloading: Bool = false
@@ -29,9 +29,9 @@ class ModelDownloadManager: ObservableObject {
     }
 
     func checkModelsExist() {
-        funasrDownloaded = SherpaOnnxManager.shared.isFunASRModelDownloaded()
         streamingParaformerDownloaded = SherpaOnnxManager.shared.isStreamingParaformerDownloaded()
         qwenASRDownloaded = SherpaOnnxManager.shared.isQwenASRModelDownloaded()
+        funasrNanoLLMDownloaded = SherpaOnnxManager.shared.isFunASRNanoLLMDownloaded()
         punctuationDownloaded = SherpaOnnxManager.shared.isPunctuationModelDownloaded()
         cscDownloaded = SherpaOnnxManager.shared.isCSCModelDownloaded()
     }
@@ -39,12 +39,12 @@ class ModelDownloadManager: ObservableObject {
     /// 兼容旧接口
     var isDownloaded: Bool {
         switch selectedModel {
-        case .funasrNano:
-            return funasrDownloaded
         case .streamingParaformer:
             return streamingParaformerDownloaded
         case .qwenASR:
             return qwenASRDownloaded
+        case .funasrNanoLLM:
+            return funasrNanoLLMDownloaded
         }
     }
 
@@ -205,7 +205,7 @@ struct SettingsView: View {
             } header: {
                 Text("模型状态")
             } footer: {
-                Text("SenseVoice Nano 约 179MB，Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 1.2GB（自带标点）。")
+                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 1.2GB（自带标点），FunASR Nano LLM 约 716MB（自带标点）。")
             }
 
             Section("快捷键") {
@@ -235,9 +235,9 @@ struct SettingsView: View {
     private func modelStatusView(for model: ASRModelType) -> some View {
         let isDownloaded: Bool = {
             switch model {
-            case .funasrNano: return downloadManager.funasrDownloaded
             case .streamingParaformer: return downloadManager.streamingParaformerDownloaded
             case .qwenASR: return downloadManager.qwenASRDownloaded
+            case .funasrNanoLLM: return downloadManager.funasrNanoLLMDownloaded
             }
         }()
 

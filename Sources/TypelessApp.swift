@@ -128,9 +128,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        RecordingManager.shared.onPartialResult = { [weak self] text in
+        RecordingManager.shared.onPartialResult = { [weak self] stableText, unfixedText in
             DispatchQueue.main.async {
-                self?.overlayWindow?.updateRecognizedText(text)
+                self?.overlayWindow?.updateRecognizedText(stableText, unfixedText: unfixedText)
             }
         }
 

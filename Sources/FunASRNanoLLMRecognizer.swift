@@ -4,22 +4,21 @@ import os
 import CSherpaOnnx
 #endif
 
-private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnxRecognizer")
+private let logger = Logger(subsystem: "com.typeless.app", category: "FunASRNanoLLM")
 
-/// Sherpa-ONNX 离线语音识别器
-class SherpaOnnxRecognizer {
+/// FunASR Nano LLM 离线语音识别器
+/// 使用 SenseVoice encoder + Qwen3-0.6B LLM 进行高质量语音转文字
+class FunASRNanoLLMRecognizer {
     private var recognizer: OpaquePointer?
     private let cStrings = CStringLifetime()
 
-    /// 初始化识别器
-    init?(modelPath: String, tokensPath: String) {
-        logger.info("SherpaOnnxRecognizer: 开始初始化...")
-        logger.debug("模型路径: \(modelPath, privacy: .public)")
-        logger.debug("Tokens路径: \(tokensPath, privacy: .public)")
+    init?(encoderAdaptorPath: String, llmPath: String, embeddingPath: String, tokenizerDir: String) {
+        logger.info("FunASRNanoLLMRecognizer: 开始初始化...")
 
-        guard FileManager.default.fileExists(atPath: modelPath),
-              FileManager.default.fileExists(atPath: tokensPath) else {
-            logger.info("SherpaOnnxRecognizer: 模型文件不存在")
+        guard FileManager.default.fileExists(atPath: encoderAdaptorPath),
+              FileManager.default.fileExists(atPath: llmPath),
+              FileManager.default.fileExists(atPath: embeddingPath) else {
+            logger.info("FunASRNanoLLMRecognizer: 模型文件不存在")
             return nil
         }
 
@@ -29,15 +28,25 @@ class SherpaOnnxRecognizer {
         config.feat_config.sample_rate = 16000
         config.feat_config.feature_dim = 80
 
-        // 模型配置
-        config.model_config.tokens = cStrings.makeCString(tokensPath)
+        // FunASR Nano 模型配置
+        config.model_config.funasr_nano.encoder_adaptor = cStrings.makeCString(encoderAdaptorPath)
+        config.model_config.funasr_nano.llm = cStrings.makeCString(llmPath)
+        config.model_config.funasr_nano.embedding = cStrings.makeCString(embeddingPath)
+        config.model_config.funasr_nano.tokenizer = cStrings.makeCString(tokenizerDir)
+        config.model_config.funasr_nano.system_prompt = cStrings.makeCString("You are a helpful assistant.")
+        config.model_config.funasr_nano.user_prompt = cStrings.makeCString("语音转写：")
+        config.model_config.funasr_nano.language = cStrings.makeCString("")
+        config.model_config.funasr_nano.itn = 1
+        config.model_config.funasr_nano.hotwords = cStrings.makeCString("")
+        config.model_config.funasr_nano.max_new_tokens = 512
+        config.model_config.funasr_nano.temperature = 1e-6
+        config.model_config.funasr_nano.top_p = 0.8
+        config.model_config.funasr_nano.seed = 42
+
         config.model_config.num_threads = 2
         config.model_config.debug = 0
         config.model_config.provider = cStrings.makeCString("cpu")
-        config.model_config.sense_voice.model = cStrings.makeCString(modelPath)
-        config.model_config.sense_voice.language = cStrings.makeCString("auto")
-        config.model_config.sense_voice.use_itn = 1
-        config.model_config.model_type = cStrings.makeCString("sense_voice")
+        config.model_config.model_type = cStrings.makeCString("")
 
         // 解码配置
         config.decoding_method = cStrings.makeCString("greedy_search")
@@ -46,11 +55,11 @@ class SherpaOnnxRecognizer {
         recognizer = SherpaOnnxCreateOfflineRecognizer(&config)
 
         if recognizer == nil {
-            logger.info("SherpaOnnxRecognizer: 创建识别器失败")
+            logger.info("FunASRNanoLLMRecognizer: 创建识别器失败")
             return nil
         }
 
-        logger.info("SherpaOnnxRecognizer: 初始化成功")
+        logger.info("FunASRNanoLLMRecognizer: 初始化成功")
     }
 
     deinit {
@@ -84,14 +93,7 @@ class SherpaOnnxRecognizer {
 
         guard let textPtr = result.pointee.text else { return nil }
 
-        // 过滤 FunASR 特殊标记（如 <|nospeech|>, <|HAPPY|>, <|en|> 等）
         var text = String(cString: textPtr)
-        text = text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)
-
-        // 移除中文和英文之间的空格
-        text = text.replacingOccurrences(of: "([\\u4e00-\\u9fa5])\\s+([a-zA-Z0-9])", with: "$1$2", options: .regularExpression)
-        text = text.replacingOccurrences(of: "([a-zA-Z0-9])\\s+([\\u4e00-\\u9fa5])", with: "$1$2", options: .regularExpression)
-
         text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? nil : text
     }

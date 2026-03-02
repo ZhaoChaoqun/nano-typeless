@@ -6,47 +6,47 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnx
 /// ASR 模型类型
 enum ASRModelType: String, CaseIterable, Identifiable {
     case streamingParaformer = "streaming-paraformer"
-    case funasrNano = "funasr-nano"
     case qwenASR = "qwen-asr"
+    case funasrNanoLLM = "funasr-nano-llm"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .funasrNano:
-            return "SenseVoice Nano"
         case .streamingParaformer:
             return "Streaming Paraformer"
         case .qwenASR:
             return "Qwen3-ASR"
+        case .funasrNanoLLM:
+            return "FunASR Nano LLM"
         }
     }
 
     var description: String {
         switch self {
-        case .funasrNano:
-            return "中英文混合识别，支持方言，需要 VAD 分段"
         case .streamingParaformer:
             return "原生流式识别，中英文混合，无需 VAD"
         case .qwenASR:
             return "Qwen3 大模型 ASR，中英文混合，自带标点，无需 VAD"
+        case .funasrNanoLLM:
+            return "SenseVoice + Qwen3 LLM，高质量输出，自带标点和 ITN"
         }
     }
 
     var folderName: String {
         switch self {
-        case .funasrNano:
-            return "sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17"
         case .streamingParaformer:
             return "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
         case .qwenASR:
             return "Qwen3-ASR-0.6B"
+        case .funasrNanoLLM:
+            return "sherpa-onnx-funasr-nano-int8-2025-12-30"
         }
     }
 
     var needsVAD: Bool {
         switch self {
-        case .funasrNano:
+        case .funasrNanoLLM:
             return true
         case .streamingParaformer, .qwenASR:
             return false
@@ -56,21 +56,21 @@ enum ASRModelType: String, CaseIterable, Identifiable {
     /// 是否需要外部标点模型（Qwen3-ASR 自带标点）
     var needsPunctuation: Bool {
         switch self {
-        case .qwenASR:
+        case .qwenASR, .funasrNanoLLM:
             return false
-        default:
+        case .streamingParaformer:
             return true
         }
     }
 
     var modelSize: String {
         switch self {
-        case .funasrNano:
-            return "~179MB"
         case .streamingParaformer:
             return "~216MB"
         case .qwenASR:
             return "~1.2GB"
+        case .funasrNanoLLM:
+            return "~716MB"
         }
     }
 }
@@ -82,10 +82,6 @@ enum DownloadSource: CaseIterable {
 
     func url(for model: ASRModelType) -> String {
         switch (self, model) {
-        case (.modelScope, .funasrNano):
-            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17.tar.bz2"
-        case (.github, .funasrNano):
-            return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17.tar.bz2"
         case (.modelScope, .streamingParaformer):
             return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2"
         case (.github, .streamingParaformer):
@@ -95,6 +91,10 @@ enum DownloadSource: CaseIterable {
         case (.github, .qwenASR):
             // GitHub 备用源暂无，使用 ModelScope
             return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
+        case (.modelScope, .funasrNanoLLM):
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-funasr-nano-int8-2025-12-30.tar.bz2"
+        case (.github, .funasrNanoLLM):
+            return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-funasr-nano-int8-2025-12-30.tar.bz2"
         }
     }
 
@@ -150,27 +150,6 @@ class SherpaOnnxManager: NSObject {
     static let cscModelFolder = "macbert4csc-base-chinese"
     static let cscModelURL = "https://modelscope.cn/models/Xenova/macbert4csc-base-chinese/resolve/master/onnx/model_int8.onnx"
     static let cscVocabURL = "https://modelscope.cn/models/Xenova/macbert4csc-base-chinese/resolve/master/vocab.txt"
-
-    // MARK: - SenseVoice Nano 模型路径
-
-    /// 获取 SenseVoice Nano 模型路径
-    func getFunASRModelPath() -> (modelPath: String, tokensPath: String)? {
-        let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.funasrNano.folderName)
-        let modelPath = modelDir.appendingPathComponent("model.int8.onnx")
-        let tokensPath = modelDir.appendingPathComponent("tokens.txt")
-
-        guard FileManager.default.fileExists(atPath: modelPath.path),
-              FileManager.default.fileExists(atPath: tokensPath.path) else {
-            return nil
-        }
-
-        return (modelPath.path, tokensPath.path)
-    }
-
-    /// 检查 SenseVoice Nano 模型是否已下载
-    func isFunASRModelDownloaded() -> Bool {
-        return getFunASRModelPath() != nil
-    }
 
     // MARK: - Streaming Paraformer 模型路径
 
@@ -242,17 +221,49 @@ class SherpaOnnxManager: NSObject {
         return getQwenASRModelDir() != nil
     }
 
+    // MARK: - FunASR Nano LLM 模型路径
+
+    /// 获取 FunASR Nano LLM 模型路径
+    func getFunASRNanoLLMModelPaths() -> (
+        encoderAdaptorPath: String,
+        llmPath: String,
+        embeddingPath: String,
+        tokenizerDir: String
+    )? {
+        let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.funasrNanoLLM.folderName)
+
+        let encoderAdaptor = modelDir.appendingPathComponent("encoder_adaptor.int8.onnx")
+        let llm = modelDir.appendingPathComponent("llm.int8.onnx")
+        let embedding = modelDir.appendingPathComponent("embedding.int8.onnx")
+        let tokenizerDir = modelDir.appendingPathComponent("Qwen3-0.6B")
+        let vocabJson = tokenizerDir.appendingPathComponent("vocab.json")
+
+        guard FileManager.default.fileExists(atPath: encoderAdaptor.path),
+              FileManager.default.fileExists(atPath: llm.path),
+              FileManager.default.fileExists(atPath: embedding.path),
+              FileManager.default.fileExists(atPath: vocabJson.path) else {
+            return nil
+        }
+
+        return (encoderAdaptor.path, llm.path, embedding.path, tokenizerDir.path)
+    }
+
+    /// 检查 FunASR Nano LLM 模型是否已下载
+    func isFunASRNanoLLMDownloaded() -> Bool {
+        return getFunASRNanoLLMModelPaths() != nil
+    }
+
     // MARK: - 通用模型检查
 
     /// 检查指定模型是否已下载
     func isModelDownloaded(_ modelType: ASRModelType) -> Bool {
         switch modelType {
-        case .funasrNano:
-            return isFunASRModelDownloaded()
         case .streamingParaformer:
             return isStreamingParaformerDownloaded()
         case .qwenASR:
             return isQwenASRModelDownloaded()
+        case .funasrNanoLLM:
+            return isFunASRNanoLLMDownloaded()
         }
     }
 

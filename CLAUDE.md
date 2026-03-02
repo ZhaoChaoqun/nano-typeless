@@ -77,7 +77,6 @@ api.upload_file(
 目录结构：
 ```
 ~/.cache/typeless-models/
-├── sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17.tar.bz2
 ├── sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2
 ├── sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8.tar.bz2
 └── silero_vad.onnx
@@ -87,7 +86,6 @@ api.upload_file(
 
 | 模型 | 用途 | GitHub 源 |
 |-----|------|----------|
-| sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17 | SenseVoice Nano ASR | k2-fsa/sherpa-onnx |
 | sherpa-onnx-streaming-paraformer-bilingual-zh-en | Streaming Paraformer ASR | k2-fsa/sherpa-onnx |
 | sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8 | CT-Transformer 标点模型 (INT8) | k2-fsa/sherpa-onnx |
 | silero_vad.onnx | VAD 语音活动检测 | k2-fsa/sherpa-onnx |

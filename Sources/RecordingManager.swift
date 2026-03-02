@@ -33,8 +33,8 @@ class RecordingManager {
 
     // MARK: - 公开回调（由 TypelessApp 一次性注册）
 
-    /// 部分识别结果回调
-    var onPartialResult: ((String) -> Void)?
+    /// 部分识别结果回调（stableText, unfixedText）
+    var onPartialResult: ((String, String?) -> Void)?
     /// 实时音频电平回调（0.0 ~ 1.0）
     var onAudioLevel: ((Float) -> Void)?
     /// 最终识别结果回调（替代旧的 stopRecording completion）
@@ -76,7 +76,9 @@ class RecordingManager {
             }
 
             self.state = newState
-            logger.debug("状态转换: \(oldState, privacy: .public) → \(newState, privacy: .public) [事件: \(event, privacy: .public)]")
+            if oldState != newState {
+                logger.debug("状态转换: \(oldState, privacy: .public) → \(newState, privacy: .public) [事件: \(event, privacy: .public)]")
+            }
             self.handleSideEffects(from: oldState, to: newState, event: event)
         }
     }
@@ -112,10 +114,8 @@ class RecordingManager {
 
         // 部分识别结果
         case (.recording, .recording):
-            if case .partialResult(let text) = event {
-                DispatchQueue.main.async { self.onPartialResult?(text) }
-            } else if case .audioReceived(let samples) = event {
-                self.processAudioSamples(samples)
+            if case .partialResult(let text, let unfixedText) = event {
+                DispatchQueue.main.async { self.onPartialResult?(text, unfixedText) }
             }
 
         // 停止录音，开始 flush
@@ -163,7 +163,7 @@ class RecordingManager {
             guard let self = self else { return }
             let samples = self.extractSamples(buffer: buffer, converter: converter, targetFormat: targetFormat)
             if let samples = samples {
-                self.handleEvent(.audioReceived(samples: samples))
+                self.processAudioSamples(samples)
             }
         }
 
@@ -206,7 +206,11 @@ class RecordingManager {
     }
 
     /// 处理音频样本：计算电平 + 发送到 ASR 引擎
+    /// 直接从 installTap 回调调用，绕过 stateQueue 以避免延迟
     private func processAudioSamples(_ samples: [Float]) {
+        // 轻量状态检查：仅在 recording 状态处理音频
+        guard stateQueue.sync(execute: { state.isRecording }) else { return }
+
         // 计算 RMS 音频电平并通知 UI
         if let onAudioLevel = onAudioLevel {
             var sum: Float = 0
@@ -220,8 +224,8 @@ class RecordingManager {
         }
 
         // 通过引擎处理音频
-        currentEngine?.processAudio(samples: samples) { [weak self] text in
-            self?.handleEvent(.partialResult(text: text))
+        currentEngine?.processAudio(samples: samples) { [weak self] stableText, unfixedText in
+            self?.handleEvent(.partialResult(text: stableText, unfixedText: unfixedText))
         }
     }
 
@@ -278,12 +282,12 @@ class RecordingManager {
         currentEngine = nil
 
         switch currentModel {
-        case .funasrNano:
-            await initializeFunASR()
         case .streamingParaformer:
             await initializeStreamingParaformer()
         case .qwenASR:
             await initializeQwenASR()
+        case .funasrNanoLLM:
+            await initializeFunASRNanoLLM()
         }
 
         if currentEngine != nil {
@@ -291,33 +295,6 @@ class RecordingManager {
         } else {
             handleEvent(.modelLoadFailed)
         }
-    }
-
-    private func initializeFunASR() async {
-        guard SherpaOnnxManager.shared.isFunASRModelDownloaded(),
-              let paths = SherpaOnnxManager.shared.getFunASRModelPath() else {
-            logger.warning("SenseVoice Nano 模型未下载")
-            return
-        }
-
-        guard let recognizer = SherpaOnnxRecognizer(modelPath: paths.modelPath, tokensPath: paths.tokensPath) else {
-            logger.error("SenseVoice Nano 模型加载失败")
-            return
-        }
-
-        guard let vad = await loadVAD() else {
-            logger.error("VAD 加载失败，SenseVoice Nano 无法使用")
-            return
-        }
-
-        currentEngine = FunASREngine(
-            recognizer: recognizer, vad: vad,
-            recognitionQueue: recognitionQueue
-        )
-        logger.info("SenseVoice Nano 模型加载成功")
-
-        await initializePunctuation()
-        initializeCSC()
     }
 
     private func initializeStreamingParaformer() async {
@@ -364,6 +341,35 @@ class RecordingManager {
             recognizer: recognizer, recognitionQueue: recognitionQueue
         )
         logger.info("QwenASR 流式模型加载成功")
+    }
+
+    private func initializeFunASRNanoLLM() async {
+        guard SherpaOnnxManager.shared.isFunASRNanoLLMDownloaded(),
+              let paths = SherpaOnnxManager.shared.getFunASRNanoLLMModelPaths() else {
+            logger.warning("FunASR Nano LLM 模型未下载")
+            return
+        }
+
+        guard let recognizer = FunASRNanoLLMRecognizer(
+            encoderAdaptorPath: paths.encoderAdaptorPath,
+            llmPath: paths.llmPath,
+            embeddingPath: paths.embeddingPath,
+            tokenizerDir: paths.tokenizerDir
+        ) else {
+            logger.error("FunASR Nano LLM 模型加载失败")
+            return
+        }
+
+        guard let vad = await loadVAD() else {
+            logger.error("VAD 加载失败，FunASR Nano LLM 无法使用")
+            return
+        }
+
+        currentEngine = FunASRNanoLLMEngine(
+            recognizer: recognizer, vad: vad,
+            recognitionQueue: recognitionQueue
+        )
+        logger.info("FunASR Nano LLM 模型加载成功")
     }
 
     private func initializePunctuation() async {

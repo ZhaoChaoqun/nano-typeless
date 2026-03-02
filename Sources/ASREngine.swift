@@ -2,13 +2,13 @@ import Foundation
 
 /// 统一的 ASR 引擎接口
 ///
-/// 封装了不同 ASR 后端（SenseVoice Nano、Streaming Paraformer、QwenASR）的差异，
+/// 封装了不同 ASR 后端（Streaming Paraformer、QwenASR、FunASR Nano LLM）的差异，
 /// 让 RecordingManager 无需关心具体引擎类型。
 protocol ASREngine: AnyObject {
     /// 将新的音频采样送入引擎
     /// - Parameter samples: 16kHz monoFloat32 PCM 采样
-    /// - Parameter onPartialResult: 有新的部分识别结果时回调（在 recognitionQueue 上调用）
-    func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void)
+    /// - Parameter onPartialResult: 有新的部分识别结果时回调（stableText, unfixedText）
+    func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void)
 
     /// 刷新引擎缓冲区，获取最终识别文本
     /// - Parameter completion: 返回最终文本（在 main queue 上调用）
@@ -21,26 +21,91 @@ protocol ASREngine: AnyObject {
     var needsPunctuation: Bool { get }
 }
 
-// MARK: - SenseVoice Nano Engine (VAD + Offline)
+// MARK: - Streaming Paraformer Engine
 
-/// SenseVoice Nano 引擎：使用 VAD 分段 + 离线识别
-class FunASREngine: ASREngine {
-    private let recognizer: SherpaOnnxRecognizer
-    private let vad: SherpaOnnxVAD
+/// Streaming Paraformer 引擎：原生流式识别
+class StreamingParaformerEngine: ASREngine {
+    private let recognizer: SherpaOnnxOnlineRecognizer
     private let recognitionQueue: DispatchQueue
-    private let internalQueue = DispatchQueue(label: "com.typeless.funasrengine")
-    private var _accumulatedText = ""
 
     let needsPunctuation = true
 
-    init(recognizer: SherpaOnnxRecognizer, vad: SherpaOnnxVAD,
+    init(recognizer: SherpaOnnxOnlineRecognizer, recognitionQueue: DispatchQueue) {
+        self.recognizer = recognizer
+        self.recognitionQueue = recognitionQueue
+    }
+
+    func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void) {
+        recognitionQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.recognizer.acceptWaveform(samples: samples)
+
+            while self.recognizer.isReady() {
+                self.recognizer.decode()
+            }
+
+            let text = self.recognizer.getResult()
+            if !text.isEmpty {
+                onPartialResult(text, nil)
+            }
+        }
+    }
+
+    func flush(completion: @escaping (String) -> Void) {
+        recognitionQueue.async { [weak self] in
+            guard let self = self else {
+                DispatchQueue.main.async { completion("") }
+                return
+            }
+
+            // 1s silence padding + inputFinished 确保流式解码器完成尾部帧
+            let silencePadding = [Float](repeating: 0.0, count: 16000)
+            self.recognizer.acceptWaveform(samples: silencePadding)
+
+            while self.recognizer.isReady() {
+                self.recognizer.decode()
+            }
+
+            self.recognizer.inputFinished()
+
+            while self.recognizer.isReady() {
+                self.recognizer.decode()
+            }
+
+            let text = self.recognizer.getResult()
+            self.recognizer.reset()
+
+            DispatchQueue.main.async {
+                completion(text)
+            }
+        }
+    }
+
+    func reset() {
+        recognizer.reset()
+    }
+}
+
+// MARK: - FunASR Nano LLM Engine (VAD + Offline LLM)
+
+/// FunASR Nano LLM 引擎：使用 VAD 分段 + SenseVoice encoder + Qwen3 LLM 离线识别
+class FunASRNanoLLMEngine: ASREngine {
+    private let recognizer: FunASRNanoLLMRecognizer
+    private let vad: SherpaOnnxVAD
+    private let recognitionQueue: DispatchQueue
+    private let internalQueue = DispatchQueue(label: "com.typeless.funasrnano-llm-engine")
+    private var _accumulatedText = ""
+
+    let needsPunctuation = false
+
+    init(recognizer: FunASRNanoLLMRecognizer, vad: SherpaOnnxVAD,
          recognitionQueue: DispatchQueue) {
         self.recognizer = recognizer
         self.vad = vad
         self.recognitionQueue = recognitionQueue
     }
 
-    func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void) {
+    func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void) {
         vad.acceptWaveform(samples: samples)
 
         while vad.hasSegment() {
@@ -82,7 +147,7 @@ class FunASREngine: ASREngine {
         internalQueue.sync { _accumulatedText = "" }
     }
 
-    private func transcribeSegment(_ segment: SpeechSegment, onPartialResult: @escaping (String) -> Void) {
+    private func transcribeSegment(_ segment: SpeechSegment, onPartialResult: @escaping (String, String?) -> Void) {
         if let text = recognizer.transcribe(samples: segment.samples) {
             let newAccumulated: String = internalQueue.sync {
                 if _accumulatedText.isEmpty {
@@ -92,66 +157,8 @@ class FunASREngine: ASREngine {
                 }
                 return _accumulatedText
             }
-            onPartialResult(newAccumulated)
+            onPartialResult(newAccumulated, nil)
         }
-    }
-}
-
-// MARK: - Streaming Paraformer Engine
-
-/// Streaming Paraformer 引擎：原生流式识别
-class StreamingParaformerEngine: ASREngine {
-    private let recognizer: SherpaOnnxOnlineRecognizer
-    private let recognitionQueue: DispatchQueue
-
-    let needsPunctuation = true
-
-    init(recognizer: SherpaOnnxOnlineRecognizer, recognitionQueue: DispatchQueue) {
-        self.recognizer = recognizer
-        self.recognitionQueue = recognitionQueue
-    }
-
-    func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void) {
-        recognitionQueue.async { [weak self] in
-            guard let self = self else { return }
-            self.recognizer.acceptWaveform(samples: samples)
-
-            while self.recognizer.isReady() {
-                self.recognizer.decode()
-            }
-
-            let text = self.recognizer.getResult()
-            if !text.isEmpty {
-                onPartialResult(text)
-            }
-        }
-    }
-
-    func flush(completion: @escaping (String) -> Void) {
-        recognitionQueue.async { [weak self] in
-            guard let self = self else {
-                DispatchQueue.main.async { completion("") }
-                return
-            }
-
-            let silencePadding = [Float](repeating: 0.0, count: 4800)
-            self.recognizer.acceptWaveform(samples: silencePadding)
-
-            while self.recognizer.isReady() {
-                self.recognizer.decode()
-            }
-
-            let text = self.recognizer.getResult()
-            self.recognizer.reset()
-
-            DispatchQueue.main.async {
-                completion(text)
-            }
-        }
-    }
-
-    func reset() {
-        recognizer.reset()
     }
 }
 
@@ -169,13 +176,20 @@ class QwenASREngine: ASREngine {
         self.recognitionQueue = recognitionQueue
     }
 
-    func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void) {
+    func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void) {
         recognitionQueue.async { [weak self] in
             guard let self = self else { return }
             _ = self.recognizer.pushAudio(samples: samples, finalize: false)
-            let fullText = self.recognizer.getResult()
-            if !fullText.isEmpty {
-                onPartialResult(fullText)
+
+            // stable 确认文本
+            let stableText = self.recognizer.getResult()
+
+            // unfixed 投机文本（rollback 窗口 + unfixed chunks 中的 token）
+            let unfixedText = self.recognizer.getUnfixed()
+
+            let hasContent = !stableText.isEmpty || (unfixedText != nil && !unfixedText!.isEmpty)
+            if hasContent {
+                onPartialResult(stableText, unfixedText)
             }
         }
     }
@@ -187,11 +201,11 @@ class QwenASREngine: ASREngine {
                 return
             }
 
-            // finalize=true 刷出 rollback 区域的剩余 token，不需要额外静音 padding
-            // （推送静音会被追加到累积 buffer，导致模型在静音段产生重复幻觉）
-            _ = self.recognizer.pushAudio(samples: [], finalize: true)
-
-            let result = self.recognizer.getResult()
+            // 直接取 stable + unfixed 作为最终结果，不推送 silence
+            // 推送 silence + finalize 会导致 decoder 在静音上 hallucinate（重复之前的内容）
+            let stableText = self.recognizer.getResult()
+            let unfixedText = self.recognizer.getUnfixed() ?? ""
+            let result = stableText + unfixedText
             self.recognizer.reset()
 
             DispatchQueue.main.async {
