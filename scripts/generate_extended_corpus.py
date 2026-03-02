@@ -44,8 +44,7 @@ CORPUS_ENTRIES = [
     {
         "id": "zh_short_01",
         "category": "chinese_short",
-        "text_input": "今天天气真好",
-        "expected_text": "今天天气真好",
+        "expected_text": "今天天气真好。",
         "match_mode": "character_error_rate",
         "match_threshold": 0.15,
         "language": "zh",
@@ -55,7 +54,6 @@ CORPUS_ENTRIES = [
     {
         "id": "zh_long_01",
         "category": "chinese_long",
-        "text_input": "人工智能正在深刻地改变我们的生活方式，从语音识别到自动驾驶，从医疗诊断到金融分析",
         "expected_text": "人工智能正在深刻地改变我们的生活方式，从语音识别到自动驾驶，从医疗诊断到金融分析。",
         "match_mode": "character_error_rate",
         "match_threshold": 0.15,
@@ -67,8 +65,7 @@ CORPUS_ENTRIES = [
     {
         "id": "mixed_01",
         "category": "mixed_zh_en",
-        "text_input": "我今天用Python写了一个API接口",
-        "expected_text": "我今天用Python写了一个API接口",
+        "expected_text": "我今天用Python写了一个API接口。",
         "match_mode": "contains_all",
         "match_keywords": ["Python", "API"],
         "language": "zh",
@@ -78,8 +75,7 @@ CORPUS_ENTRIES = [
     {
         "id": "mixed_02",
         "category": "mixed_technical",
-        "text_input": "MacBook Pro M3芯片性能提升了百分之四十",
-        "expected_text": "MacBook Pro M3芯片性能提升了百分之四十",
+        "expected_text": "MacBook Pro M3芯片性能提升了百分之40。",
         "match_mode": "contains_all",
         "match_keywords": ["MacBook", "芯片"],
         "language": "zh",
@@ -90,8 +86,7 @@ CORPUS_ENTRIES = [
     {
         "id": "en_short_01",
         "category": "english_short",
-        "text_input": "Hello world",
-        "expected_text": "Hello world",
+        "expected_text": "Hello world.",
         "match_mode": "character_error_rate",
         "match_threshold": 0.2,
         "language": "en",
@@ -102,8 +97,7 @@ CORPUS_ENTRIES = [
     {
         "id": "tech_num_01",
         "category": "technical_numbers",
-        "text_input": "服务器IP地址是192.168.1.100端口号8080",
-        "expected_text": "服务器IP地址是192.168.1.100端口号8080",
+        "expected_text": "服务器IP地址是192.168.1.100，端口号8080。",
         "match_mode": "contains_all",
         "match_keywords": ["服务器", "端口"],
         "language": "zh",
@@ -114,7 +108,6 @@ CORPUS_ENTRIES = [
     {
         "id": "silence_01",
         "category": "silence",
-        "text_input": "",
         "expected_text": "",
         "match_mode": "empty_or_whitespace",
         "language": "none",
@@ -124,7 +117,6 @@ CORPUS_ENTRIES = [
     {
         "id": "silence_02",
         "category": "silence_short",
-        "text_input": "",
         "expected_text": "",
         "match_mode": "empty_or_whitespace",
         "language": "none",
@@ -135,8 +127,7 @@ CORPUS_ENTRIES = [
     {
         "id": "noise_01",
         "category": "speech_trailing_silence",
-        "text_input": "你好",
-        "expected_text": "你好",
+        "expected_text": "你好。",
         "match_mode": "contains",
         "language": "zh",
         "say_voice": "Tingting",
@@ -150,8 +141,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_git_01",
         "category": "developer_corpus",
-        "text_input": "执行git commit修复登录bug",
-        "expected_text": "执行git commit修复登录bug",
+        "expected_text": "执行git commit，修复登录bug。",
         "match_mode": "contains_all",
         "match_keywords": ["git", "commit", "bug"],
         "language": "zh",
@@ -161,8 +151,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_swift_01",
         "category": "developer_corpus",
-        "text_input": "定义一个struct叫做UserModel",
-        "expected_text": "定义一个struct叫做UserModel",
+        "expected_text": "定义一个struct叫做UserModel。",
         "match_mode": "contains_all",
         "match_keywords": ["struct"],
         "language": "zh",
@@ -172,8 +161,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_rust_01",
         "category": "developer_corpus",
-        "text_input": "在Rust里面用async await处理并发",
-        "expected_text": "在Rust里面用async await处理并发",
+        "expected_text": "在Rust里面用async await处理并发。",
         "match_mode": "contains_all",
         "match_keywords": ["Rust", "async"],
         "language": "zh",
@@ -183,8 +171,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_k8s_01",
         "category": "developer_corpus",
-        "text_input": "Kubernetes的pod状态是CrashLoopBackOff",
-        "expected_text": "Kubernetes的pod状态是CrashLoopBackOff",
+        "expected_text": "Kubernetes的pod状态是CrashLoopBackOff。",
         "match_mode": "contains_all",
         "match_keywords": ["crash", "back"],
         "language": "zh",
@@ -194,8 +181,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_api_01",
         "category": "developer_corpus",
-        "text_input": "调用RESTful API返回JSON格式数据",
-        "expected_text": "调用RESTful API返回JSON格式数据",
+        "expected_text": "调用RESTful API返回JSON格式数据。",
         "match_mode": "contains_all",
         "match_keywords": ["API", "JSON"],
         "language": "zh",
@@ -205,8 +191,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_db_01",
         "category": "developer_corpus",
-        "text_input": "执行SQL查询SELECT FROM users WHERE id等于一",
-        "expected_text": "执行SQL查询SELECT FROM users WHERE id等于一",
+        "expected_text": "执行SQL查询SELECT FROM users WHERE id = 1。",
         "match_mode": "contains_all",
         "match_keywords": ["SQL", "SELECT", "users"],
         "language": "zh",
@@ -216,8 +201,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_url_01",
         "category": "developer_corpus",
-        "text_input": "访问github点com",
-        "expected_text": "访问github点com",
+        "expected_text": "访问github.com。",
         "match_mode": "contains_all",
         "match_keywords": ["访问", "com"],
         "language": "zh",
@@ -227,8 +211,7 @@ CORPUS_ENTRIES = [
     {
         "id": "dev_debug_01",
         "category": "developer_corpus",
-        "text_input": "在第四十二行设置一个breakpoint",
-        "expected_text": "在第四十二行设置一个breakpoint",
+        "expected_text": "在第42行设置一个breakpoint。",
         "match_mode": "contains_all",
         "match_keywords": ["breakpoint"],
         "language": "zh",
@@ -242,8 +225,7 @@ CORPUS_ENTRIES = [
     {
         "id": "cs_var_01",
         "category": "code_switching",
-        "text_input": "把这个variable赋值给constant",
-        "expected_text": "把这个variable赋值给constant",
+        "expected_text": "把这个variable赋值给constant。",
         "match_mode": "contains_all",
         "match_keywords": ["variable", "constant"],
         "language": "zh",
@@ -253,8 +235,7 @@ CORPUS_ENTRIES = [
     {
         "id": "cs_build_01",
         "category": "code_switching",
-        "text_input": "在macOS上运行swift build",
-        "expected_text": "在macOS上运行swift build",
+        "expected_text": "在macOS上运行swift build。",
         "match_mode": "contains_all",
         "match_keywords": ["macOS", "swift", "build"],
         "language": "zh",
@@ -264,8 +245,7 @@ CORPUS_ENTRIES = [
     {
         "id": "cs_error_01",
         "category": "code_switching",
-        "text_input": "这个error是null pointer exception",
-        "expected_text": "这个error是null pointer exception",
+        "expected_text": "这个error是null pointer exception。",
         "match_mode": "contains_all",
         "match_keywords": ["error", "pointer"],
         "language": "zh",
@@ -275,8 +255,7 @@ CORPUS_ENTRIES = [
     {
         "id": "cs_deploy_01",
         "category": "code_switching",
-        "text_input": "把Docker image push到registry",
-        "expected_text": "把Docker image push到registry",
+        "expected_text": "把Docker image push到registry。",
         "match_mode": "contains_all",
         "match_keywords": ["push", "registry"],
         "language": "zh",
@@ -286,8 +265,7 @@ CORPUS_ENTRIES = [
     {
         "id": "cs_review_01",
         "category": "code_switching",
-        "text_input": "帮我review一下这个pull request",
-        "expected_text": "帮我review一下这个pull request",
+        "expected_text": "帮我review一下这个pull request。",
         "match_mode": "contains_all",
         "match_keywords": ["review", "pull", "request"],
         "language": "zh",
@@ -301,7 +279,6 @@ CORPUS_ENTRIES = [
     {
         "id": "hal_silence_10s",
         "category": "hallucination",
-        "text_input": "",
         "expected_text": "",
         "match_mode": "empty_or_whitespace",
         "language": "none",
@@ -311,7 +288,6 @@ CORPUS_ENTRIES = [
     {
         "id": "hal_silence_30s",
         "category": "hallucination",
-        "text_input": "",
         "expected_text": "",
         "match_mode": "empty_or_whitespace",
         "language": "none",
@@ -321,7 +297,6 @@ CORPUS_ENTRIES = [
     {
         "id": "hal_white_noise_01",
         "category": "hallucination",
-        "text_input": "",
         "expected_text": "",
         "match_mode": "empty_or_whitespace",
         "language": "none",
@@ -333,7 +308,6 @@ CORPUS_ENTRIES = [
     {
         "id": "hal_breath_01",
         "category": "hallucination",
-        "text_input": "",
         "expected_text": "",
         "match_mode": "empty_or_whitespace",
         "language": "none",
@@ -348,7 +322,6 @@ CORPUS_ENTRIES = [
     {
         "id": "punct_question_01",
         "category": "punctuation",
-        "text_input": "你今天吃饭了吗",
         "expected_text": "你今天吃饭了吗？",
         "match_mode": "contains_all",
         "match_keywords": ["吃饭", "？"],
@@ -359,7 +332,6 @@ CORPUS_ENTRIES = [
     {
         "id": "punct_exclaim_01",
         "category": "punctuation",
-        "text_input": "太好了我成功了",
         "expected_text": "太好了，我成功了。",
         "match_mode": "contains_all",
         "match_keywords": ["成功", "，"],
@@ -370,7 +342,6 @@ CORPUS_ENTRIES = [
     {
         "id": "punct_list_01",
         "category": "punctuation",
-        "text_input": "第一步打开终端，第二步输入命令，第三步确认执行",
         "expected_text": "第一步打开终端，第二步输入命令，第三步确认执行。",
         "match_mode": "contains_all",
         "match_keywords": ["终端", "命令", "，"],
@@ -385,8 +356,7 @@ CORPUS_ENTRIES = [
     {
         "id": "rate_fast_01",
         "category": "speech_rate",
-        "text_input": "快速语音识别测试一二三四五",
-        "expected_text": "快速语音识别测试一二三四五",
+        "expected_text": "快速语音识别测试，1、2、3、4、5。",
         "match_mode": "character_error_rate",
         "match_threshold": 0.2,
         "language": "zh",
@@ -398,8 +368,7 @@ CORPUS_ENTRIES = [
     {
         "id": "rate_slow_01",
         "category": "speech_rate",
-        "text_input": "慢速语音识别测试",
-        "expected_text": "慢速语音识别测试",
+        "expected_text": "慢速语音识别测试。",
         "match_mode": "character_error_rate",
         "match_threshold": 0.15,
         "language": "zh",
@@ -415,8 +384,8 @@ CORPUS_ENTRIES = [
     {
         "id": "long_30s_01",
         "category": "long_audio",
-        "text_input": (
-            "人工智能技术在过去十年中取得了巨大的进步。"
+        "expected_text": (
+            "人工智能技术在过去10年中取得了巨大的进步。"
             "深度学习算法使得计算机能够处理和理解自然语言。"
             "语音识别技术已经广泛应用于智能手机和智能音箱。"
             "自动驾驶汽车使用多种传感器和人工智能算法来感知环境。"
@@ -425,8 +394,7 @@ CORPUS_ENTRIES = [
             "计算机视觉技术使得机器能够识别和分析图像中的内容。"
             "强化学习技术让人工智能系统能够通过试错来学习最优策略。"
         ),
-        "expected_text": "人工智能",
-        "match_mode": "contains",
+        "match_mode": "character_error_rate",
         "language": "zh",
         "say_voice": "Tingting",
         "edge_tts_voice": "zh-CN-XiaoxiaoNeural",
@@ -434,7 +402,7 @@ CORPUS_ENTRIES = [
     {
         "id": "long_60s_01",
         "category": "long_audio",
-        "text_input": (
+        "expected_text": (
             "软件工程是一门研究用工程化方法构建和维护有效的实用的和高质量的软件的学科。"
             "它涉及到程序设计语言、数据库、软件开发工具、系统平台等方面的知识。"
             "现代软件开发通常采用敏捷开发方法，强调快速迭代和持续交付。"
@@ -448,8 +416,7 @@ CORPUS_ENTRIES = [
             "DevOps实践将开发和运维紧密结合，促进软件的快速可靠交付。"
             "性能优化需要从算法、数据结构、系统架构等多个层面综合考虑。"
         ),
-        "expected_text": "软件工程",
-        "match_mode": "contains",
+        "match_mode": "character_error_rate",
         "language": "zh",
         "say_voice": "Tingting",
         "edge_tts_voice": "zh-CN-XiaoxiaoNeural",
@@ -461,8 +428,7 @@ CORPUS_ENTRIES = [
     {
         "id": "pause_mid_01",
         "category": "mid_sentence_pause",
-        "text_input": "打开终端",
-        "expected_text": "打开终端",
+        "expected_text": "打开终端。",
         "match_mode": "contains_all",
         "match_keywords": ["打开", "终端"],
         "language": "zh",
@@ -477,8 +443,7 @@ CORPUS_ENTRIES = [
     {
         "id": "pause_long_01",
         "category": "mid_sentence_pause",
-        "text_input": "我想要一杯咖啡",
-        "expected_text": "我想要一杯咖啡",
+        "expected_text": "我想要一杯咖啡。",
         "match_mode": "contains_all",
         "match_keywords": ["想", "咖啡"],
         "language": "zh",
@@ -715,7 +680,7 @@ def main():
 
     for entry in CORPUS_ENTRIES:
         entry_id = entry["id"]
-        text_preview = entry.get("text_input", "(silence)")[:40]
+        text_preview = entry.get("expected_text", "(silence)")[:40]
         print(f"\n[{entry_id}] {text_preview}")
 
         audio_files = {}
@@ -738,7 +703,7 @@ def main():
             audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
 
         elif not args.only_synthetic:
-            text = entry["text_input"]
+            text = entry["expected_text"]
 
             if args.say:
                 # macOS say 模式 (离线备选)
@@ -796,7 +761,6 @@ def main():
         corpus_entry = {
             "id": entry_id,
             "category": entry["category"],
-            "text_input": entry["text_input"],
             "expected_text": entry["expected_text"],
             "match_mode": entry["match_mode"],
             "audio_files": audio_files,

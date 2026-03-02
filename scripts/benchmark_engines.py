@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """
-ASR 引擎量化对比评估脚本
+ASR Pipeline 量化对比评估脚本
 
-对比 4 个引擎：
-  1. Streaming Paraformer（流式 NAR）
-  2. Qwen3-ASR 离线（全量音频一次推理）
-  3. Qwen3-ASR 流式（chunk + rollback 模拟流式）
-  4. SenseVoice Nano（离线 + VAD）
+对比 4 个完整 Pipeline（与产品一致）：
+  1. Qwen3-ASR Pipeline 离线（内置 ITN + 标点 + 纠错）
+  2. Qwen3-ASR Pipeline 流式（chunk + rollback，内置 ITN + 标点 + 纠错）
+  3. Paraformer Pipeline（ASR + ITN → CSC → CT-Transformer 标点）
+  4. SenseVoice Pipeline（ASR + 内置ITN → CSC → CT-Transformer 标点）
 
 使用项目已有测试语料（corpus.json + real_manifest.json），
 计算逐条 CER 并输出 Markdown 报告。
 
 用法：
-    uv run --with sherpa-onnx python3 scripts/benchmark_engines.py
-    uv run --with sherpa-onnx python3 scripts/benchmark_engines.py --output docs/benchmark-report.md
+    uv run --with sherpa-onnx --with onnxruntime python3 scripts/benchmark_engines.py
+    uv run --with sherpa-onnx --with onnxruntime python3 scripts/benchmark_engines.py --output docs/benchmark-report.md
+    uv run --with sherpa-onnx --with onnxruntime python3 scripts/benchmark_engines.py --pipelines paraformer --entry ascend_cs_003
 """
 
 import argparse
 import ctypes
 import json
+import math
 import os
 import re
 import struct
@@ -28,6 +30,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
 
 # ============================================================================
 # 路径常量
@@ -43,6 +47,8 @@ QWEN_MODEL_DIR = MODELS_DIR / "Qwen3-ASR-0.6B"
 PARAFORMER_MODEL_DIR = MODELS_DIR / "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
 SENSEVOICE_MODEL_DIR = MODELS_DIR / "sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17"
 ITN_FST_PATH = MODELS_DIR / "itn_zh_number.fst"
+CSC_MODEL_DIR = MODELS_DIR / "macbert4csc-base-chinese"
+PUNCT_MODEL_DIR = MODELS_DIR / "sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8"
 
 QWEN_DYLIB = PROJECT_ROOT / "Frameworks" / "qwen-asr" / "lib" / "libqwen_asr.dylib"
 
@@ -76,18 +82,12 @@ def load_wav_as_float32(wav_path: str) -> tuple[list[float], int]:
 
 
 # ============================================================================
-# CER 计算
+# CER 计算（保留标点）
 # ============================================================================
 
-ZH_PUNCT = "\uff0c\u3002\uff01\uff1f\u3001\uff1b\uff1a\u201c\u201d\u2018\u2019\uff08\uff09\u3010\u3011\u300a\u300b"
-EN_PUNCT = ",.!?;:'\"()[]<>"
-MISC_PUNCT = "\u2026\u2014\u2013\u00b7"
-ALL_PUNCT = set(ZH_PUNCT + EN_PUNCT + MISC_PUNCT)
-
-
 def normalize_text(text: str) -> str:
-    result = "".join(ch for ch in text if ch not in ALL_PUNCT)
-    result = result.lower()
+    """归一化文本：仅 lower + 去空格，保留标点符号"""
+    result = text.lower()
     result = "".join(result.split())
     return result
 
@@ -116,13 +116,160 @@ def compute_cer(actual: str, expected: str) -> float:
 
 
 # ============================================================================
-# 引擎封装
+# 后处理模块
+# ============================================================================
+
+class ChineseSpellingCorrector:
+    """macbert4csc INT8 中文拼写纠错（Python 等价实现，与 Swift 版逻辑对齐）"""
+
+    def __init__(self, model_path: str, vocab_path: str, confidence_threshold: float = 0.9):
+        import onnxruntime as ort
+
+        # 加载词表
+        self.token2id: dict[str, int] = {}
+        self.id2token: dict[int, str] = {}
+        with open(vocab_path, encoding="utf-8") as f:
+            for idx, line in enumerate(f):
+                token = line.strip()
+                if token:
+                    self.token2id[token] = idx
+                    self.id2token[idx] = token
+
+        self.vocab_size = max(self.id2token.keys()) + 1
+        self.cls_id = self.token2id.get("[CLS]", 101)
+        self.sep_id = self.token2id.get("[SEP]", 102)
+        self.unk_id = self.token2id.get("[UNK]", 100)
+        self.confidence_threshold = confidence_threshold
+
+        # 加载 ONNX 模型
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = 2
+        self.session = ort.InferenceSession(model_path, opts, providers=["CPUExecutionProvider"])
+        print(f"    CSC 模型加载成功 (vocab={self.vocab_size})")
+
+    @staticmethod
+    def _is_chinese(char: str) -> bool:
+        cp = ord(char)
+        return (0x4E00 <= cp <= 0x9FFF or 0x3400 <= cp <= 0x4DBF or
+                0x20000 <= cp <= 0x2A6DF or 0x2A700 <= cp <= 0x2B73F or
+                0x2B740 <= cp <= 0x2B81F or 0x2B820 <= cp <= 0x2CEAF or
+                0xF900 <= cp <= 0xFAFF or 0x2F800 <= cp <= 0x2FA1F)
+
+    def _tokenize(self, text: str) -> list[int]:
+        ids = [self.cls_id]
+        for ch in text:
+            if ch in self.token2id:
+                ids.append(self.token2id[ch])
+            elif ch.lower() in self.token2id:
+                ids.append(self.token2id[ch.lower()])
+            else:
+                ids.append(self.unk_id)
+        ids.append(self.sep_id)
+        return ids
+
+    def correct(self, text: str) -> str:
+        if not text:
+            return text
+
+        chars = list(text)
+        input_ids = self._tokenize(text)
+        seq_len = len(input_ids)
+
+        if seq_len <= 2 or seq_len > 512:
+            return text
+
+        # 准备输入
+        ids_arr = np.array([input_ids], dtype=np.int64)
+        att_mask = np.ones((1, seq_len), dtype=np.int64)
+        token_types = np.zeros((1, seq_len), dtype=np.int64)
+
+        # 推理
+        outputs = self.session.run(
+            ["logits"],
+            {"input_ids": ids_arr, "attention_mask": att_mask, "token_type_ids": token_types},
+        )
+        logits = outputs[0][0]  # shape: (seq_len, vocab_size)
+
+        # 逐位置纠错
+        corrected = list(chars)
+        correction_count = 0
+        chinese_char_count = 0
+
+        for i in range(1, seq_len - 1):
+            char_idx = i - 1
+            if char_idx >= len(chars):
+                break
+
+            if not self._is_chinese(chars[char_idx]):
+                continue
+            chinese_char_count += 1
+
+            row = logits[i]
+            max_idx = int(np.argmax(row))
+            max_val = row[max_idx]
+
+            original_id = input_ids[i]
+            if max_idx != original_id and max_idx != self.unk_id:
+                original_logit = row[original_id]
+                logit_diff = max_val - original_logit
+
+                # 条件 1：logit 差值 > 5.0
+                if logit_diff <= 5.0:
+                    continue
+
+                # 条件 2：softmax top-1 > 0.9
+                exp_sum = np.sum(np.exp(row - max_val))
+                top_prob = 1.0 / exp_sum
+                if top_prob <= 0.9:
+                    continue
+
+                corrected_token = self.id2token.get(max_idx, "")
+                if len(corrected_token) == 1 and self._is_chinese(corrected_token):
+                    corrected[char_idx] = corrected_token
+                    correction_count += 1
+
+        # Sanity check: 纠正 > 20% 则丢弃
+        if correction_count > 0 and chinese_char_count > 0:
+            ratio = correction_count / chinese_char_count
+            if ratio > 0.2:
+                return text
+            return "".join(corrected)
+
+        return text
+
+
+class PunctuationProcessor:
+    """CT-Transformer 标点处理器（通过 sherpa-onnx Python API）"""
+
+    def __init__(self, model_dir: str):
+        import sherpa_onnx
+
+        model_path = os.path.join(model_dir, "model.int8.onnx")
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"标点模型不存在: {model_path}")
+
+        config = sherpa_onnx.OfflinePunctuationConfig(
+            model=sherpa_onnx.OfflinePunctuationModelConfig(
+                ct_transformer=model_path,
+                num_threads=2,
+                provider="cpu",
+            )
+        )
+        self.punct = sherpa_onnx.OfflinePunctuation(config)
+        print(f"    标点模型加载成功")
+
+    def add_punctuation(self, text: str) -> str:
+        if not text:
+            return text
+        return self.punct.add_punctuation(text)
+
+
+# ============================================================================
+# ASR 引擎（底层）
 # ============================================================================
 
 class QwenASROfflineEngine:
     """Qwen3-ASR 离线模式：一次性传入全部音频"""
-    NAME = "Qwen3-ASR (离线)"
-    SHORT = "qwen_offline"
 
     def __init__(self, model_dir: str, dylib_path: str):
         self.lib = ctypes.CDLL(dylib_path)
@@ -161,8 +308,6 @@ class QwenASROfflineEngine:
 
 class QwenASRStreamEngine:
     """Qwen3-ASR 流式模式：chunk + rollback"""
-    NAME = "Qwen3-ASR (流式)"
-    SHORT = "qwen_stream"
 
     def __init__(self, model_dir: str, dylib_path: str):
         self.lib = ctypes.CDLL(dylib_path)
@@ -171,7 +316,6 @@ class QwenASRStreamEngine:
         if not self.engine:
             raise RuntimeError(f"Failed to load Qwen3-ASR from {model_dir}")
         self.lib.qwen_asr_set_language(self.engine, b"chinese")
-        # 与 app 中一致的流式参数
         self.lib.qwen_asr_stream_set_chunk_sec(self.engine, ctypes.c_float(2.0))
         self.lib.qwen_asr_stream_set_rollback(self.engine, 3)
         self.lib.qwen_asr_stream_set_unfixed_chunks(self.engine, 1)
@@ -210,7 +354,6 @@ class QwenASRStreamEngine:
         state = self.lib.qwen_asr_stream_new()
         if not state: return ""
 
-        # 模拟真实录音：每 4096 样本（0.256s @16kHz）推送一次
         chunk_size = 4096
         for i in range(0, len(samples), chunk_size):
             chunk = samples[i:i+chunk_size]
@@ -225,7 +368,6 @@ class QwenASRStreamEngine:
         if ptr:
             self.lib.qwen_asr_free_string(ptr)
 
-        # 获取完整结果
         res_ptr = self.lib.qwen_asr_stream_get_result(state)
         text = ""
         if res_ptr:
@@ -243,8 +385,6 @@ class QwenASRStreamEngine:
 
 class ParaformerEngine:
     """Streaming Paraformer（sherpa-onnx 流式）"""
-    NAME = "Streaming Paraformer"
-    SHORT = "paraformer"
 
     def __init__(self, model_dir: str, itn_fst_path: Optional[str] = None):
         import sherpa_onnx
@@ -270,7 +410,14 @@ class ParaformerEngine:
         chunk_size = 4096
         for i in range(0, len(samples), chunk_size):
             stream.accept_waveform(16000, samples[i:i+chunk_size])
-        stream.accept_waveform(16000, [0.0] * 4800)
+            while self.recognizer.is_ready(stream):
+                self.recognizer.decode_stream(stream)
+        # 流式 Paraformer 编码器有 lookahead 需求，
+        # 需要足够静音 padding + input_finished 才能完整解码尾部 token
+        stream.accept_waveform(16000, [0.0] * 16000)  # 1s silence padding
+        while self.recognizer.is_ready(stream):
+            self.recognizer.decode_stream(stream)
+        stream.input_finished()
         while self.recognizer.is_ready(stream):
             self.recognizer.decode_stream(stream)
         text = self.recognizer.get_result(stream)
@@ -284,8 +431,6 @@ class ParaformerEngine:
 
 class SenseVoiceEngine:
     """SenseVoice Nano（sherpa-onnx 离线）"""
-    NAME = "SenseVoice Nano"
-    SHORT = "sensevoice"
 
     def __init__(self, model_dir: str):
         import sherpa_onnx
@@ -311,6 +456,92 @@ class SenseVoiceEngine:
 
     def close(self):
         pass
+
+
+# ============================================================================
+# Pipeline 封装（与产品架构一致）
+# ============================================================================
+
+class QwenASRPipeline:
+    """Pipeline: Qwen3-ASR 离线（内置 ITN + 标点 + 纠错）"""
+    NAME = "Qwen3-ASR (离线)"
+    SHORT = "qwen"
+    DESC = "内置 ITN + 标点 + 纠错"
+
+    def __init__(self, model_dir: str, dylib_path: str):
+        self.asr = QwenASROfflineEngine(model_dir, dylib_path)
+
+    def transcribe(self, samples: list[float]) -> str:
+        return self.asr.transcribe(samples)
+
+    def close(self):
+        self.asr.close()
+
+
+class QwenASRStreamPipeline:
+    """Pipeline: Qwen3-ASR 流式 chunk + rollback（内置 ITN + 标点 + 纠错）"""
+    NAME = "Qwen3-ASR (流式)"
+    SHORT = "qwen_stream"
+    DESC = "流式 chunk+rollback, 内置 ITN + 标点 + 纠错"
+
+    def __init__(self, model_dir: str, dylib_path: str):
+        self.asr = QwenASRStreamEngine(model_dir, dylib_path)
+
+    def transcribe(self, samples: list[float]) -> str:
+        return self.asr.transcribe(samples)
+
+    def close(self):
+        self.asr.close()
+
+
+class ParaformerPipeline:
+    """Pipeline: Streaming Paraformer + ITN → CSC → CT-Transformer 标点"""
+    NAME = "Paraformer Pipeline"
+    SHORT = "paraformer"
+    DESC = "ASR + ITN → CSC → 标点"
+
+    def __init__(self, model_dir: str, itn_fst: Optional[str],
+                 csc: Optional[ChineseSpellingCorrector],
+                 punct: Optional[PunctuationProcessor]):
+        self.asr = ParaformerEngine(model_dir, itn_fst)
+        self.csc = csc
+        self.punct = punct
+
+    def transcribe(self, samples: list[float]) -> str:
+        text = self.asr.transcribe(samples)
+        if self.csc:
+            text = self.csc.correct(text)
+        if self.punct:
+            text = self.punct.add_punctuation(text)
+        return text
+
+    def close(self):
+        self.asr.close()
+
+
+class SenseVoicePipeline:
+    """Pipeline: SenseVoice Nano (内置ITN) → CSC → CT-Transformer 标点"""
+    NAME = "SenseVoice Pipeline"
+    SHORT = "sensevoice"
+    DESC = "ASR + 内置ITN → CSC → 标点"
+
+    def __init__(self, model_dir: str,
+                 csc: Optional[ChineseSpellingCorrector],
+                 punct: Optional[PunctuationProcessor]):
+        self.asr = SenseVoiceEngine(model_dir)
+        self.csc = csc
+        self.punct = punct
+
+    def transcribe(self, samples: list[float]) -> str:
+        text = self.asr.transcribe(samples)
+        if self.csc:
+            text = self.csc.correct(text)
+        if self.punct:
+            text = self.punct.add_punctuation(text)
+        return text
+
+    def close(self):
+        self.asr.close()
 
 
 # ============================================================================
@@ -346,7 +577,7 @@ def load_entries() -> list[Entry]:
         for item in data["entries"]:
             if item.get("match_mode") == "empty_or_whitespace":
                 continue
-            if not item.get("expected_text", "").strip() and not item.get("text_input", "").strip():
+            if not item.get("expected_text", "").strip():
                 continue
             audio_files = item.get("audio_files", {})
             audio_path = None
@@ -358,11 +589,9 @@ def load_entries() -> list[Entry]:
                         break
             if not audio_path:
                 continue
-            # 优先用 text_input 作为参考文本（完整文本），expected_text 可能只是关键词
-            ref_text = item.get("text_input", "").strip() or item.get("expected_text", "").strip()
             entries.append(Entry(
                 id=item["id"], category=item.get("category", "unknown"),
-                expected_text=ref_text, audio_path=audio_path,
+                expected_text=item["expected_text"], audio_path=audio_path,
                 language=item.get("language", "zh"), duration_sec=item.get("duration_sec", 0),
             ))
     return entries
@@ -372,7 +601,7 @@ def load_entries() -> list[Entry]:
 # 评估与报告生成
 # ============================================================================
 
-def run_engine(engine, engine_name: str, entries: list[Entry]) -> list[Result]:
+def run_engine(engine, engine_name: str, entries: list[Entry], verbose: bool = False) -> list[Result]:
     results = []
     for i, e in enumerate(entries):
         samples, _ = load_wav_as_float32(e.audio_path)
@@ -383,6 +612,10 @@ def run_engine(engine, engine_name: str, entries: list[Entry]) -> list[Result]:
         results.append(Result(entry=e, engine_name=engine_name, output_text=output, cer=cer, elapsed_sec=elapsed))
         tag = "OK" if cer <= 0.15 else ("WARN" if cer <= 0.30 else "HIGH")
         print(f"  [{i+1:3d}/{len(entries)}] [{tag:4s}] CER={cer:.3f} | {e.id}")
+        if verbose:
+            print(f"         期望: {e.expected_text}")
+            print(f"         实际: {output}")
+            print(f"         耗时: {elapsed:.2f}s")
     return results
 
 
@@ -399,11 +632,13 @@ def generate_report(
     engine_names = list(all_results.keys())
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    w(f"# ASR 引擎量化对比评估报告")
+    w(f"# ASR Pipeline 量化对比评估报告")
     w()
     w(f"*生成时间：{timestamp}*")
     w(f"*测试集：{len(entries)} 条音频（corpus.json + real_manifest.json）*")
-    w(f"*引擎：{', '.join(engine_names)}*")
+    w(f"*Pipeline：{', '.join(engine_names)}*")
+    w()
+    w("**CER 计算方式**：保留标点符号，仅做 lower + 去空格后计算字符错误率。")
     w()
     w("---")
     w()
@@ -411,8 +646,8 @@ def generate_report(
     # ---- 1. 总体汇总 ----
     w("## 1. 总体 CER 汇总")
     w()
-    w("| 引擎 | 平均 CER | CER=0 条数 | CER≤0.10 | CER≤0.20 | CER>0.20 | 总推理时长 | RTF |")
-    w("|------|:-------:|:---------:|:-------:|:-------:|:-------:|:---------:|:---:|")
+    w("| Pipeline | 平均 CER | CER=0 条数 | CER≤0.10 | CER≤0.20 | CER>0.20 | 总推理时长 | RTF |")
+    w("|----------|:-------:|:---------:|:-------:|:-------:|:-------:|:---------:|:---:|")
     total_audio = sum(e.duration_sec for e in entries)
     for name in engine_names:
         rs = all_results[name]
@@ -434,11 +669,11 @@ def generate_report(
     header = "| 类别 | N |"
     sep = "|------|:-:|"
     for name in engine_names:
-        short = name.split("(")[0].strip()[:12]
+        short = name.split("(")[0].strip()[:14]
         header += f" {short} |"
         sep += ":------:|"
-    header += " 最佳引擎 |"
-    sep += "---------|"
+    header += " 最佳 |"
+    sep += "------|"
     w(header)
     w(sep)
 
@@ -456,7 +691,7 @@ def generate_report(
             v = avgs[name]
             bold = "**" if name == best and v < 999 else ""
             row += f" {bold}{v:.3f}{bold} |"
-        row += f" {best.split('(')[0].strip()} |"
+        row += f" {best.split('(')[0].strip()[:14]} |"
         w(row)
 
     # Overall
@@ -471,7 +706,7 @@ def generate_report(
         v = overall_avgs[name]
         bold = "**" if name == best else ""
         row += f" {bold}{v:.4f}{bold} |"
-    row += f" **{best.split('(')[0].strip()}** |"
+    row += f" **{best.split('(')[0].strip()[:14]}** |"
     w(row)
     w()
 
@@ -481,7 +716,7 @@ def generate_report(
     header = "| ID | 类别 |"
     sep = "|-----|------|"
     for name in engine_names:
-        short = name.replace("Qwen3-ASR ", "Q").replace("Streaming ", "S.").replace("SenseVoice ", "SV ")[:10]
+        short = name.replace("Pipeline", "").strip()[:12]
         header += f" {short} |"
         sep += ":-----:|"
     header += " 最佳 |"
@@ -507,15 +742,15 @@ def generate_report(
             if name == best_name and v < 999:
                 cell = f"**{cell.replace('**','')}**"
             row += f" {cell} |"
-        row += f" {best_name.split('(')[0].strip()[:8]} |"
+        row += f" {best_name.replace('Pipeline','').strip()[:10]} |"
         w(row)
     w()
 
     # ---- 4. 推理速度 ----
     w("## 4. 推理速度对比")
     w()
-    w("| 引擎 | 总音频 | 总推理 | RTF | 平均/条 |")
-    w("|------|:-----:|:-----:|:---:|:------:|")
+    w("| Pipeline | 总音频 | 总推理 | RTF | 平均/条 |")
+    w("|----------|:-----:|:-----:|:---:|:------:|")
     for name in engine_names:
         rs = all_results[name]
         t_audio = sum(r.entry.duration_sec for r in rs)
@@ -526,7 +761,7 @@ def generate_report(
     w()
 
     # ---- 5. 错误案例分析 ----
-    w("## 5. 各引擎识别错误案例详细分析")
+    w("## 5. 各 Pipeline 识别错误案例详细分析")
     w()
     CER_THRESHOLD = 0.05  # CER > 5% 视为不准确
 
@@ -553,14 +788,10 @@ def generate_report(
             # 分析错误类型
             error_types = []
             # 繁体字检测
-            if any('\u7e41' <= ch <= '\u9fa5' for ch in r.output_text):
-                import unicodedata
-                trad_chars = [ch for ch in r.output_text if unicodedata.name(ch, "").startswith("CJK") and ch != ch]
-                # 简单检测：看是否有常见繁体字
-                trad_indicators = set("書學數點機語認識經過國開會從發時問題這個應該進來說長給對門關電話東風車後飛運動員")
-                found_trad = set(r.output_text) & trad_indicators
-                if found_trad and not (set(r.entry.expected_text) & found_trad):
-                    error_types.append("繁体字输出")
+            trad_indicators = set("書學數點機語認識經過國開會從發時問題這個應該進來說長給對門關電話東風車後飛運動員")
+            found_trad = set(r.output_text) & trad_indicators
+            if found_trad and not (set(r.entry.expected_text) & found_trad):
+                error_types.append("繁体字输出")
 
             # 英文词汇错误
             en_expected = set(re.findall(r"[a-zA-Z]+", r.entry.expected_text.lower()))
@@ -579,6 +810,14 @@ def generate_report(
                 error_types.append("截断")
             elif len(actual_norm) > len(expected_norm) * 1.4:
                 error_types.append("幻觉/冗余")
+
+            # 标点差异
+            zh_punct = set("，。！？、；：""''（）【】《》…—·")
+            en_punct = set(",.!?;:'\"()[]<>")
+            exp_puncts = set(r.entry.expected_text) & (zh_punct | en_punct)
+            act_puncts = set(r.output_text) & (zh_punct | en_punct)
+            if exp_puncts != act_puncts and r.cer <= 0.15:
+                error_types.append("标点差异")
 
             # 同音字
             if not error_types and r.cer <= 0.3:
@@ -599,11 +838,11 @@ def generate_report(
     w("## 6. 综合分析与建议")
     w()
 
-    # 找每个类别的最佳引擎
-    w("### 各场景最佳引擎推荐")
+    # 找每个类别的最佳 Pipeline
+    w("### 各场景最佳 Pipeline 推荐")
     w()
-    w("| 场景 | 推荐引擎 | 理由 |")
-    w("|------|---------|------|")
+    w("| 场景 | 推荐 Pipeline | CER |")
+    w("|------|--------------|:---:|")
 
     cat_winners = {}
     for cat in cats:
@@ -616,10 +855,10 @@ def generate_report(
         cat_winners[cat] = (best, avgs[best])
 
     for cat, (best, cer) in sorted(cat_winners.items()):
-        w(f"| {cat} | {best} | CER={cer:.3f} |")
+        w(f"| {cat} | {best} | {cer:.3f} |")
     w()
 
-    w("### 引擎特点总结")
+    w("### Pipeline 特点总结")
     w()
     for name in engine_names:
         rs = all_results[name]
@@ -658,24 +897,37 @@ def generate_report(
 # ============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="ASR 引擎量化对比评估")
+    parser = argparse.ArgumentParser(description="ASR Pipeline 量化对比评估")
     parser.add_argument("--output", "-o", type=str, default=None, help="输出 Markdown 报告路径")
-    parser.add_argument("--engines", type=str, default="all",
-                        help="要评估的引擎，逗号分隔：paraformer,qwen_offline,qwen_stream,sensevoice (默认 all)")
+    parser.add_argument("--pipelines", type=str, default="all",
+                        help="要评估的 Pipeline，逗号分隔：qwen,qwen_stream,paraformer,sensevoice (默认 all)")
+    parser.add_argument("--entry", type=str, default=None,
+                        help="仅运行指定 entry ID（逗号分隔可指定多条），例如：--entry ascend_cs_003")
     args = parser.parse_args()
 
-    if args.engines == "all":
-        engine_list = ["paraformer", "qwen_offline", "qwen_stream", "sensevoice"]
+    if args.pipelines == "all":
+        pipeline_list = ["qwen", "qwen_stream", "paraformer", "sensevoice"]
     else:
-        engine_list = [e.strip() for e in args.engines.split(",")]
+        pipeline_list = [e.strip() for e in args.pipelines.split(",")]
 
     print("=" * 100)
-    print("ASR 引擎量化对比评估")
+    print("ASR Pipeline 量化对比评估")
     print("=" * 100)
 
     print("\n[1] 加载测试数据...")
     entries = load_entries()
+
+    # 按 entry ID 过滤
+    if args.entry:
+        entry_ids = [eid.strip() for eid in args.entry.split(",")]
+        entries = [e for e in entries if e.id in entry_ids]
+        if not entries:
+            print(f"  [ERROR] 未找到匹配的 entry ID: {args.entry}")
+            return
+        print(f"  已过滤，仅评估: {', '.join(e.id for e in entries)}")
+
     print(f"  共 {len(entries)} 条可评估条目")
+    verbose = len(entries) <= 5
     cats = {}
     for e in entries:
         cats.setdefault(e.category, 0)
@@ -683,60 +935,88 @@ def main():
     for cat, n in sorted(cats.items()):
         print(f"    {cat}: {n} 条")
 
+    # 初始化共享后处理模块
+    csc = None
+    punct = None
+    need_postprocessing = "paraformer" in pipeline_list or "sensevoice" in pipeline_list
+
+    if need_postprocessing:
+        print("\n[2] 初始化共享后处理模块...")
+
+        # CSC
+        csc_model = CSC_MODEL_DIR / "model_int8.onnx"
+        csc_vocab = CSC_MODEL_DIR / "vocab.txt"
+        if csc_model.exists() and csc_vocab.exists():
+            try:
+                csc = ChineseSpellingCorrector(str(csc_model), str(csc_vocab))
+            except Exception as e:
+                print(f"    [WARN] CSC 加载失败: {e}")
+        else:
+            print(f"    [WARN] CSC 模型不存在，跳过纠错")
+
+        # 标点
+        if PUNCT_MODEL_DIR.exists():
+            try:
+                punct = PunctuationProcessor(str(PUNCT_MODEL_DIR))
+            except Exception as e:
+                print(f"    [WARN] 标点模型加载失败: {e}")
+        else:
+            print(f"    [WARN] 标点模型不存在，跳过标点")
+
     all_results: dict[str, list[Result]] = {}
-    step = 2
+    step = 3 if need_postprocessing else 2
 
-    # Qwen3-ASR 离线
-    if "qwen_offline" in engine_list:
-        print(f"\n[{step}] 初始化 Qwen3-ASR (离线)...")
+    # Qwen3-ASR Pipeline (离线)
+    if "qwen" in pipeline_list:
+        print(f"\n[{step}] 初始化 Qwen3-ASR (离线) Pipeline...")
         step += 1
         if QWEN_DYLIB.exists() and QWEN_MODEL_DIR.exists():
-            eng = QwenASROfflineEngine(str(QWEN_MODEL_DIR), str(QWEN_DYLIB))
+            pipe = QwenASRPipeline(str(QWEN_MODEL_DIR), str(QWEN_DYLIB))
             print(f"  加载成功，开始评估...")
-            all_results[QwenASROfflineEngine.NAME] = run_engine(eng, QwenASROfflineEngine.NAME, entries)
-            eng.close()
+            all_results[QwenASRPipeline.NAME] = run_engine(pipe, QwenASRPipeline.NAME, entries, verbose)
+            pipe.close()
         else:
             print(f"  [SKIP] 模型或 dylib 不存在")
 
-    # Qwen3-ASR 流式
-    if "qwen_stream" in engine_list:
-        print(f"\n[{step}] 初始化 Qwen3-ASR (流式)...")
+    # Qwen3-ASR Pipeline (流式)
+    if "qwen_stream" in pipeline_list:
+        print(f"\n[{step}] 初始化 Qwen3-ASR (流式) Pipeline...")
         step += 1
         if QWEN_DYLIB.exists() and QWEN_MODEL_DIR.exists():
-            eng = QwenASRStreamEngine(str(QWEN_MODEL_DIR), str(QWEN_DYLIB))
+            pipe = QwenASRStreamPipeline(str(QWEN_MODEL_DIR), str(QWEN_DYLIB))
             print(f"  加载成功，开始评估...")
-            all_results[QwenASRStreamEngine.NAME] = run_engine(eng, QwenASRStreamEngine.NAME, entries)
-            eng.close()
+            all_results[QwenASRStreamPipeline.NAME] = run_engine(pipe, QwenASRStreamPipeline.NAME, entries, verbose)
+            pipe.close()
         else:
             print(f"  [SKIP] 模型或 dylib 不存在")
 
-    # Streaming Paraformer
-    if "paraformer" in engine_list:
-        print(f"\n[{step}] 初始化 Streaming Paraformer...")
+    # Paraformer Pipeline
+    if "paraformer" in pipeline_list:
+        print(f"\n[{step}] 初始化 Paraformer Pipeline...")
         step += 1
         if PARAFORMER_MODEL_DIR.exists():
             itn = str(ITN_FST_PATH) if ITN_FST_PATH.exists() else None
-            eng = ParaformerEngine(str(PARAFORMER_MODEL_DIR), itn)
-            print(f"  加载成功 (ITN: {'on' if itn else 'off'})，开始评估...")
-            all_results[ParaformerEngine.NAME] = run_engine(eng, ParaformerEngine.NAME, entries)
-            eng.close()
+            pipe = ParaformerPipeline(str(PARAFORMER_MODEL_DIR), itn, csc, punct)
+            print(f"  加载成功 (ITN: {'on' if itn else 'off'}, CSC: {'on' if csc else 'off'}, 标点: {'on' if punct else 'off'})，开始评估...")
+            all_results[ParaformerPipeline.NAME] = run_engine(pipe, ParaformerPipeline.NAME, entries, verbose)
+            pipe.close()
         else:
             print(f"  [SKIP] 模型不存在")
 
-    # SenseVoice Nano
-    if "sensevoice" in engine_list:
-        print(f"\n[{step}] 初始化 SenseVoice Nano...")
+    # SenseVoice Pipeline
+    if "sensevoice" in pipeline_list:
+        print(f"\n[{step}] 初始化 SenseVoice Pipeline...")
         step += 1
         if SENSEVOICE_MODEL_DIR.exists():
-            eng = SenseVoiceEngine(str(SENSEVOICE_MODEL_DIR))
-            print(f"  加载成功，开始评估...")
-            all_results[SenseVoiceEngine.NAME] = run_engine(eng, SenseVoiceEngine.NAME, entries)
-            eng.close()
+            pipe = SenseVoicePipeline(str(SENSEVOICE_MODEL_DIR), csc, punct)
+            print(f"  加载成功 (CSC: {'on' if csc else 'off'}, 标点: {'on' if punct else 'off'})，开始评估...")
+            all_results[SenseVoicePipeline.NAME] = run_engine(pipe, SenseVoicePipeline.NAME, entries, verbose)
+            pipe.close()
         else:
             print(f"  [SKIP] 模型不存在")
 
     if not all_results:
-        print("\n没有可用的引擎，退出。")
+        print("\n没有可用的 Pipeline，退出。")
         return
 
     print(f"\n[{step}] 生成对比报告...")

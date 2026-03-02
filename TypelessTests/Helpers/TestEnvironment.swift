@@ -1,4 +1,5 @@
 import Foundation
+@testable import Nano_Typeless
 
 /// 测试环境共用工具：模型路径查找、项目根目录定位
 enum TestEnvironment {
@@ -51,5 +52,49 @@ enum TestEnvironment {
     /// tests/fixtures 目录路径
     static func fixturesPath(from filePath: String = #filePath) -> String {
         projectRoot(from: filePath) + "/tests/fixtures"
+    }
+
+    // MARK: - 模型路径（基于 SherpaOnnxManager）
+
+    /// 模型根目录
+    static var modelsDirectory: String {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Nano Typeless/models").path
+    }
+
+    /// Streaming Paraformer 模型路径
+    static func paraformerPaths() -> (encoder: String, decoder: String, tokens: String)? {
+        SherpaOnnxManager.shared.getStreamingParaformerPath().map {
+            ($0.encoderPath, $0.decoderPath, $0.tokensPath)
+        }
+    }
+
+    /// VAD 模型路径
+    static func vadModelPath() -> String? {
+        SherpaOnnxManager.shared.getVADModelPath()
+    }
+
+    /// CT-Transformer 标点模型路径
+    static func punctuationModelPath() -> String? {
+        SherpaOnnxManager.shared.getPunctuationModelPath()
+    }
+
+    /// CSC 纠错模型路径
+    static func cscModelPaths() -> (model: String, vocab: String)? {
+        SherpaOnnxManager.shared.getCSCModelPath().map {
+            ($0.modelPath, $0.vocabPath)
+        }
+    }
+
+    /// ITN WFST 路径（comma-separated tagger + verbalizer）
+    static func itnFstPath() -> String? {
+        SherpaOnnxManager.shared.getITNFstPath()
+    }
+
+    /// FunASR Nano LLM 模型路径
+    static func funasrNanoLLMPaths() -> (encoderAdaptor: String, llm: String, embedding: String, tokenizerDir: String)? {
+        SherpaOnnxManager.shared.getFunASRNanoLLMModelPaths().map {
+            ($0.encoderAdaptorPath, $0.llmPath, $0.embeddingPath, $0.tokenizerDir)
+        }
     }
 }

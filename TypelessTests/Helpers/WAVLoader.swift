@@ -66,15 +66,15 @@ struct WAVLoader {
         while offset + 8 <= data.count {
             let chunkID = String(data: data[offset..<offset+4], encoding: .ascii) ?? ""
             let chunkSize = data.withUnsafeBytes { ptr in
-                ptr.load(fromByteOffset: offset + 4, as: UInt32.self)
+                ptr.loadUnaligned(fromByteOffset: offset + 4, as: UInt32.self)
             }
 
             if chunkID == "fmt " {
                 guard offset + 16 <= data.count else { break }
-                audioFormat = data.withUnsafeBytes { $0.load(fromByteOffset: offset + 8, as: UInt16.self) }
-                channels = data.withUnsafeBytes { $0.load(fromByteOffset: offset + 10, as: UInt16.self) }
-                sampleRate = data.withUnsafeBytes { $0.load(fromByteOffset: offset + 12, as: UInt32.self) }
-                bitsPerSample = data.withUnsafeBytes { $0.load(fromByteOffset: offset + 22, as: UInt16.self) }
+                audioFormat = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset + 8, as: UInt16.self) }
+                channels = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset + 10, as: UInt16.self) }
+                sampleRate = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset + 12, as: UInt32.self) }
+                bitsPerSample = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset + 22, as: UInt16.self) }
             } else if chunkID == "data" {
                 dataOffset = offset + 8
                 dataSize = Int(chunkSize)
@@ -103,7 +103,7 @@ struct WAVLoader {
             let sampleCount = (endOffset - dataOffset) / 2
             samples = (0..<sampleCount).map { i in
                 let value = data.withUnsafeBytes { ptr in
-                    ptr.load(fromByteOffset: dataOffset + i * 2, as: Int16.self)
+                    ptr.loadUnaligned(fromByteOffset: dataOffset + i * 2, as: Int16.self)
                 }
                 return Float(value) / 32768.0
             }
@@ -112,7 +112,7 @@ struct WAVLoader {
             let sampleCount = (endOffset - dataOffset) / 4
             samples = (0..<sampleCount).map { i in
                 data.withUnsafeBytes { ptr in
-                    ptr.load(fromByteOffset: dataOffset + i * 4, as: Float.self)
+                    ptr.loadUnaligned(fromByteOffset: dataOffset + i * 4, as: Float.self)
                 }
             }
         default:
