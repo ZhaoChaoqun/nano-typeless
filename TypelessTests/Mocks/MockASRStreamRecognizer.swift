@@ -10,6 +10,8 @@ class MockASRStreamRecognizer: ASRStreamRecognizing {
     var pushAudioResult: String? = nil
     /// getResult 返回的完整文本
     var getResultText: String = ""
+    /// getUnfixed 返回的投机文本（nil 表示无 unfixed 文本）
+    var getUnfixedText: String? = nil
 
     // MARK: - 调用记录
 
@@ -33,6 +35,10 @@ class MockASRStreamRecognizer: ASRStreamRecognizing {
         return getResultText
     }
 
+    func getUnfixed() -> String? {
+        return getUnfixedText
+    }
+
     func reset() {
         resetCallCount += 1
     }
@@ -52,10 +58,10 @@ class MockASREngine: ASREngine {
     /// processAudio 时回调的文本（nil 表示不回调）
     var partialResultText: String? = nil
 
-    func processAudio(samples: [Float], onPartialResult: @escaping (String) -> Void) {
+    func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void) {
         processAudioCallCount += 1
         if let text = partialResultText {
-            onPartialResult(text)
+            onPartialResult(text, nil)
         }
     }
 

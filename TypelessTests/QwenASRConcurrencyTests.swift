@@ -74,7 +74,7 @@ class QwenASRConcurrencyTests: XCTestCase {
         let engine = QwenASREngine(recognizer: mock, recognitionQueue: queue)
 
         for _ in 0..<5 {
-            engine.processAudio(samples: [Float](repeating: 0, count: 1600)) { _ in }
+            engine.processAudio(samples: [Float](repeating: 0, count: 1600)) { _, _ in }
         }
 
         let expectation = self.expectation(description: "rapid flush")

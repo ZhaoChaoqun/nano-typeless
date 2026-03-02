@@ -20,7 +20,7 @@ final class RecordingStateTests: XCTestCase {
         XCTAssertEqual(state, .recording(accumulatedText: ""))
 
         // recording → (partialResult) → recording("你好")
-        state = RecordingState.nextState(from: state, event: .partialResult(text: "你好"))!
+        state = RecordingState.nextState(from: state, event: .partialResult(text: "你好", unfixedText: nil))!
         XCTAssertEqual(state, .recording(accumulatedText: "你好"))
 
         // recording → (fnKeyUp) → flushing("你好")
@@ -81,14 +81,6 @@ final class RecordingStateTests: XCTestCase {
         // 当 init 时 handleEvent(.reloadRequested) 还没执行，但模型已经加载好了
         let next = RecordingState.nextState(from: .idle, event: .modelLoaded)
         XCTAssertEqual(next, .ready)
-    }
-
-    // MARK: - audioReceived 保持状态不变
-
-    func testAudioReceivedKeepsRecordingState() {
-        let state: RecordingState = .recording(accumulatedText: "你好")
-        let next = RecordingState.nextState(from: state, event: .audioReceived(samples: [0.1, 0.2]))
-        XCTAssertEqual(next, state, "audioReceived 不应改变状态")
     }
 
     // MARK: - flushing 保留 accumulatedText

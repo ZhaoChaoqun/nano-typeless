@@ -34,7 +34,7 @@ class QwenASRUnitTests: XCTestCase {
         let samples = [Float](repeating: 0.1, count: 16000)
 
         let expectation = self.expectation(description: "recognition queue")
-        engine.processAudio(samples: samples) { _ in
+        engine.processAudio(samples: samples) { _, _ in
             XCTAssertEqual(mock.pushCallCount, 1, "pushAudio 应被调用一次")
             XCTAssertEqual(mock.receivedSamples.first?.count, 16000, "应传递 16000 个样本")
             XCTAssertEqual(mock.receivedFinalizeFlags.first, false, "finalize 应为 false")
@@ -52,7 +52,7 @@ class QwenASRUnitTests: XCTestCase {
         let engine = QwenASREngine(recognizer: mock, recognitionQueue: queue)
 
         var callbackInvoked = false
-        engine.processAudio(samples: [Float](repeating: 0, count: 100)) { _ in
+        engine.processAudio(samples: [Float](repeating: 0, count: 100)) { _, _ in
             callbackInvoked = true
         }
 
