@@ -29,7 +29,7 @@ class QwenASRStreamRecognizer {
 
         // 流式参数：chunk_sec 和 max_new_tokens 保持默认以获得更好的准确度
         // rollback 和 unfixed_chunks 适度降低以减少首字延迟
-        qwen_asr_stream_set_chunk_sec(engine, 2.0)
+        qwen_asr_stream_set_chunk_sec(engine, 1.5)
         qwen_asr_stream_set_rollback(engine, 3)
         qwen_asr_stream_set_unfixed_chunks(engine, 1)
         qwen_asr_stream_set_max_new_tokens(engine, 32)
@@ -43,6 +43,13 @@ class QwenASRStreamRecognizer {
         }
 
         logger.info("QwenASRStreamRecognizer: 初始化成功")
+
+        let isInt8 = qwen_asr_is_int8(engine)
+        if isInt8 == 1 {
+            logger.info("QwenASRStreamRecognizer: 使用 INT8 量化模型")
+        } else {
+            logger.info("QwenASRStreamRecognizer: 使用 BF16 原始模型")
+        }
     }
 
     deinit {
@@ -81,10 +88,39 @@ class QwenASRStreamRecognizer {
         return String(cString: resultPtr)
     }
 
+    /// 获取当前已解码但尚未稳定的投机文本
+    func getUnfixed() -> String? {
+        guard let state = streamState else { return nil }
+        guard let resultPtr = qwen_asr_stream_get_unfixed(state) else { return nil }
+        defer { qwen_asr_free_string(resultPtr) }
+        let text = String(cString: resultPtr)
+        return text.isEmpty ? nil : text
+    }
+
     /// 重置流式状态，开始新一轮识别
     func reset() {
         guard let state = streamState else { return }
         qwen_asr_stream_reset(state)
+    }
+
+    /// 离线转写完整音频（适合长语音，使用分段解码）
+    /// - Parameters:
+    ///   - samples: PCM 样本（16kHz mono f32）
+    ///   - segmentSec: 分段长度（秒），默认 20s
+    /// - Returns: 完整转写文本
+    func transcribeOffline(samples: [Float], segmentSec: Float = 20.0) -> String {
+        guard let engine = engine else { return "" }
+
+        qwen_asr_set_segment_sec(engine, segmentSec)
+        let resultPtr = samples.withUnsafeBufferPointer { buffer in
+            qwen_asr_transcribe_pcm(engine, buffer.baseAddress, Int32(samples.count))
+        }
+        // Reset segment_sec to avoid affecting streaming behavior
+        qwen_asr_set_segment_sec(engine, 0)
+
+        guard let resultPtr = resultPtr else { return "" }
+        defer { qwen_asr_free_string(resultPtr) }
+        return String(cString: resultPtr)
     }
 }
 

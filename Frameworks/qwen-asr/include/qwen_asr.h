@@ -20,6 +20,10 @@ QwenAsrEngine* qwen_asr_load_model(const char* model_dir, int32_t n_threads, int
 /// Free the engine and all associated resources.
 void qwen_asr_free(QwenAsrEngine* engine);
 
+/// Check if the engine is using INT8 quantized decoder.
+/// @return 1 if INT8, 0 if BF16, -1 if engine is null
+int32_t qwen_asr_is_int8(const QwenAsrEngine* engine);
+
 /// Transcribe raw PCM audio.
 /// @param engine Engine handle
 /// @param samples Pointer to float32 PCM samples (16kHz, mono, range [-1,1])
@@ -96,6 +100,11 @@ void qwen_asr_stream_set_unfixed_chunks(QwenAsrEngine* engine, int32_t chunks);
 
 /// Configure max new tokens per chunk (default 32).
 void qwen_asr_stream_set_max_new_tokens(QwenAsrEngine* engine, int32_t tokens);
+
+/// Get currently decoded but not-yet-stable (speculative) text.
+/// @return Heap-allocated UTF-8 string, or NULL if empty.
+///         Caller must free with qwen_asr_free_string().
+char* qwen_asr_stream_get_unfixed(QwenAsrStreamState* stream);
 
 #ifdef __cplusplus
 }

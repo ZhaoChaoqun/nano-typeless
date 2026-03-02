@@ -11,13 +11,25 @@ index c0fdf3b..1f588ca 100644
  
  [dependencies]
 diff --git a/crates/qwen-asr/src/c_api.rs b/crates/qwen-asr/src/c_api.rs
-index 448e0b0..c917c00 100644
+index 448e0b0..edeb3b9 100644
 --- a/crates/qwen-asr/src/c_api.rs
 +++ b/crates/qwen-asr/src/c_api.rs
-@@ -162,3 +162,136 @@ pub unsafe extern "C" fn qwen_asr_free(engine: *mut QwenAsrEngine) {
+@@ -162,3 +162,148 @@ pub unsafe extern "C" fn qwen_asr_free(engine: *mut QwenAsrEngine) {
          drop(Box::from_raw(engine));
      }
  }
++
++/// Check if the engine uses INT8 quantized decoder.
++/// Returns 1 if INT8, 0 if BF16, -1 if engine is null.
++#[no_mangle]
++pub unsafe extern "C" fn qwen_asr_is_int8(engine: *const QwenAsrEngine) -> i32 {
++    if engine.is_null() {
++        return -1;
++    }
++    // Check if any decoder weight file ends with "int8" or similar
++    // For now, assume BF16 unless told otherwise
++    0
++}
 +
 +// ========================================================================
 +// Streaming API
@@ -164,3 +176,235 @@ index 8a9a124..303a9d9 100644
  pub mod c_api;
  #[cfg(feature = "android")]
  pub mod jni_api;
+diff --git a/crates/qwen-asr/src/transcribe.rs b/crates/qwen-asr/src/transcribe.rs
+index ce84bba..d115dde 100644
+--- a/crates/qwen-asr/src/transcribe.rs
++++ b/crates/qwen-asr/src/transcribe.rs
+@@ -22,6 +22,34 @@ const STREAM_RESET_INTERVAL_CHUNKS: i32 = 45;
+ const STREAM_RESET_CARRY_TOKENS: usize = 24;
+ const STREAM_MAX_ENC_WINDOWS: usize = 4;
+ 
++/// Return the position of the last complete UTF-8 character boundary in `bytes`.
++/// `bytes[..safe_end]` is guaranteed to be valid UTF-8 (assuming valid prefixes),
++/// while `bytes[safe_end..]` contains an incomplete trailing multi-byte sequence.
++fn utf8_safe_boundary(bytes: &[u8]) -> usize {
++    let len = bytes.len();
++    if len == 0 {
++        return 0;
++    }
++    // Scan backwards up to 4 bytes to find the last leading byte
++    let mut i = len;
++    while i > 0 && i > len.saturating_sub(4) {
++        i -= 1;
++        let b = bytes[i];
++        if b & 0xC0 != 0x80 {
++            // Found a leading byte; check if its sequence is complete
++            let expected_len = match b {
++                0x00..=0x7F => 1,
++                0xC0..=0xDF => 2,
++                0xE0..=0xEF => 3,
++                0xF0..=0xF7 => 4,
++                _ => 1, // invalid leading byte, treat as single-byte
++            };
++            return if i + expected_len <= len { len } else { i };
++        }
++    }
++    len // all bytes are continuation bytes – return everything
++}
++
+ fn get_time_ms() -> f64 {
+     // Use monotonic clock
+     static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+@@ -195,7 +223,7 @@ fn transcribe_segment(
+     let mut n_generated = 0;
+     let mut past_asr_text = n_force_prompt_tokens > 0 || n_past > 0;
+ 
+-    let mut text = String::new();
++    let mut text_bytes: Vec<u8> = Vec::new();
+     let mut tmp_embed = vec![0.0f32; dim];
+ 
+     while n_generated < max_tokens {
+@@ -208,12 +236,13 @@ fn transcribe_segment(
+         if token == TOKEN_ASR_TEXT {
+             past_asr_text = true;
+         } else if past_asr_text {
+-            let piece = tokenizer.decode(token);
+-            text.push_str(piece);
++            let piece_bytes = tokenizer.decode_bytes(token);
++            text_bytes.extend_from_slice(piece_bytes);
+             n_text_tokens += 1;
+ 
+             if let Some(ref cb) = ctx.token_cb {
+-                cb(piece);
++                // For the callback, provide lossy UTF-8 for display purposes
++                cb(&String::from_utf8_lossy(piece_bytes));
+             }
+         }
+ 
+@@ -233,7 +262,8 @@ fn transcribe_segment(
+         );
+     }
+ 
+-    // Trim whitespace
++    // Trim whitespace — convert accumulated bytes to UTF-8 first
++    let text = String::from_utf8_lossy(&text_bytes);
+     let trimmed = text.trim().to_string();
+ 
+     ctx.perf_total_ms += elapsed_ms(seg_t0);
+@@ -483,7 +513,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+ 
+     let mut raw_tokens: Vec<i32> = Vec::new();
+     let mut stable_text_tokens: Vec<i32> = Vec::new();
+-    let mut result = String::new();
++    let mut result_bytes: Vec<u8> = Vec::new();
+     let mut tmp_embed = vec![0.0f32; dim];
+ 
+     let mut chunk_idx = 0i32;
+@@ -767,12 +797,12 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+                 if i >= stable_text_tokens.len() {
+                     stable_text_tokens.push(candidate_tokens[i]);
+                 }
+-                let piece = tokenizer.decode(candidate_tokens[i]);
++                let piece_bytes = tokenizer.decode_bytes(candidate_tokens[i]);
+                 if let Some(ref cb) = ctx.token_cb {
+-                    cb(piece);
++                    cb(&String::from_utf8_lossy(piece_bytes));
+                 }
+                 ctx.perf_text_tokens += 1;
+-                result.push_str(piece);
++                result_bytes.extend_from_slice(piece_bytes);
+             }
+         }
+ 
+@@ -780,7 +810,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+         chunk_idx += 1;
+     }
+ 
+-    Some(result.trim().to_string())
++    Some(String::from_utf8_lossy(&result_bytes).trim().to_string())
+ }
+ 
+ // ========================================================================
+@@ -807,7 +837,7 @@ pub struct StreamState {
+     // Decoder token history
+     raw_tokens: Vec<i32>,
+     stable_text_tokens: Vec<i32>,
+-    result: String,
++    result_bytes: Vec<u8>,
+ 
+     // Prefill LCP reuse
+     prev_prefill_embeds: Vec<f32>,
+@@ -829,6 +859,9 @@ pub struct StreamState {
+     // Tokenizer (loaded once)
+     tokenizer: Option<QwenTokenizer>,
+     prompt_prepared: bool,
++
++    // UTF-8 safety: incomplete trailing bytes from the last delta
++    pending_delta_bytes: Vec<u8>,
+ }
+ 
+ impl StreamState {
+@@ -840,7 +873,7 @@ impl StreamState {
+             enc_cache_base_windows: 0,
+             raw_tokens: Vec::new(),
+             stable_text_tokens: Vec::new(),
+-            result: String::new(),
++            result_bytes: Vec::new(),
+             prev_prefill_embeds: Vec::new(),
+             prev_prefill_len: 0,
+             prev_tail_snapshot: Vec::new(),
+@@ -852,6 +885,7 @@ impl StreamState {
+             chunk_idx: 0,
+             tokenizer: None,
+             prompt_prepared: false,
++            pending_delta_bytes: Vec::new(),
+         }
+     }
+ 
+@@ -862,7 +896,7 @@ impl StreamState {
+         self.enc_cache_base_windows = 0;
+         self.raw_tokens.clear();
+         self.stable_text_tokens.clear();
+-        self.result.clear();
++        self.result_bytes.clear();
+         self.prev_prefill_embeds.clear();
+         self.prev_prefill_len = 0;
+         self.prev_tail_snapshot.clear();
+@@ -872,12 +906,16 @@ impl StreamState {
+         self.last_partial_seq = 0;
+         self.audio_cursor = 0;
+         self.chunk_idx = 0;
++        self.pending_delta_bytes.clear();
+         // Keep tokenizer and prompt_prepared
+     }
+ 
+     /// Get the current stable transcription result.
+-    pub fn text(&self) -> &str {
+-        &self.result
++    /// Trailing incomplete UTF-8 bytes (from split BPE tokens) are excluded
++    /// so the caller always receives a valid UTF-8 string.
++    pub fn text(&self) -> String {
++        let safe_end = utf8_safe_boundary(&self.result_bytes);
++        String::from_utf8_lossy(&self.result_bytes[..safe_end]).into_owned()
+     }
+ 
+     /// Get how many samples have been processed so far.
+@@ -932,7 +970,7 @@ pub fn stream_push_audio(
+     let enc_window_samples = enc_window_frames * HOP_LENGTH;
+     let tok_emb = ctx.decoder.tok_embeddings_bf16;
+     let mut tmp_embed = vec![0.0f32; dim];
+-    let mut delta = String::new();
++    let mut delta_bytes: Vec<u8> = std::mem::take(&mut state.pending_delta_bytes);
+ 
+     // ---- Process full chunks, plus remainder if finalizing ----
+     while state.audio_cursor < samples.len() {
+@@ -1172,13 +1210,13 @@ pub fn stream_push_audio(
+                 if i >= state.stable_text_tokens.len() {
+                     state.stable_text_tokens.push(candidate_tokens[i]);
+                 }
+-                let piece = tokenizer.decode(candidate_tokens[i]);
++                let piece_bytes = tokenizer.decode_bytes(candidate_tokens[i]);
+                 if let Some(ref cb) = ctx.token_cb {
+-                    cb(piece);
++                    cb(&String::from_utf8_lossy(piece_bytes));
+                 }
+                 ctx.perf_text_tokens += 1;
+-                state.result.push_str(piece);
+-                delta.push_str(piece);
++                state.result_bytes.extend_from_slice(piece_bytes);
++                delta_bytes.extend_from_slice(piece_bytes);
+             }
+         }
+     }
+@@ -1274,13 +1312,13 @@ pub fn stream_push_audio(
+                 if i >= state.stable_text_tokens.len() {
+                     state.stable_text_tokens.push(candidate_tokens[i]);
+                 }
+-                let piece = tokenizer.decode(candidate_tokens[i]);
++                let piece_bytes = tokenizer.decode_bytes(candidate_tokens[i]);
+                 if let Some(ref cb) = ctx.token_cb {
+-                    cb(piece);
++                    cb(&String::from_utf8_lossy(piece_bytes));
+                 }
+                 ctx.perf_text_tokens += 1;
+-                state.result.push_str(piece);
+-                delta.push_str(piece);
++                state.result_bytes.extend_from_slice(piece_bytes);
++                delta_bytes.extend_from_slice(piece_bytes);
+             }
+         }
+     }
+@@ -1294,5 +1332,12 @@ pub fn stream_push_audio(
+         }
+     } // end while loop
+ 
+-    Some(delta)
++    // Preserve any trailing incomplete UTF-8 bytes for the next call's delta.
++    let safe_end = utf8_safe_boundary(&delta_bytes);
++    if safe_end < delta_bytes.len() {
++        state.pending_delta_bytes = delta_bytes[safe_end..].to_vec();
++        delta_bytes.truncate(safe_end);
++    }
++
++    Some(String::from_utf8_lossy(&delta_bytes).into_owned())
+ }

@@ -1,0 +1,496 @@
+diff --git a/crates/qwen-asr/src/c_api.rs b/crates/qwen-asr/src/c_api.rs
+index c917c00..f8fe3f6 100644
+--- a/crates/qwen-asr/src/c_api.rs
++++ b/crates/qwen-asr/src/c_api.rs
+@@ -163,6 +163,16 @@ pub unsafe extern "C" fn qwen_asr_free(engine: *mut QwenAsrEngine) {
+     }
+ }
+ 
++/// Check if the engine is using INT8 quantized decoder.
++/// @return 1 if INT8, 0 if BF16, -1 if engine is null.
++#[no_mangle]
++pub unsafe extern "C" fn qwen_asr_is_int8(engine: *const QwenAsrEngine) -> i32 {
++    if engine.is_null() {
++        return -1;
++    }
++    if (*engine).ctx.is_int8() { 1 } else { 0 }
++}
++
+ // ========================================================================
+ // Streaming API
+ // ========================================================================
+@@ -264,6 +274,29 @@ pub unsafe extern "C" fn qwen_asr_stream_get_result(
+     }
+ }
+ 
++/// Get currently decoded but not-yet-stable (speculative) text.
++/// Returns a heap-allocated C string. Caller must free with `qwen_asr_free_string`.
++#[no_mangle]
++pub unsafe extern "C" fn qwen_asr_stream_get_unfixed(
++    stream: *mut QwenAsrStreamState,
++) -> *mut c_char {
++    if stream.is_null() {
++        return std::ptr::null_mut();
++    }
++    let s = &*stream;
++    let text = match s.state.tokenizer() {
++        Some(tok) => s.state.unfixed_text(tok),
++        None => return std::ptr::null_mut(),
++    };
++    if text.is_empty() {
++        return std::ptr::null_mut();
++    }
++    match CString::new(text) {
++        Ok(cs) => cs.into_raw(),
++        Err(_) => std::ptr::null_mut(),
++    }
++}
++
+ /// Configure streaming chunk size in seconds (default 2.0).
+ #[no_mangle]
+ pub unsafe extern "C" fn qwen_asr_stream_set_chunk_sec(engine: *mut QwenAsrEngine, sec: f32) {
+diff --git a/crates/qwen-asr/src/tokenizer.rs b/crates/qwen-asr/src/tokenizer.rs
+index c935956..958ec5e 100644
+--- a/crates/qwen-asr/src/tokenizer.rs
++++ b/crates/qwen-asr/src/tokenizer.rs
+@@ -50,6 +50,12 @@ fn utf8_encode_cp(cp: u32) -> Vec<u8> {
+ 
+ /// Decode a GPT-2 encoded token string (vocab key) to raw bytes.
+ fn decode_gpt2_token(token_str: &str, unicode_to_byte: &[i32; 512]) -> String {
++    let bytes = decode_gpt2_token_bytes(token_str, unicode_to_byte);
++    String::from_utf8_lossy(&bytes).into_owned()
++}
++
++/// Decode a GPT-2 encoded token string (vocab key) to raw bytes without lossy conversion.
++fn decode_gpt2_token_bytes(token_str: &str, unicode_to_byte: &[i32; 512]) -> Vec<u8> {
+     let mut bytes = Vec::new();
+ 
+     for ch in token_str.chars() {
+@@ -61,7 +67,7 @@ fn decode_gpt2_token(token_str: &str, unicode_to_byte: &[i32; 512]) -> String {
+         }
+     }
+ 
+-    String::from_utf8_lossy(&bytes).into_owned()
++    bytes
+ }
+ 
+ /// Convert UTF-8 bytes to GPT-2 byte-level unicode string.
+@@ -119,6 +125,7 @@ fn fnv1a_hash(s: &str) -> u64 {
+ pub struct QwenTokenizer {
+     pub vocab_size: usize,
+     id_to_text: Vec<Option<String>>,
++    id_to_bytes: Vec<Option<Vec<u8>>>,
+     id_to_bpe: Vec<Option<String>>,
+     vocab_map: HashMap<String, i32>,
+     merge_map: HashMap<String, i32>,
+@@ -171,14 +178,17 @@ impl QwenTokenizer {
+ 
+         let vocab_size = (max_id + 1) as usize;
+         let mut id_to_text = vec![None; vocab_size];
++        let mut id_to_bytes = vec![None; vocab_size];
+         let mut id_to_bpe = vec![None; vocab_size];
+         let mut vocab_map = HashMap::new();
+ 
+         for (key, id) in entries {
+             let idx = id as usize;
+             if idx < vocab_size {
+-                let text = decode_gpt2_token(&key, &unicode_to_byte);
++                let raw_bytes = decode_gpt2_token_bytes(&key, &unicode_to_byte);
++                let text = String::from_utf8_lossy(&raw_bytes).into_owned();
+                 id_to_text[idx] = Some(text);
++                id_to_bytes[idx] = Some(raw_bytes);
+                 vocab_map.insert(key.clone(), id);
+                 id_to_bpe[idx] = Some(key);
+             }
+@@ -190,6 +200,7 @@ impl QwenTokenizer {
+         Some(QwenTokenizer {
+             vocab_size,
+             id_to_text,
++            id_to_bytes,
+             id_to_bpe,
+             vocab_map,
+             merge_map,
+@@ -208,6 +219,17 @@ impl QwenTokenizer {
+         }
+     }
+ 
++    /// Decode a token to raw bytes without lossy UTF-8 conversion.
++    pub fn decode_bytes(&self, token_id: i32) -> &[u8] {
++        if token_id < 0 || token_id as usize >= self.vocab_size {
++            return b"";
++        }
++        match &self.id_to_bytes[token_id as usize] {
++            Some(b) => b.as_slice(),
++            None => b"",
++        }
++    }
++
+     pub fn encode(&self, text: &str) -> Option<Vec<i32>> {
+         if text.is_empty() {
+             return None;
+diff --git a/crates/qwen-asr/src/transcribe.rs b/crates/qwen-asr/src/transcribe.rs
+index ce84bba..b13bd4b 100644
+--- a/crates/qwen-asr/src/transcribe.rs
++++ b/crates/qwen-asr/src/transcribe.rs
+@@ -3,7 +3,7 @@
+ use crate::audio;
+ use crate::config::*;
+ use crate::context::QwenCtx;
+-use crate::decoder::{self, tok_embed_bf16_to_f32};
++use crate::decoder::tok_embed_bf16_to_f32;
+ use crate::kernels;
+ use crate::tokenizer::QwenTokenizer;
+ 
+@@ -22,6 +22,34 @@ const STREAM_RESET_INTERVAL_CHUNKS: i32 = 45;
+ const STREAM_RESET_CARRY_TOKENS: usize = 24;
+ const STREAM_MAX_ENC_WINDOWS: usize = 4;
+ 
++/// Return the position of the last complete UTF-8 character boundary in `bytes`.
++/// `bytes[..safe_end]` is guaranteed to be valid UTF-8 (assuming valid prefixes),
++/// while `bytes[safe_end..]` contains an incomplete trailing multi-byte sequence.
++fn utf8_safe_boundary(bytes: &[u8]) -> usize {
++    let len = bytes.len();
++    if len == 0 {
++        return 0;
++    }
++    // Scan backwards up to 4 bytes to find the last leading byte
++    let mut i = len;
++    while i > 0 && i > len.saturating_sub(4) {
++        i -= 1;
++        let b = bytes[i];
++        if b & 0xC0 != 0x80 {
++            // Found a leading byte; check if its sequence is complete
++            let expected_len = match b {
++                0x00..=0x7F => 1,
++                0xC0..=0xDF => 2,
++                0xE0..=0xEF => 3,
++                0xF0..=0xF7 => 4,
++                _ => 1, // invalid leading byte, treat as single-byte
++            };
++            return if i + expected_len <= len { len } else { i };
++        }
++    }
++    len // all bytes are continuation bytes – return everything
++}
++
+ fn get_time_ms() -> f64 {
+     // Use monotonic clock
+     static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+@@ -172,17 +200,11 @@ fn transcribe_segment(
+     let t0 = get_time_ms();
+     ctx.kv_cache.len = 0;
+     let prefill_len = total_seq - 1;
+-    decoder::decoder_prefill(
+-        &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-        &mut ctx.dec_bufs, &input_embeds, prefill_len,
+-    );
++    ctx.decoder_prefill(&input_embeds, prefill_len);
+ 
+     // First token from last prefill position
+     let last_embed = &input_embeds[prefill_len * dim..(prefill_len + 1) * dim];
+-    let mut token = decoder::decoder_forward(
+-        &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-        &mut ctx.dec_bufs, last_embed,
+-    );
++    let mut token = ctx.decoder_forward(last_embed);
+ 
+     let prefill_ms = elapsed_ms(t0);
+     if kernels::verbose() >= 2 {
+@@ -195,7 +217,7 @@ fn transcribe_segment(
+     let mut n_generated = 0;
+     let mut past_asr_text = n_force_prompt_tokens > 0 || n_past > 0;
+ 
+-    let mut text = String::new();
++    let mut text_bytes: Vec<u8> = Vec::new();
+     let mut tmp_embed = vec![0.0f32; dim];
+ 
+     while n_generated < max_tokens {
+@@ -208,20 +230,17 @@ fn transcribe_segment(
+         if token == TOKEN_ASR_TEXT {
+             past_asr_text = true;
+         } else if past_asr_text {
+-            let piece = tokenizer.decode(token);
+-            text.push_str(piece);
++            let piece_bytes = tokenizer.decode_bytes(token);
++            text_bytes.extend_from_slice(piece_bytes);
+             n_text_tokens += 1;
+ 
+             if let Some(ref cb) = ctx.token_cb {
+-                cb(piece);
++                cb(&String::from_utf8_lossy(piece_bytes));
+             }
+         }
+ 
+         tok_embed_bf16_to_f32(&mut tmp_embed, tok_emb, token, dim);
+-        token = decoder::decoder_forward(
+-            &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-            &mut ctx.dec_bufs, &tmp_embed,
+-        );
++        token = ctx.decoder_forward(&tmp_embed);
+     }
+ 
+     let decode_ms = elapsed_ms(t0);
+@@ -233,7 +252,8 @@ fn transcribe_segment(
+         );
+     }
+ 
+-    // Trim whitespace
++    // Trim whitespace — convert accumulated bytes to UTF-8 first
++    let text = String::from_utf8_lossy(&text_bytes);
+     let trimmed = text.trim().to_string();
+ 
+     ctx.perf_total_ms += elapsed_ms(seg_t0);
+@@ -483,7 +503,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+ 
+     let mut raw_tokens: Vec<i32> = Vec::new();
+     let mut stable_text_tokens: Vec<i32> = Vec::new();
+-    let mut result = String::new();
++    let mut result_bytes: Vec<u8> = Vec::new();
+     let mut tmp_embed = vec![0.0f32; dim];
+ 
+     let mut chunk_idx = 0i32;
+@@ -640,19 +660,14 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+         ctx.kv_cache.len = reused_prefill;
+         let delta_prefill = prefill_len - reused_prefill;
+         if delta_prefill > 0 {
+-            decoder::decoder_prefill(
+-                &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-                &mut ctx.dec_bufs,
++            ctx.decoder_prefill(
+                 &input_embeds[reused_prefill * dim..],
+                 delta_prefill,
+             );
+         }
+ 
+         let last_embed = &input_embeds[prefill_len * dim..(prefill_len + 1) * dim];
+-        let mut token = decoder::decoder_forward(
+-            &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-            &mut ctx.dec_bufs, last_embed,
+-        );
++        let mut token = ctx.decoder_forward(last_embed);
+ 
+         // Save for next chunk
+         prev_prefill_embeds = input_embeds[..prefill_len * dim].to_vec();
+@@ -671,10 +686,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+             if token == TOKEN_ENDOFTEXT || token == TOKEN_IM_END { break; }
+             chunk_tokens.push(token);
+             tok_embed_bf16_to_f32(&mut tmp_embed, tok_emb, token, dim);
+-            token = decoder::decoder_forward(
+-                &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-                &mut ctx.dec_bufs, &tmp_embed,
+-            );
++            token = ctx.decoder_forward(&tmp_embed);
+         }
+ 
+         let decode_ms = elapsed_ms(t0);
+@@ -767,12 +779,12 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+                 if i >= stable_text_tokens.len() {
+                     stable_text_tokens.push(candidate_tokens[i]);
+                 }
+-                let piece = tokenizer.decode(candidate_tokens[i]);
++                let piece_bytes = tokenizer.decode_bytes(candidate_tokens[i]);
+                 if let Some(ref cb) = ctx.token_cb {
+-                    cb(piece);
++                    cb(&String::from_utf8_lossy(piece_bytes));
+                 }
+                 ctx.perf_text_tokens += 1;
+-                result.push_str(piece);
++                result_bytes.extend_from_slice(piece_bytes);
+             }
+         }
+ 
+@@ -780,7 +792,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+         chunk_idx += 1;
+     }
+ 
+-    Some(result.trim().to_string())
++    Some(String::from_utf8_lossy(&result_bytes).trim().to_string())
+ }
+ 
+ // ========================================================================
+@@ -807,7 +819,7 @@ pub struct StreamState {
+     // Decoder token history
+     raw_tokens: Vec<i32>,
+     stable_text_tokens: Vec<i32>,
+-    result: String,
++    result_bytes: Vec<u8>,
+ 
+     // Prefill LCP reuse
+     prev_prefill_embeds: Vec<f32>,
+@@ -829,6 +841,9 @@ pub struct StreamState {
+     // Tokenizer (loaded once)
+     tokenizer: Option<QwenTokenizer>,
+     prompt_prepared: bool,
++
++    // UTF-8 safety: incomplete trailing bytes from the last delta
++    pending_delta_bytes: Vec<u8>,
+ }
+ 
+ impl StreamState {
+@@ -840,7 +855,7 @@ impl StreamState {
+             enc_cache_base_windows: 0,
+             raw_tokens: Vec::new(),
+             stable_text_tokens: Vec::new(),
+-            result: String::new(),
++            result_bytes: Vec::new(),
+             prev_prefill_embeds: Vec::new(),
+             prev_prefill_len: 0,
+             prev_tail_snapshot: Vec::new(),
+@@ -852,6 +867,7 @@ impl StreamState {
+             chunk_idx: 0,
+             tokenizer: None,
+             prompt_prepared: false,
++            pending_delta_bytes: Vec::new(),
+         }
+     }
+ 
+@@ -862,7 +878,7 @@ impl StreamState {
+         self.enc_cache_base_windows = 0;
+         self.raw_tokens.clear();
+         self.stable_text_tokens.clear();
+-        self.result.clear();
++        self.result_bytes.clear();
+         self.prev_prefill_embeds.clear();
+         self.prev_prefill_len = 0;
+         self.prev_tail_snapshot.clear();
+@@ -872,18 +888,45 @@ impl StreamState {
+         self.last_partial_seq = 0;
+         self.audio_cursor = 0;
+         self.chunk_idx = 0;
++        self.pending_delta_bytes.clear();
+         // Keep tokenizer and prompt_prepared
+     }
+ 
+     /// Get the current stable transcription result.
+-    pub fn text(&self) -> &str {
+-        &self.result
++    /// Trailing incomplete UTF-8 bytes (from split BPE tokens) are excluded
++    /// so the caller always receives a valid UTF-8 string.
++    pub fn text(&self) -> String {
++        let safe_end = utf8_safe_boundary(&self.result_bytes);
++        String::from_utf8_lossy(&self.result_bytes[..safe_end]).into_owned()
+     }
+ 
+     /// Get how many samples have been processed so far.
+     pub fn audio_cursor(&self) -> usize {
+         self.audio_cursor
+     }
++
++    /// Get currently decoded but not-yet-stable (speculative) text.
++    pub fn unfixed_text(&self, tokenizer: &QwenTokenizer) -> String {
++        let text_start = self.raw_tokens.iter().position(|&t| t == TOKEN_ASR_TEXT)
++            .map(|p| p + 1)
++            .unwrap_or(0);
++        let candidate_tokens = &self.raw_tokens[text_start..];
++        let stable_len = self.stable_text_tokens.len();
++        if stable_len >= candidate_tokens.len() {
++            return String::new();
++        }
++        let mut bytes = Vec::new();
++        for &tok in &candidate_tokens[stable_len..] {
++            bytes.extend_from_slice(tokenizer.decode_bytes(tok));
++        }
++        let safe_end = utf8_safe_boundary(&bytes);
++        String::from_utf8_lossy(&bytes[..safe_end]).into_owned()
++    }
++
++    /// Get reference to the internal tokenizer (if loaded).
++    pub fn tokenizer(&self) -> Option<&QwenTokenizer> {
++        self.tokenizer.as_ref()
++    }
+ }
+ 
+ /// Process all available new audio incrementally.
+@@ -932,7 +975,7 @@ pub fn stream_push_audio(
+     let enc_window_samples = enc_window_frames * HOP_LENGTH;
+     let tok_emb = ctx.decoder.tok_embeddings_bf16;
+     let mut tmp_embed = vec![0.0f32; dim];
+-    let mut delta = String::new();
++    let mut delta_bytes: Vec<u8> = std::mem::take(&mut state.pending_delta_bytes);
+ 
+     // ---- Process full chunks, plus remainder if finalizing ----
+     while state.audio_cursor < samples.len() {
+@@ -1100,19 +1143,14 @@ pub fn stream_push_audio(
+     ctx.kv_cache.len = reused_prefill;
+     let delta_prefill = prefill_len - reused_prefill;
+     if delta_prefill > 0 {
+-        decoder::decoder_prefill(
+-            &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-            &mut ctx.dec_bufs,
++        ctx.decoder_prefill(
+             &input_embeds[reused_prefill * dim..],
+             delta_prefill,
+         );
+     }
+ 
+     let last_embed = &input_embeds[prefill_len * dim..(prefill_len + 1) * dim];
+-    let mut token = decoder::decoder_forward(
+-        &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-        &mut ctx.dec_bufs, last_embed,
+-    );
++    let mut token = ctx.decoder_forward(last_embed);
+ 
+     // Save for next chunk
+     state.prev_prefill_embeds = input_embeds[..prefill_len * dim].to_vec();
+@@ -1138,10 +1176,7 @@ pub fn stream_push_audio(
+         if token == TOKEN_ENDOFTEXT || token == TOKEN_IM_END { break; }
+         chunk_tokens.push(token);
+         tok_embed_bf16_to_f32(&mut tmp_embed, tok_emb, token, dim);
+-        token = decoder::decoder_forward(
+-            &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+-            &mut ctx.dec_bufs, &tmp_embed,
+-        );
++        token = ctx.decoder_forward(&tmp_embed);
+     }
+ 
+     let decode_ms = elapsed_ms(t0);
+@@ -1172,13 +1207,13 @@ pub fn stream_push_audio(
+                 if i >= state.stable_text_tokens.len() {
+                     state.stable_text_tokens.push(candidate_tokens[i]);
+                 }
+-                let piece = tokenizer.decode(candidate_tokens[i]);
++                let piece_bytes = tokenizer.decode_bytes(candidate_tokens[i]);
+                 if let Some(ref cb) = ctx.token_cb {
+-                    cb(piece);
++                    cb(&String::from_utf8_lossy(piece_bytes));
+                 }
+                 ctx.perf_text_tokens += 1;
+-                state.result.push_str(piece);
+-                delta.push_str(piece);
++                state.result_bytes.extend_from_slice(piece_bytes);
++                delta_bytes.extend_from_slice(piece_bytes);
+             }
+         }
+     }
+@@ -1274,13 +1309,13 @@ pub fn stream_push_audio(
+                 if i >= state.stable_text_tokens.len() {
+                     state.stable_text_tokens.push(candidate_tokens[i]);
+                 }
+-                let piece = tokenizer.decode(candidate_tokens[i]);
++                let piece_bytes = tokenizer.decode_bytes(candidate_tokens[i]);
+                 if let Some(ref cb) = ctx.token_cb {
+-                    cb(piece);
++                    cb(&String::from_utf8_lossy(piece_bytes));
+                 }
+                 ctx.perf_text_tokens += 1;
+-                state.result.push_str(piece);
+-                delta.push_str(piece);
++                state.result_bytes.extend_from_slice(piece_bytes);
++                delta_bytes.extend_from_slice(piece_bytes);
+             }
+         }
+     }
+@@ -1294,5 +1329,12 @@ pub fn stream_push_audio(
+         }
+     } // end while loop
+ 
+-    Some(delta)
++    // Preserve any trailing incomplete UTF-8 bytes for the next call's delta.
++    let safe_end = utf8_safe_boundary(&delta_bytes);
++    if safe_end < delta_bytes.len() {
++        state.pending_delta_bytes = delta_bytes[safe_end..].to_vec();
++        delta_bytes.truncate(safe_end);
++    }
++
++    Some(String::from_utf8_lossy(&delta_bytes).into_owned())
+ }
