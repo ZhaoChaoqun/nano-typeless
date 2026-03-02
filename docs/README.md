@@ -23,8 +23,8 @@ docs/
 
 | 文档 | 说明 |
 |------|------|
-| [asr-pipeline-architecture.md](architecture/asr-pipeline-architecture.md) | Typeless 三引擎 ASR 处理流水线架构（SenseVoice / Paraformer / Qwen3-ASR）|
-| [sherpa-onnx-integration.md](architecture/sherpa-onnx-integration.md) | Sherpa-ONNX 集成架构（Paraformer + SenseVoice 引擎接入）|
+| [asr-pipeline-architecture.md](architecture/asr-pipeline-architecture.md) | Typeless 三引擎 ASR 处理流水线架构（Paraformer / FunASR Nano LLM / Qwen3-ASR）|
+| [sherpa-onnx-integration.md](architecture/sherpa-onnx-integration.md) | Sherpa-ONNX 集成架构（Paraformer + FunASR Nano LLM 引擎接入）|
 | [qwen3-asr-integration-comparison.md](architecture/qwen3-asr-integration-comparison.md) | Qwen3-ASR 接入方案对比：Rust FFI vs 嵌入 Python mlx-audio |
 | [qwen3-asr-optimization-report.md](architecture/qwen3-asr-optimization-report.md) | Qwen3-ASR Rust FFI 性能优化报告（调用链路、瓶颈分析）|
 | [full-repo-audit-report.md](architecture/full-repo-audit-report.md) | 全仓库架构与用户体验审计报告（5 专家交叉审查）|
