@@ -131,6 +131,12 @@ class SherpaOnnxOnlineRecognizer {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// 标记输入结束，通知解码器不会再有新的音频数据
+    func inputFinished() {
+        guard let stream = stream else { return }
+        SherpaOnnxOnlineStreamInputFinished(stream)
+    }
+
     /// 重置流状态（用于新的识别会话）
     /// 销毁旧 stream 并创建新 stream，彻底清除音频特征缓冲区和解码器状态
     func reset() {
