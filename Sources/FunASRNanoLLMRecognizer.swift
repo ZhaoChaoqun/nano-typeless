@@ -43,7 +43,7 @@ class FunASRNanoLLMRecognizer {
         config.model_config.funasr_nano.top_p = 0.8
         config.model_config.funasr_nano.seed = 42
 
-        config.model_config.num_threads = 2
+        config.model_config.num_threads = 1
         config.model_config.debug = 0
         config.model_config.provider = cStrings.makeCString("cpu")
         config.model_config.model_type = cStrings.makeCString("")

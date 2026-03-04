@@ -23,7 +23,7 @@ class SherpaOnnxPunctuation {
 
         var config = SherpaOnnxOfflinePunctuationConfig()
         config.model.ct_transformer = cStrings.makeCString(modelPath)
-        config.model.num_threads = 2
+        config.model.num_threads = 1
         config.model.debug = 0
         config.model.provider = cStrings.makeCString("cpu")
 

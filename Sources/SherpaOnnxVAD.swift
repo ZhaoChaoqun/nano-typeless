@@ -37,7 +37,7 @@ class SherpaOnnxVAD {
         config.silero_vad.window_size = 512          // 窗口大小
 
         config.sample_rate = sampleRate
-        config.num_threads = 2
+        config.num_threads = 1
         config.provider = cStrings.makeCString("cpu")
         config.debug = 0
 

@@ -39,7 +39,7 @@ class SherpaOnnxOnlineRecognizer {
         config.model_config.paraformer.encoder = cStrings.makeCString(encoderPath)
         config.model_config.paraformer.decoder = cStrings.makeCString(decoderPath)
         config.model_config.tokens = cStrings.makeCString(tokensPath)
-        config.model_config.num_threads = 2
+        config.model_config.num_threads = 1
         config.model_config.debug = 0
         config.model_config.provider = cStrings.makeCString("cpu")
         config.model_config.model_type = cStrings.makeCString("paraformer")
