@@ -136,6 +136,7 @@ class FunASRNanoLLMEngine: ASREngine {
             }
 
             let rawText = self.internalQueue.sync { self._accumulatedText }
+            self.reset()
             DispatchQueue.main.async {
                 completion(rawText)
             }
