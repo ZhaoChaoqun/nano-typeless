@@ -54,6 +54,14 @@ rollback → n_prefix_tokens = (raw_tokens.len() - rollback).max(0)
 
 **结论：无 Bug。**
 
+> **什么是 RoPE（Rotary Position Embedding）？**
+>
+> Transformer 模型处理一串 token 时，模型本身并不知道每个 token 在序列中的"位置"——它只看到一组向量，分不清谁先谁后。RoPE 是一种告诉模型"这个 token 排第几"的技术。
+>
+> 具体做法是：根据 token 的位置编号，对它的向量做一个**旋转变换**（类似把向量在平面上转一个角度）。位置越靠后，旋转的角度越大。这样模型在计算注意力时，就能从向量的旋转角度差异中"感知"到两个 token 之间的距离——相邻 token 角度差小，距离远的 token 角度差大。
+>
+> 这里的关键要求是：**位置编号必须连续递增**（0, 1, 2, 3, …）。如果位置出现跳跃（比如从 5 突然跳到 100）或意外重置为 0，模型就会"误判"token 之间的距离，导致注意力计算混乱、输出质量下降。
+
 RoPE position 完全由 `kv_cache.len` 驱动。prefill 使用 `start_pos = kv_cache.len` 作为 RoPE 起点，forward 使用 `pos = kv_cache.len`。位置始终从 LCP reuse 点连续递增，不存在跳跃或重置为 0 的问题。
 
 ```rust
