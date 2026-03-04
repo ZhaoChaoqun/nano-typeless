@@ -27,11 +27,10 @@ class QwenASRStreamRecognizer {
         // 强制简体中文输出，避免自动检测导致输出繁体字
         qwen_asr_set_language(engine, "chinese")
 
-        // 流式参数：chunk_sec 和 max_new_tokens 保持默认以获得更好的准确度
-        // rollback 和 unfixed_chunks 适度降低以减少首字延迟
-        qwen_asr_stream_set_chunk_sec(engine, 1.5)
-        qwen_asr_stream_set_rollback(engine, 3)
-        qwen_asr_stream_set_unfixed_chunks(engine, 1)
+        // 流式参数：使用 C API 默认值
+        qwen_asr_stream_set_chunk_sec(engine, 2.0)
+        qwen_asr_stream_set_rollback(engine, 5)
+        qwen_asr_stream_set_unfixed_chunks(engine, 2)
         qwen_asr_stream_set_max_new_tokens(engine, 32)
 
         streamState = qwen_asr_stream_new()

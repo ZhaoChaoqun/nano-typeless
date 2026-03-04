@@ -201,11 +201,13 @@ class QwenASREngine: ASREngine {
                 return
             }
 
-            // 直接取 stable + unfixed 作为最终结果，不推送 silence
-            // 推送 silence + finalize 会导致 decoder 在静音上 hallucinate（重复之前的内容）
-            let stableText = self.recognizer.getResult()
-            let unfixedText = self.recognizer.getUnfixed() ?? ""
-            let result = stableText + unfixedText
+            // 推送极少量 silence（0.1s）+ finalize，让 Rust 处理尾部不足一个 chunk 的音频
+            // 并 commit rollback 窗口内的 token。0.1s silence 不会导致 decoder hallucinate，
+            // 而之前的 1s silence 在长音频上导致 decoder 重复之前的内容。
+            let minimalSilence = [Float](repeating: 0.0, count: 1600)
+            _ = self.recognizer.pushAudio(samples: minimalSilence, finalize: true)
+
+            let result = self.recognizer.getResult()
             self.recognizer.reset()
 
             DispatchQueue.main.async {
