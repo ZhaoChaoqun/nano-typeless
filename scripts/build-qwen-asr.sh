@@ -3,10 +3,12 @@
 # 构建 QwenASR macOS dylib（含 Streaming FFI）
 #
 # 流程：
-#   1. 克隆/更新 QwenASR 仓库
-#   2. 应用 patch（crate-type, cfg 解除, streaming C FFI）
-#   3. cargo build --release
-#   4. 复制 dylib，修复 install_name，签名
+#   1. 克隆/更新 QwenASR 仓库（从个人 fork）
+#   2. cargo build --release
+#   3. 复制 dylib，修复 install_name，签名
+#
+# Rust 代码的修改统一在上游仓库进行：~/Github/QwenASR
+# 本脚本不再使用 patch，直接拉取上游 main 分支编译。
 #
 
 set -euo pipefail
@@ -15,8 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$SCRIPT_DIR/.qwen-asr-build"
 FRAMEWORK_DIR="$PROJECT_DIR/Frameworks/qwen-asr"
-REPO_URL="https://github.com/huanglizhuo/QwenASR.git"
-PATCH_FILE="$SCRIPT_DIR/qwen-asr-macos-streaming.patch"
+REPO_URL="https://github.com/ZhaoChaoqun/QwenASR.git"
 
 echo "=== QwenASR dylib 构建脚本 ==="
 echo "项目目录: $PROJECT_DIR"
@@ -34,18 +35,18 @@ if ! command -v cargo &> /dev/null; then
     fi
 fi
 
-# 检查 patch 文件
-if [ ! -f "$PATCH_FILE" ]; then
-    echo "错误: 未找到 patch 文件: $PATCH_FILE"
-    exit 1
-fi
-
 # 克隆或更新仓库
 if [ -d "$BUILD_DIR/QwenASR" ]; then
-    echo ">>> 重置并更新已有的 QwenASR 仓库..."
+    echo ">>> 更新已有的 QwenASR 仓库..."
     cd "$BUILD_DIR/QwenASR"
-    git checkout -- .
-    git pull --ff-only || true
+    # 确保 origin 指向正确的 fork
+    CURRENT_URL=$(git remote get-url origin 2>/dev/null || echo "")
+    if [ "$CURRENT_URL" != "$REPO_URL" ]; then
+        echo "    更新 origin: $CURRENT_URL -> $REPO_URL"
+        git remote set-url origin "$REPO_URL"
+    fi
+    git fetch origin
+    git reset --hard origin/main
 else
     echo ">>> 克隆 QwenASR 仓库..."
     mkdir -p "$BUILD_DIR"
@@ -54,11 +55,7 @@ else
 fi
 
 cd "$BUILD_DIR/QwenASR"
-
-# 应用 patch（包含 Cargo.toml crate-type、lib.rs cfg 解除、c_api.rs streaming FFI）
-echo ">>> 应用 macOS streaming patch..."
-git apply "$PATCH_FILE"
-echo "    patch 应用成功"
+echo "    当前 commit: $(git log --oneline -1)"
 
 # 构建
 echo ""
@@ -117,7 +114,7 @@ echo ""
 STREAM_COUNT=$(nm -gU "$FRAMEWORK_DIR/lib/libqwen_asr.dylib" | grep -c "qwen_asr_stream" || true)
 echo ">>> Streaming API 符号数: $STREAM_COUNT"
 if [ "$STREAM_COUNT" -lt 9 ]; then
-    echo "警告: 预期 9 个 streaming 符号，实际 $STREAM_COUNT 个"
+    echo "警告: 预期至少 9 个 streaming 符号，实际 $STREAM_COUNT 个"
 fi
 
 echo ""

@@ -114,3 +114,22 @@ api.upload_file(
 1. 根据内容类型选择对应子目录
 2. 如果现有目录不合适，创建新的子目录
 3. 更新 `docs/README.md` 索引，添加新文档的链接和说明
+
+## QwenASR Rust 代码管理
+
+QwenASR 的 Rust 源码统一在 `~/Github/QwenASR`（fork 仓库）的 main 分支上维护。**不要**直接修改 `scripts/.qwen-asr-build/QwenASR/` 下的代码（该目录是构建脚本的临时目录，每次构建会被 `git reset --hard origin/main` 还原）。
+
+### 仓库信息
+
+- 本地路径: `~/Github/QwenASR`
+- 远程 origin: `https://github.com/ZhaoChaoqun/QwenASR.git`（个人 fork）
+- 远程 upstream: `https://github.com/huanglizhuo/QwenASR.git`（上游原始仓库）
+- 开发分支: main（所有修改直接提交到 main）
+
+### Rust 代码修改流程
+
+1. 在 `~/Github/QwenASR` 的 main 分支上修改 Rust 代码并提交、push
+2. 运行 `bash scripts/build-qwen-asr.sh` 构建 dylib
+3. 构建脚本会自动：从 fork 拉取最新 main → 编译 → 复制 dylib 到 Frameworks
+
+不使用 patch 文件，所有改动都在上游 repo 完成。
