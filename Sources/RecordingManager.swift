@@ -279,7 +279,11 @@ class RecordingManager {
     private func initializeRecognizer() async {
         logger.info("开始加载语音识别模型 (\(self.currentModel.displayName, privacy: .public))")
 
+        // 释放旧引擎和附属模型，等待 recognitionQueue 排空防止闭包延迟持有旧引擎
         currentEngine = nil
+        punctuator = nil
+        corrector = nil
+        recognitionQueue.sync {}
 
         switch currentModel {
         case .streamingParaformer:
