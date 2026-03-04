@@ -9,7 +9,7 @@ class QwenASRStreamRecognizer {
     private var engine: OpaquePointer?       // QwenAsrEngine*
     private var streamState: OpaquePointer?  // QwenAsrStreamState*
 
-    init?(modelDir: String, numThreads: Int32 = 4) {
+    init?(modelDir: String, numThreads: Int32 = 0) {
         logger.info("QwenASRStreamRecognizer: 开始初始化...")
         logger.debug("模型目录: \(modelDir, privacy: .public)")
 
