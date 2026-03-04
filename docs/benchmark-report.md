@@ -1,8 +1,8 @@
 # ASR Pipeline 量化对比评估报告
 
-*生成时间：2026-03-02 11:33*
-*测试集：1 条音频（corpus.json + real_manifest.json）*
-*Pipeline：Paraformer Pipeline*
+*生成时间：2026-03-03 13:29*
+*测试集：3 条音频（corpus.json + real_manifest.json）*
+*Pipeline：Qwen3-ASR (流式)*
 
 **CER 计算方式**：保留标点符号，仅做 lower + 去空格后计算字符错误率。
 
@@ -12,51 +12,55 @@
 
 | Pipeline | 平均 CER | CER=0 条数 | CER≤0.10 | CER≤0.20 | CER>0.20 | 总推理时长 | RTF |
 |----------|:-------:|:---------:|:-------:|:-------:|:-------:|:---------:|:---:|
-| Paraformer Pipeline | 0.2647 | 0/1 | 0 | 0 | 1 | 0.2s | 0.036x |
+| Qwen3-ASR (流式) | 0.4978 | 1/3 | 1 | 1 | 2 | 520.8s | 4.101x |
 
 ## 2. 按数据集/类别的平均 CER
 
-| 类别 | N | Paraformer Pip | 最佳 |
+| 类别 | N | Qwen3-ASR | 最佳 |
 |------|:-:|:------:|------|
-| real_ascend_codeswitching | 1 | **0.265** | Paraformer Pip |
-| **OVERALL** | 1 | **0.2647** | **Paraformer Pip** |
+| chinese_long | 1 | **0.000** | Qwen3-ASR |
+| long_audio | 2 | **0.747** | Qwen3-ASR |
+| **OVERALL** | 3 | **0.4978** | **Qwen3-ASR** |
 
 ## 3. 逐条 CER 对比
 
-| ID | 类别 | Paraformer | 最佳 |
+| ID | 类别 | Qwen3-ASR (流 | 最佳 |
 |-----|------|:-----:|------|
-| ascend_cs_003 | real_ascend_codeswitching | **0.265** | Paraformer |
+| zh_long_01 | chinese_long | **0** | Qwen3-ASR  |
+| long_30s_01 | long_audio | **0.675** | Qwen3-ASR  |
+| long_60s_01 | long_audio | **0.818** | Qwen3-ASR  |
 
 ## 4. 推理速度对比
 
 | Pipeline | 总音频 | 总推理 | RTF | 平均/条 |
 |----------|:-----:|:-----:|:---:|:------:|
-| Paraformer Pipeline | 5s | 0.2s | 0.036x | 0.16s |
+| Qwen3-ASR (流式) | 127s | 520.8s | 4.101x | 173.60s |
 
 ## 5. 各 Pipeline 识别错误案例详细分析
 
-### 5.1 Paraformer Pipeline（1 条不准确）
+### 5.1 Qwen3-ASR (流式)（2 条不准确）
 
 | # | ID | CER | 期望文本 | 识别结果 | 错误类型 |
 |:-:|-----|:---:|---------|---------|---------|
-| 1 | ascend_cs_003 | 0.265 | 深圳啊，或者是上海这种比较大的城市，会有更多opportunity。 | 深圳啊，或者是上海这种表达城市会有更opportun。 | 英文词丢失: opportunity |
-深圳啊，或者上海这种比较大的城市，会有更多的 opportunity。深圳啊，或者上海这种比较大的城市，会有更多的 opportunity。深圳或者上海这种比较大的城市会有更多的opportunity。深圳或者上海这种比较大的城市会有更多的opportunity。
-深圳或者上海这种深圳或者上海这种比较大的城市会有更多的opportunity。
+| 1 | long_60s_01 | 0.818 | 软件工程是一门研究用工程化方法构建和维护有效的实用的和高质量的软件的学科。它涉及… | 软件工程是一门研究用工程化方法构建和维护有效的、实用的和高质量的软件的学科。它涉… | 英文词丢失: git,docker,devops, 数字/量词, 截断 |
+| 2 | long_30s_01 | 0.675 | 人工智能技术在过去10年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解… | 人工智能技术在过去十年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自… | 数字/量词, 截断 |
+
 ## 6. 综合分析与建议
 
 ### 各场景最佳 Pipeline 推荐
 
 | 场景 | 推荐 Pipeline | CER |
 |------|--------------|:---:|
-| real_ascend_codeswitching | Paraformer Pipeline | 0.265 |
+| chinese_long | Qwen3-ASR (流式) | 0.000 |
+| long_audio | Qwen3-ASR (流式) | 0.747 |
 
 ### Pipeline 特点总结
 
-**Paraformer Pipeline**
-- 平均 CER: 0.2647
-- 完美识别 (CER=0): 0/1 条
-- 不准确 (CER>5%): 1/1 条
-- RTF: 0.036x
+**Qwen3-ASR (流式)**
+- 平均 CER: 0.4978
+- 完美识别 (CER=0): 1/3 条
+- 不准确 (CER>5%): 2/3 条
+- RTF: 4.101x
 
 ---
 
