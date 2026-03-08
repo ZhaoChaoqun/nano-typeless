@@ -8,42 +8,25 @@
 
 Typeless 支持三个 ASR 引擎，每个引擎的后处理链不同：
 
+```mermaid
+graph TD
+    MIC["麦克风 → 音频采集 (16kHz mono f32) → AVAudioEngine"]
+
+    MIC --> FUNASR["FunASR Nano LLM<br/>VAD 分段 + LLM 识别<br/>ITN: 内置 | 标点: 内置"]
+    MIC --> PARAFORMER["Streaming Paraformer<br/>流式识别<br/>ITN: FST"]
+    MIC --> QWEN["Qwen3-ASR<br/>流式识别<br/>ITN: 内置 | 标点: 内置 | 纠错: 内置"]
+
+    PARAFORMER --> CSC["CSC 中文拼写纠错<br/>(macbert4csc INT8, 98MB)<br/>~15-30ms"]
+    CSC --> PUNCT["CT-Transformer 标点模型<br/>(62MB)"]
+
+    FUNASR --> OUTPUT["最终文本 → 粘贴到光标位置"]
+    PUNCT --> OUTPUT
+    QWEN --> OUTPUT
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Typeless ASR Pipeline                        │
-│                                                                     │
-│  麦克风 → 音频采集 (16kHz mono f32) → AVAudioEngine                  │
-│                          │                                          │
-│              ┌───────────┼───────────┐                              │
-│              ▼           ▼           ▼                              │
-│     ┌──────────────┐ ┌────────┐ ┌──────────┐                       │
-│     │ FunASR Nano  │ │Streaming│ │ Qwen3-ASR│                       │
-│     │ LLM          │ │Parafor- │ │          │                       │
-│     │              │ │mer      │ │          │                       │
-│     │ VAD 分段     │ │         │ │          │                       │
-│     │ + LLM 识别   │ │ 流式识别│ │ 流式识别 │                       │
-│     │              │ │         │ │          │                       │
-│     │ ITN: 内置    │ │ITN: FST │ │ ITN: 内置│                       │
-│     │ 标点: 内置   │ │         │ │ 标点: 内置│                       │
-│     └──────┬───────┘ └────┬────┘ │ 纠错: 内置│                       │
-│            │              │      └─────┬────┘                       │
-│            │              │            │                             │
-│            │              ▼            │                             │
-│            │       ┌──────────────────────────┐                     │
-│            │       │ CSC 中文拼写纠错          │                     │
-│            │       │ (macbert4csc INT8, 98MB) │                     │
-│            │       │ ~15-30ms                 │                     │
-│            │       └────────────┬─────────────┘                     │
-│            │                    ▼                                    │
-│            │       ┌──────────────────────────┐                     │
-│            │       │ CT-Transformer 标点模型   │                     │
-│            │       │ (62MB)                   │                     │
-│            │       └────────────┬─────────────┘                     │
-│            │                    │                                    │
-│            ▼                    ▼                     ▼              │
-│              最终文本 ──────────────> 粘贴到光标位置                   │
-└─────────────────────────────────────────────────────────────────────┘
-```
+
+**路径说明：**
+- **Streaming Paraformer**（中间路径）：需要外部 CSC 纠错 + CT-Transformer 标点
+- **FunASR Nano LLM** 和 **Qwen3-ASR**：内置 ITN/标点/纠错，**直接输出最终文本**，不经过 CSC 和 CT-Transformer
 
 ---
 

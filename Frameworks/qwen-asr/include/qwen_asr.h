@@ -56,6 +56,10 @@ int32_t qwen_asr_set_language(QwenAsrEngine* engine, const char* language);
 /// Free a string returned by qwen_asr_transcribe_* or qwen_asr_stream_*.
 void qwen_asr_free_string(char* s);
 
+/// Enable or disable GPU acceleration at runtime.
+/// @param use_gpu 1 = GPU (Metal), 0 = CPU-only
+void qwen_asr_set_use_gpu(QwenAsrEngine* engine, int32_t use_gpu);
+
 // ========================================================================
 // Streaming API
 // ========================================================================

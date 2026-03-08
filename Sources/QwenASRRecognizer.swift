@@ -27,10 +27,14 @@ class QwenASRStreamRecognizer {
         // 强制简体中文输出，避免自动检测导致输出繁体字
         qwen_asr_set_language(engine, "chinese")
 
+        // 启用 Metal GPU 加速
+        qwen_asr_set_use_gpu(engine, 1)
+        logger.info("QwenASRStreamRecognizer: 已启用 Metal GPU 加速")
+
         // 流式参数：使用 C API 默认值
         qwen_asr_stream_set_chunk_sec(engine, 2.0)
         qwen_asr_stream_set_rollback(engine, 5)
-        qwen_asr_stream_set_unfixed_chunks(engine, 2)
+        qwen_asr_stream_set_unfixed_chunks(engine, 0)
         qwen_asr_stream_set_max_new_tokens(engine, 32)
 
         streamState = qwen_asr_stream_new()

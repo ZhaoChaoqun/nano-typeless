@@ -63,7 +63,7 @@ echo ">>> 开始编译 (Release mode)..."
 echo "    RUSTFLAGS=\"-C target-cpu=native\""
 echo ""
 
-RUSTFLAGS="-C target-cpu=native" cargo build --release --features ios 2>&1
+RUSTFLAGS="-C target-cpu=native" cargo build --release --features ios,metal 2>&1
 
 echo ""
 echo ">>> 编译完成"
