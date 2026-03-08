@@ -10,6 +10,7 @@
 
 #include "sherpa-onnx/c-api/c-api.h"
 #include "qwen_asr.h"
+#include "qwen3_rewrite.h"
 #include "onnxruntime/onnxruntime_c_api.h"
 
 #endif /* CSherpaOnnx_Bridging_Header_h */

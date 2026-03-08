@@ -16,6 +16,10 @@ class ModelDownloadManager: ObservableObject {
     @Published var punctuationDownloadProgress: String = ""
     @Published var isCSCDownloading: Bool = false
     @Published var cscDownloadProgress: String = ""
+    @Published var isQwen3RewriteDownloading: Bool = false
+    @Published var qwen3RewriteDownloadProgress: String = ""
+    @Published var qwen3RewriteDownloaded: Bool = false
+    @Published var postProcessingMode: PostProcessingMode
 
     init() {
         // 从 UserDefaults 读取选择的模型
@@ -24,6 +28,13 @@ class ModelDownloadManager: ObservableObject {
             selectedModel = model
         } else {
             selectedModel = .streamingParaformer
+        }
+        // 从 UserDefaults 读取后处理模式
+        if let rawValue = UserDefaults.standard.string(forKey: "postProcessingMode"),
+           let mode = PostProcessingMode(rawValue: rawValue) {
+            postProcessingMode = mode
+        } else {
+            postProcessingMode = .cscPunctuation
         }
         checkModelsExist()
     }
@@ -34,6 +45,7 @@ class ModelDownloadManager: ObservableObject {
         funasrNanoLLMDownloaded = SherpaOnnxManager.shared.isFunASRNanoLLMDownloaded()
         punctuationDownloaded = SherpaOnnxManager.shared.isPunctuationModelDownloaded()
         cscDownloaded = SherpaOnnxManager.shared.isCSCModelDownloaded()
+        qwen3RewriteDownloaded = SherpaOnnxManager.shared.isQwen3RewriteModelDownloaded()
     }
 
     /// 兼容旧接口
@@ -145,6 +157,38 @@ class ModelDownloadManager: ObservableObject {
             }
         })
     }
+
+    /// 下载 Qwen3 Rewrite 模型
+    func downloadQwen3RewriteModel() {
+        guard !isQwen3RewriteDownloading else { return }
+
+        isQwen3RewriteDownloading = true
+        qwen3RewriteDownloadProgress = "正在下载 Qwen3 Rewrite 模型..."
+
+        SherpaOnnxManager.shared.downloadQwen3RewriteModel(progress: { [weak self] progressText in
+            DispatchQueue.main.async {
+                self?.qwen3RewriteDownloadProgress = progressText
+            }
+        }, completion: { [weak self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    self?.qwen3RewriteDownloaded = true
+                    self?.qwen3RewriteDownloadProgress = "下载完成"
+                    RecordingManager.shared.reloadModel()
+                } else {
+                    self?.qwen3RewriteDownloadProgress = error ?? "下载失败"
+                }
+                self?.isQwen3RewriteDownloading = false
+            }
+        })
+    }
+
+    /// 切换后处理模式
+    func switchPostProcessingMode(to mode: PostProcessingMode) {
+        postProcessingMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: "postProcessingMode")
+        RecordingManager.shared.reloadModel()
+    }
 }
 
 /// 设置视图
@@ -184,8 +228,27 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                // 标点模型状态（仅需要外部标点模型的引擎显示）
-                if downloadManager.selectedModel.needsPunctuation {
+                // Streaming Paraformer 后处理模式选择
+                if downloadManager.selectedModel == .streamingParaformer {
+                    Picker("后处理模式", selection: Binding(
+                        get: { downloadManager.postProcessingMode },
+                        set: { downloadManager.switchPostProcessingMode(to: $0) }
+                    )) {
+                        ForEach(PostProcessingMode.allCases, id: \.self) { mode in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(mode.displayName)
+                                Text(mode.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .tag(mode)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+                }
+
+                // 标点模型状态（仅 CSC+标点模式下显示）
+                if downloadManager.selectedModel.needsPunctuation && downloadManager.postProcessingMode == .cscPunctuation {
                     punctuationModelStatusView()
 
                     if downloadManager.isPunctuationDownloading {
@@ -198,6 +261,17 @@ struct SettingsView: View {
 
                     if downloadManager.isCSCDownloading {
                         Text(downloadManager.cscDownloadProgress)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                // Qwen3 Rewrite 模型状态
+                if downloadManager.selectedModel == .streamingParaformer && downloadManager.postProcessingMode == .qwen3Rewrite {
+                    qwen3RewriteModelStatusView()
+
+                    if downloadManager.isQwen3RewriteDownloading {
+                        Text(downloadManager.qwen3RewriteDownloadProgress)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -228,7 +302,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 520)
+        .frame(width: 420, height: 600)
     }
 
     @ViewBuilder
@@ -336,6 +410,43 @@ struct SettingsView: View {
             } else {
                 Button("下载") {
                     downloadManager.downloadCSCModel()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func qwen3RewriteModelStatusView() -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Qwen3 Rewrite 模型")
+                    .fontWeight(.medium)
+                Text("一站式后处理：ITN + 标点 + CSC + 术语规范化（约570MB）")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            if downloadManager.qwen3RewriteDownloaded {
+                Label("已下载", systemImage: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.caption)
+            } else if downloadManager.isQwen3RewriteDownloading {
+                VStack(alignment: .trailing, spacing: 2) {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                    if !downloadManager.qwen3RewriteDownloadProgress.isEmpty {
+                        Text(downloadManager.qwen3RewriteDownloadProgress)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else {
+                Button("下载") {
+                    downloadManager.downloadQwen3RewriteModel()
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
