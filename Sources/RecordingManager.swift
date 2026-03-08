@@ -341,8 +341,6 @@ class RecordingManager {
             await initializeStreamingParaformer()
         case .qwenASR:
             await initializeQwenASR()
-        case .funasrNanoLLM:
-            await initializeFunASRNanoLLM()
         }
 
         if currentEngine != nil {
@@ -405,35 +403,6 @@ class RecordingManager {
             recognizer: recognizer, recognitionQueue: recognitionQueue
         )
         logger.info("QwenASR 流式模型加载成功")
-    }
-
-    private func initializeFunASRNanoLLM() async {
-        guard SherpaOnnxManager.shared.isFunASRNanoLLMDownloaded(),
-              let paths = SherpaOnnxManager.shared.getFunASRNanoLLMModelPaths() else {
-            logger.warning("FunASR Nano LLM 模型未下载")
-            return
-        }
-
-        guard let recognizer = FunASRNanoLLMRecognizer(
-            encoderAdaptorPath: paths.encoderAdaptorPath,
-            llmPath: paths.llmPath,
-            embeddingPath: paths.embeddingPath,
-            tokenizerDir: paths.tokenizerDir
-        ) else {
-            logger.error("FunASR Nano LLM 模型加载失败")
-            return
-        }
-
-        guard let vad = await loadVAD() else {
-            logger.error("VAD 加载失败，FunASR Nano LLM 无法使用")
-            return
-        }
-
-        currentEngine = FunASRNanoLLMEngine(
-            recognizer: recognizer, vad: vad,
-            recognitionQueue: recognitionQueue
-        )
-        logger.info("FunASR Nano LLM 模型加载成功")
     }
 
     private func initializePunctuation() async {

@@ -1,13 +1,12 @@
 import XCTest
 @testable import Nano_Typeless
 
-/// ASR Pipeline Benchmark — 直接使用产品 Swift 代码评估 5 个 Pipeline
+/// ASR Pipeline Benchmark — 直接使用产品 Swift 代码评估 Pipeline
 ///
 /// Pipeline:
 ///   1. Qwen3-ASR (离线): pushAudio(finalize:true) 一次性识别
 ///   2. Qwen3-ASR (流式): chunk+rollback 模拟流式
 ///   3. Paraformer Pipeline: Streaming Paraformer + ITN → CSC → CT-Transformer 标点
-///   4. FunASR Nano LLM Pipeline: SenseVoice encoder + Qwen3 LLM + VAD（自带标点）
 ///
 /// 运行:
 ///   xcodebuild test -scheme Typeless -destination 'platform=macOS' \
@@ -22,7 +21,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     // Pipeline 组件
     static var qwenRecognizer: QwenASRStreamRecognizer?
     static var paraformerRecognizer: SherpaOnnxOnlineRecognizer?
-    static var funasrNanoLLMRecognizer: FunASRNanoLLMRecognizer?
     static var vad: SherpaOnnxVAD?
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
@@ -30,7 +28,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     // 可用性标记
     static var qwenAvailable = false
     static var paraformerAvailable = false
-    static var funasrNanoLLMAvailable = false
 
     // 日志文件
     static var logPath: String = ""
@@ -118,18 +115,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
             log("[Benchmark] Paraformer: \(paraformerAvailable ? "✓" : "✗") (ITN: \(itnPath != nil ? "on" : "off"))")
         }
 
-        // FunASR Nano LLM
-        if let paths = TestEnvironment.funasrNanoLLMPaths() {
-            funasrNanoLLMRecognizer = FunASRNanoLLMRecognizer(
-                encoderAdaptorPath: paths.encoderAdaptor,
-                llmPath: paths.llm,
-                embeddingPath: paths.embedding,
-                tokenizerDir: paths.tokenizerDir
-            )
-            funasrNanoLLMAvailable = funasrNanoLLMRecognizer != nil
-            log("[Benchmark] FunASR Nano LLM: \(funasrNanoLLMAvailable ? "✓" : "✗")")
-        }
-
         // CSC
         if let cscPaths = TestEnvironment.cscModelPaths() {
             corrector = ChineseSpellingCorrector(modelPath: cscPaths.model, vocabPath: cscPaths.vocab)
@@ -149,7 +134,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         logHandle = nil
         qwenRecognizer = nil
         paraformerRecognizer = nil
-        funasrNanoLLMRecognizer = nil
         vad = nil
         punctuator = nil
         corrector = nil
@@ -241,65 +225,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         }
 
         Self.allResults.append(PipelineResult(pipelineName: "Paraformer Pipeline", results: results))
-    }
-
-    func testFunASRNanoLLMPipeline() throws {
-        try XCTSkipUnless(Self.funasrNanoLLMAvailable, "FunASR Nano LLM 模型不可用")
-        let recognizer = Self.funasrNanoLLMRecognizer!
-
-        // FunASR Nano LLM 是离线模型，长音频需要 VAD 分段
-        // 短音频（< 30s）可直接整段识别；长音频必须 VAD 分段后逐段识别
-        let vadForLLM: SherpaOnnxVAD? = {
-            guard let vadPath = TestEnvironment.vadModelPath() else { return nil }
-            return SherpaOnnxVAD(modelPath: vadPath)
-        }()
-
-        let results = runPipeline(name: "FunASR Nano LLM") { entry in
-            let samples = try WAVLoader.load(path: entry.audioPath).samples
-
-            // 长音频（≥ 25s）使用 VAD 分段识别
-            if samples.count >= 25 * 16000, let vad = vadForLLM {
-                vad.reset()
-
-                // VAD 需要按 chunk 送入（内部缓冲区有限），与产品代码 installTap 的行为一致
-                let chunkSize = 4096
-                var accumulated = ""
-                var segCount = 0
-
-                for i in stride(from: 0, to: samples.count, by: chunkSize) {
-                    let end = min(i + chunkSize, samples.count)
-                    let chunk = Array(samples[i..<end])
-                    vad.acceptWaveform(samples: chunk)
-
-                    while vad.hasSegment() {
-                        if let segment = vad.popSegmentWithTime() {
-                            segCount += 1
-                            if let text = recognizer.transcribe(samples: segment.samples) {
-                                accumulated += text
-                            }
-                        }
-                    }
-                }
-
-                vad.flush()
-                while vad.hasSegment() {
-                    if let segment = vad.popSegmentWithTime() {
-                        segCount += 1
-                        if let text = recognizer.transcribe(samples: segment.samples) {
-                            accumulated += text
-                        }
-                    }
-                }
-
-                return accumulated
-            }
-
-            // 短音频直接整段识别
-            // FunASR Nano LLM 自带标点，不需要后处理
-            return recognizer.transcribe(samples: samples) ?? ""
-        }
-
-        Self.allResults.append(PipelineResult(pipelineName: "FunASR Nano LLM", results: results))
     }
 
     // MARK: - 报告生成

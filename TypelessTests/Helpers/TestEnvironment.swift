@@ -91,10 +91,4 @@ enum TestEnvironment {
         SherpaOnnxManager.shared.getITNFstPath()
     }
 
-    /// FunASR Nano LLM 模型路径
-    static func funasrNanoLLMPaths() -> (encoderAdaptor: String, llm: String, embedding: String, tokenizerDir: String)? {
-        SherpaOnnxManager.shared.getFunASRNanoLLMModelPaths().map {
-            ($0.encoderAdaptorPath, $0.llmPath, $0.embeddingPath, $0.tokenizerDir)
-        }
-    }
 }

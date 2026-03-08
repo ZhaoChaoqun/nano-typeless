@@ -7,7 +7,6 @@ class ModelDownloadManager: ObservableObject {
     @Published var selectedModel: ASRModelType
     @Published var streamingParaformerDownloaded: Bool = false
     @Published var qwenASRDownloaded: Bool = false
-    @Published var funasrNanoLLMDownloaded: Bool = false
     @Published var punctuationDownloaded: Bool = false
     @Published var cscDownloaded: Bool = false
     @Published var isDownloading: Bool = false
@@ -42,7 +41,6 @@ class ModelDownloadManager: ObservableObject {
     func checkModelsExist() {
         streamingParaformerDownloaded = SherpaOnnxManager.shared.isStreamingParaformerDownloaded()
         qwenASRDownloaded = SherpaOnnxManager.shared.isQwenASRModelDownloaded()
-        funasrNanoLLMDownloaded = SherpaOnnxManager.shared.isFunASRNanoLLMDownloaded()
         punctuationDownloaded = SherpaOnnxManager.shared.isPunctuationModelDownloaded()
         cscDownloaded = SherpaOnnxManager.shared.isCSCModelDownloaded()
         qwen3RewriteDownloaded = SherpaOnnxManager.shared.isQwen3RewriteModelDownloaded()
@@ -55,8 +53,6 @@ class ModelDownloadManager: ObservableObject {
             return streamingParaformerDownloaded
         case .qwenASR:
             return qwenASRDownloaded
-        case .funasrNanoLLM:
-            return funasrNanoLLMDownloaded
         }
     }
 
@@ -279,7 +275,7 @@ struct SettingsView: View {
             } header: {
                 Text("模型状态")
             } footer: {
-                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 834MB（INT8，自带标点），FunASR Nano LLM 约 716MB（自带标点）。")
+                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 834MB（INT8，自带标点）。")
             }
 
             Section("快捷键") {
@@ -311,7 +307,6 @@ struct SettingsView: View {
             switch model {
             case .streamingParaformer: return downloadManager.streamingParaformerDownloaded
             case .qwenASR: return downloadManager.qwenASRDownloaded
-            case .funasrNanoLLM: return downloadManager.funasrNanoLLMDownloaded
             }
         }()
 
@@ -319,11 +314,6 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(model.displayName)
                     .fontWeight(.medium)
-                if model.needsVAD {
-                    Text("需要额外下载 VAD 模型")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
                 if !model.needsPunctuation {
                     Text("自带标点，无需标点模型")
                         .font(.caption)

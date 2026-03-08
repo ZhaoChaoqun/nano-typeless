@@ -2,7 +2,7 @@ import Foundation
 
 /// 统一的 ASR 引擎接口
 ///
-/// 封装了不同 ASR 后端（Streaming Paraformer、QwenASR、FunASR Nano LLM）的差异，
+/// 封装了不同 ASR 后端（Streaming Paraformer、QwenASR）的差异，
 /// 让 RecordingManager 无需关心具体引擎类型。
 protocol ASREngine: AnyObject {
     /// 将新的音频采样送入引擎
@@ -83,83 +83,6 @@ class StreamingParaformerEngine: ASREngine {
 
     func reset() {
         recognizer.reset()
-    }
-}
-
-// MARK: - FunASR Nano LLM Engine (VAD + Offline LLM)
-
-/// FunASR Nano LLM 引擎：使用 VAD 分段 + SenseVoice encoder + Qwen3 LLM 离线识别
-class FunASRNanoLLMEngine: ASREngine {
-    private let recognizer: FunASRNanoLLMRecognizer
-    private let vad: SherpaOnnxVAD
-    private let recognitionQueue: DispatchQueue
-    private let internalQueue = DispatchQueue(label: "com.typeless.funasrnano-llm-engine")
-    private var _accumulatedText = ""
-
-    let needsPunctuation = false
-
-    init(recognizer: FunASRNanoLLMRecognizer, vad: SherpaOnnxVAD,
-         recognitionQueue: DispatchQueue) {
-        self.recognizer = recognizer
-        self.vad = vad
-        self.recognitionQueue = recognitionQueue
-    }
-
-    func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void) {
-        vad.acceptWaveform(samples: samples)
-
-        while vad.hasSegment() {
-            if let segment = vad.popSegmentWithTime() {
-                recognitionQueue.async { [weak self] in
-                    self?.transcribeSegment(segment, onPartialResult: onPartialResult)
-                }
-            }
-        }
-    }
-
-    func flush(completion: @escaping (String) -> Void) {
-        vad.flush()
-
-        recognitionQueue.async { [weak self] in
-            guard let self = self else {
-                DispatchQueue.main.async { completion("") }
-                return
-            }
-
-            while self.vad.hasSegment() {
-                if let segment = self.vad.popSegmentWithTime(),
-                   let text = self.recognizer.transcribe(samples: segment.samples) {
-                    self.internalQueue.sync {
-                        self._accumulatedText += text
-                    }
-                }
-            }
-
-            let rawText = self.internalQueue.sync { self._accumulatedText }
-            self.reset()
-            DispatchQueue.main.async {
-                completion(rawText)
-            }
-        }
-    }
-
-    func reset() {
-        vad.reset()
-        internalQueue.sync { _accumulatedText = "" }
-    }
-
-    private func transcribeSegment(_ segment: SpeechSegment, onPartialResult: @escaping (String, String?) -> Void) {
-        if let text = recognizer.transcribe(samples: segment.samples) {
-            let newAccumulated: String = internalQueue.sync {
-                if _accumulatedText.isEmpty {
-                    _accumulatedText = text
-                } else {
-                    _accumulatedText += text
-                }
-                return _accumulatedText
-            }
-            onPartialResult(newAccumulated, nil)
-        }
     }
 }
 

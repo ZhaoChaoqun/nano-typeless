@@ -7,7 +7,6 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnx
 enum ASRModelType: String, CaseIterable, Identifiable {
     case streamingParaformer = "streaming-paraformer"
     case qwenASR = "qwen-asr"
-    case funasrNanoLLM = "funasr-nano-llm"
 
     var id: String { rawValue }
 
@@ -17,19 +16,15 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "Streaming Paraformer"
         case .qwenASR:
             return "Qwen3-ASR"
-        case .funasrNanoLLM:
-            return "FunASR Nano LLM"
         }
     }
 
     var description: String {
         switch self {
         case .streamingParaformer:
-            return "原生流式识别，中英文混合，无需 VAD"
+            return "原生流式识别，中英文混合"
         case .qwenASR:
-            return "Qwen3 大模型 ASR，中英文混合，自带标点，无需 VAD"
-        case .funasrNanoLLM:
-            return "SenseVoice + Qwen3 LLM，高质量输出，自带标点和 ITN"
+            return "Qwen3 大模型 ASR，中英文混合，自带标点"
         }
     }
 
@@ -39,24 +34,13 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
         case .qwenASR:
             return "Qwen3-ASR-0.6B"
-        case .funasrNanoLLM:
-            return "sherpa-onnx-funasr-nano-int8-2025-12-30"
-        }
-    }
-
-    var needsVAD: Bool {
-        switch self {
-        case .funasrNanoLLM:
-            return true
-        case .streamingParaformer, .qwenASR:
-            return false
         }
     }
 
     /// 是否需要外部标点模型（Qwen3-ASR 自带标点）
     var needsPunctuation: Bool {
         switch self {
-        case .qwenASR, .funasrNanoLLM:
+        case .qwenASR:
             return false
         case .streamingParaformer:
             return true
@@ -69,8 +53,6 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "~216MB"
         case .qwenASR:
             return "~834MB"
-        case .funasrNanoLLM:
-            return "~716MB"
         }
     }
 }
@@ -91,10 +73,6 @@ enum DownloadSource: CaseIterable {
         case (.github, .qwenASR):
             // GitHub 备用源暂无，使用 ModelScope
             return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
-        case (.modelScope, .funasrNanoLLM):
-            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-funasr-nano-int8-2025-12-30.tar.bz2"
-        case (.github, .funasrNanoLLM):
-            return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-funasr-nano-int8-2025-12-30.tar.bz2"
         }
     }
 
@@ -225,38 +203,6 @@ class SherpaOnnxManager: NSObject {
         return getQwenASRModelDir() != nil
     }
 
-    // MARK: - FunASR Nano LLM 模型路径
-
-    /// 获取 FunASR Nano LLM 模型路径
-    func getFunASRNanoLLMModelPaths() -> (
-        encoderAdaptorPath: String,
-        llmPath: String,
-        embeddingPath: String,
-        tokenizerDir: String
-    )? {
-        let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.funasrNanoLLM.folderName)
-
-        let encoderAdaptor = modelDir.appendingPathComponent("encoder_adaptor.int8.onnx")
-        let llm = modelDir.appendingPathComponent("llm.int8.onnx")
-        let embedding = modelDir.appendingPathComponent("embedding.int8.onnx")
-        let tokenizerDir = modelDir.appendingPathComponent("Qwen3-0.6B")
-        let vocabJson = tokenizerDir.appendingPathComponent("vocab.json")
-
-        guard FileManager.default.fileExists(atPath: encoderAdaptor.path),
-              FileManager.default.fileExists(atPath: llm.path),
-              FileManager.default.fileExists(atPath: embedding.path),
-              FileManager.default.fileExists(atPath: vocabJson.path) else {
-            return nil
-        }
-
-        return (encoderAdaptor.path, llm.path, embedding.path, tokenizerDir.path)
-    }
-
-    /// 检查 FunASR Nano LLM 模型是否已下载
-    func isFunASRNanoLLMDownloaded() -> Bool {
-        return getFunASRNanoLLMModelPaths() != nil
-    }
-
     // MARK: - 通用模型检查
 
     /// 检查指定模型是否已下载
@@ -266,8 +212,6 @@ class SherpaOnnxManager: NSObject {
             return isStreamingParaformerDownloaded()
         case .qwenASR:
             return isQwenASRModelDownloaded()
-        case .funasrNanoLLM:
-            return isFunASRNanoLLMDownloaded()
         }
     }
 
