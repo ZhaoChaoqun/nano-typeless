@@ -51,6 +51,8 @@ CSC_MODEL_DIR = MODELS_DIR / "macbert4csc-base-chinese"
 PUNCT_MODEL_DIR = MODELS_DIR / "sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8"
 
 QWEN_DYLIB = PROJECT_ROOT / "Frameworks" / "qwen-asr" / "lib" / "libqwen_asr.dylib"
+QWEN3_REWRITE_DYLIB = PROJECT_ROOT / "Frameworks" / "qwen3-rewrite" / "lib" / "libqwen3_rewrite.dylib"
+QWEN3_REWRITE_MODEL_DIR = Path.home() / "Github" / "Qwen3-0.6B" / "models" / "Qwen3-0.6B-rewrite-lora"
 
 # ============================================================================
 # WAV 加载
@@ -458,6 +460,43 @@ class SenseVoiceEngine:
         pass
 
 
+class Qwen3RewriteEngine:
+    """Qwen3-0.6B Rewrite 后处理引擎（C FFI）"""
+
+    def __init__(self, model_dir: str, dylib_path: str):
+        self.lib = ctypes.CDLL(dylib_path)
+        self._setup(self.lib)
+        self.engine = self.lib.qwen3_rewrite_load(model_dir.encode(), 0, 1)
+        if not self.engine:
+            raise RuntimeError(f"Failed to load Qwen3 Rewrite from {model_dir}")
+
+    @staticmethod
+    def _setup(lib):
+        lib.qwen3_rewrite_load.argtypes = [ctypes.c_char_p, ctypes.c_int32, ctypes.c_int32]
+        lib.qwen3_rewrite_load.restype = ctypes.c_void_p
+        lib.qwen3_rewrite_text.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        lib.qwen3_rewrite_text.restype = ctypes.c_void_p
+        lib.qwen3_rewrite_free_string.argtypes = [ctypes.c_void_p]
+        lib.qwen3_rewrite_free_string.restype = None
+        lib.qwen3_rewrite_free.argtypes = [ctypes.c_void_p]
+        lib.qwen3_rewrite_free.restype = None
+
+    def rewrite(self, text: str) -> str:
+        if not text:
+            return text
+        ptr = self.lib.qwen3_rewrite_text(self.engine, text.encode("utf-8"))
+        if not ptr:
+            return text
+        result = ctypes.string_at(ptr).decode("utf-8")
+        self.lib.qwen3_rewrite_free_string(ptr)
+        return result
+
+    def close(self):
+        if self.engine:
+            self.lib.qwen3_rewrite_free(self.engine)
+            self.engine = None
+
+
 # ============================================================================
 # Pipeline 封装（与产品架构一致）
 # ============================================================================
@@ -538,6 +577,26 @@ class SenseVoicePipeline:
             text = self.csc.correct(text)
         if self.punct:
             text = self.punct.add_punctuation(text)
+        return text
+
+    def close(self):
+        self.asr.close()
+
+
+class ParaformerQwen3RewritePipeline:
+    """Pipeline: Streaming Paraformer + Qwen3-0.6B Rewrite 一站式后处理"""
+    NAME = "Paraformer + Qwen3 Rewrite"
+    SHORT = "paraformer_rewrite"
+    DESC = "ASR + Qwen3-0.6B 一站式后处理（ITN + 标点 + CSC）"
+
+    def __init__(self, model_dir: str, itn_fst: Optional[str],
+                 rewriter: Qwen3RewriteEngine):
+        self.asr = ParaformerEngine(model_dir, itn_fst)
+        self.rewriter = rewriter
+
+    def transcribe(self, samples: list[float]) -> str:
+        text = self.asr.transcribe(samples)
+        text = self.rewriter.rewrite(text)
         return text
 
     def close(self):
@@ -900,13 +959,13 @@ def main():
     parser = argparse.ArgumentParser(description="ASR Pipeline 量化对比评估")
     parser.add_argument("--output", "-o", type=str, default=None, help="输出 Markdown 报告路径")
     parser.add_argument("--pipelines", type=str, default="all",
-                        help="要评估的 Pipeline，逗号分隔：qwen,qwen_stream,paraformer,sensevoice (默认 all)")
+                        help="要评估的 Pipeline，逗号分隔：qwen,qwen_stream,paraformer,paraformer_rewrite,sensevoice (默认 all)")
     parser.add_argument("--entry", type=str, default=None,
                         help="仅运行指定 entry ID（逗号分隔可指定多条），例如：--entry ascend_cs_003")
     args = parser.parse_args()
 
     if args.pipelines == "all":
-        pipeline_list = ["qwen", "qwen_stream", "paraformer", "sensevoice"]
+        pipeline_list = ["qwen", "qwen_stream", "paraformer", "paraformer_rewrite", "sensevoice"]
     else:
         pipeline_list = [e.strip() for e in args.pipelines.split(",")]
 
@@ -938,7 +997,9 @@ def main():
     # 初始化共享后处理模块
     csc = None
     punct = None
+    rewriter = None
     need_postprocessing = "paraformer" in pipeline_list or "sensevoice" in pipeline_list
+    need_rewriter = "paraformer_rewrite" in pipeline_list
 
     if need_postprocessing:
         print("\n[2] 初始化共享后处理模块...")
@@ -964,7 +1025,9 @@ def main():
             print(f"    [WARN] 标点模型不存在，跳过标点")
 
     all_results: dict[str, list[Result]] = {}
-    step = 3 if need_postprocessing else 2
+    step = 2
+    if need_postprocessing:
+        step += 1
 
     # Qwen3-ASR Pipeline (离线)
     if "qwen" in pipeline_list:
@@ -1014,6 +1077,32 @@ def main():
             pipe.close()
         else:
             print(f"  [SKIP] 模型不存在")
+
+    # Paraformer + Qwen3 Rewrite Pipeline
+    if "paraformer_rewrite" in pipeline_list:
+        print(f"\n[{step}] 初始化 Paraformer + Qwen3 Rewrite Pipeline...")
+        step += 1
+        if PARAFORMER_MODEL_DIR.exists() and QWEN3_REWRITE_DYLIB.exists() and QWEN3_REWRITE_MODEL_DIR.exists():
+            if not rewriter:
+                try:
+                    rewriter = Qwen3RewriteEngine(str(QWEN3_REWRITE_MODEL_DIR), str(QWEN3_REWRITE_DYLIB))
+                    print(f"    Qwen3 Rewrite 引擎加载成功")
+                except Exception as e:
+                    print(f"    [WARN] Qwen3 Rewrite 引擎加载失败: {e}")
+            if rewriter:
+                itn = str(ITN_FST_PATH) if ITN_FST_PATH.exists() else None
+                pipe = ParaformerQwen3RewritePipeline(str(PARAFORMER_MODEL_DIR), itn, rewriter)
+                print(f"  加载成功 (ITN: {'on' if itn else 'off'})，开始评估...")
+                all_results[ParaformerQwen3RewritePipeline.NAME] = run_engine(pipe, ParaformerQwen3RewritePipeline.NAME, entries, verbose)
+                pipe.close()
+            else:
+                print(f"  [SKIP] Qwen3 Rewrite 引擎不可用")
+        else:
+            missing = []
+            if not PARAFORMER_MODEL_DIR.exists(): missing.append("Paraformer 模型")
+            if not QWEN3_REWRITE_DYLIB.exists(): missing.append("qwen3_rewrite dylib")
+            if not QWEN3_REWRITE_MODEL_DIR.exists(): missing.append("Qwen3 Rewrite 模型")
+            print(f"  [SKIP] 缺少: {', '.join(missing)}")
 
     if not all_results:
         print("\n没有可用的 Pipeline，退出。")
