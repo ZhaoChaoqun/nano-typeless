@@ -138,24 +138,8 @@ class SherpaOnnxManager: NSObject {
     /// FP16 模型目录名（原生 ORT 推理使用）
     static let streamingParaformerFP16Folder = "sherpa-onnx-streaming-paraformer-bilingual-zh-en-fp16"
 
-    /// 获取 Streaming Paraformer 模型路径（优先级：FP16 > INT8 > FP32）
-    ///
-    /// FP16 模型精度最高（与 Python 参考实现完全一致），优先使用。
-    /// INT8 量化模型在短音频上存在 token 重复/乱序问题。
+    /// 获取 Streaming Paraformer 模型路径（优先 FP32，fallback INT8）
     func getStreamingParaformerPath() -> (encoderPath: String, decoderPath: String, tokensPath: String)? {
-        // 1. 优先使用 FP16 版本（独立目录）
-        let fp16Dir = modelsDirectory.appendingPathComponent(Self.streamingParaformerFP16Folder)
-        let fp16Tokens = fp16Dir.appendingPathComponent("tokens.txt")
-        let encoderFP16 = fp16Dir.appendingPathComponent("encoder.fp16.onnx")
-        let decoderFP16 = fp16Dir.appendingPathComponent("decoder.fp16.onnx")
-
-        if FileManager.default.fileExists(atPath: encoderFP16.path),
-           FileManager.default.fileExists(atPath: decoderFP16.path),
-           FileManager.default.fileExists(atPath: fp16Tokens.path) {
-            return (encoderFP16.path, decoderFP16.path, fp16Tokens.path)
-        }
-
-        // 2. 回退到 INT8 版本
         let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.streamingParaformer.folderName)
         let tokensPath = modelDir.appendingPathComponent("tokens.txt")
 
@@ -163,21 +147,22 @@ class SherpaOnnxManager: NSObject {
             return nil
         }
 
-        let encoderINT8 = modelDir.appendingPathComponent("encoder.int8.onnx")
-        let decoderINT8 = modelDir.appendingPathComponent("decoder.int8.onnx")
-
-        if FileManager.default.fileExists(atPath: encoderINT8.path),
-           FileManager.default.fileExists(atPath: decoderINT8.path) {
-            return (encoderINT8.path, decoderINT8.path, tokensPath.path)
-        }
-
-        // 3. 回退到 FP32 版本
+        // 优先 FP32
         let encoderFP32 = modelDir.appendingPathComponent("encoder.onnx")
         let decoderFP32 = modelDir.appendingPathComponent("decoder.onnx")
 
         if FileManager.default.fileExists(atPath: encoderFP32.path),
            FileManager.default.fileExists(atPath: decoderFP32.path) {
             return (encoderFP32.path, decoderFP32.path, tokensPath.path)
+        }
+
+        // Fallback INT8
+        let encoderINT8 = modelDir.appendingPathComponent("encoder.int8.onnx")
+        let decoderINT8 = modelDir.appendingPathComponent("decoder.int8.onnx")
+
+        if FileManager.default.fileExists(atPath: encoderINT8.path),
+           FileManager.default.fileExists(atPath: decoderINT8.path) {
+            return (encoderINT8.path, decoderINT8.path, tokensPath.path)
         }
 
         return nil

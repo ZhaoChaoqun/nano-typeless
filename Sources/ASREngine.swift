@@ -25,12 +25,12 @@ protocol ASREngine: AnyObject {
 
 /// Streaming Paraformer 引擎：原生流式识别
 class StreamingParaformerEngine: ASREngine {
-    private let recognizer: StreamingParaformerRecognizer
+    private let recognizer: SherpaOnnxOnlineRecognizer
     private let recognitionQueue: DispatchQueue
 
     let needsPunctuation = true
 
-    init(recognizer: StreamingParaformerRecognizer, recognitionQueue: DispatchQueue) {
+    init(recognizer: SherpaOnnxOnlineRecognizer, recognitionQueue: DispatchQueue) {
         self.recognizer = recognizer
         self.recognitionQueue = recognitionQueue
     }
@@ -58,8 +58,14 @@ class StreamingParaformerEngine: ASREngine {
                 return
             }
 
-            // 新 engine 内置 final chunk 处理（CIF tail flush + 右上下文保留），
-            // 不再需要 1s silence padding
+            // 1s silence padding + inputFinished 确保流式解码器完成尾部帧
+            let silencePadding = [Float](repeating: 0.0, count: 16000)
+            self.recognizer.acceptWaveform(samples: silencePadding)
+
+            while self.recognizer.isReady() {
+                self.recognizer.decode()
+            }
+
             self.recognizer.inputFinished()
 
             while self.recognizer.isReady() {

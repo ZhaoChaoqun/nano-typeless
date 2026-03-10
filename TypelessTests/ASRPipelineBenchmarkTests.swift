@@ -20,7 +20,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
 
     // Pipeline 组件
     static var qwenRecognizer: QwenASRStreamRecognizer?
-    static var paraformerRecognizer: StreamingParaformerRecognizer?
+    static var paraformerRecognizer: SherpaOnnxOnlineRecognizer?
     static var vad: SherpaOnnxVAD?
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
@@ -107,7 +107,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         // Paraformer
         if let paths = TestEnvironment.paraformerPaths() {
             let itnPath = TestEnvironment.itnFstPath()
-            paraformerRecognizer = StreamingParaformerRecognizer(
+            paraformerRecognizer = SherpaOnnxOnlineRecognizer(
                 encoderPath: paths.encoder,
                 decoderPath: paths.decoder,
                 tokensPath: paths.tokens,
@@ -200,8 +200,21 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let results = runPipeline(name: "Paraformer Pipeline") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
 
-            // 使用离线一次性推理（避免流式 chunk 分割的 LFR 边界问题）
-            var text = recognizer.transcribeOffline(samples: samples)
+            // 流式推理 + 1s silence padding
+            recognizer.reset()
+            let chunkSize = 4096
+            for i in stride(from: 0, to: samples.count, by: chunkSize) {
+                let end = min(i + chunkSize, samples.count)
+                let chunk = Array(samples[i..<end])
+                recognizer.acceptWaveform(samples: chunk)
+                while recognizer.isReady() { recognizer.decode() }
+            }
+            recognizer.acceptWaveform(samples: [Float](repeating: 0, count: 16000))
+            while recognizer.isReady() { recognizer.decode() }
+            recognizer.inputFinished()
+            while recognizer.isReady() { recognizer.decode() }
+            var text = recognizer.getResult()
+            recognizer.reset()
 
             // 后处理：CSC → 标点
             text = Self.applyPostProcessing(text)
@@ -220,8 +233,21 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let results = runPipeline(name: "Paraformer + Cloud Rewrite") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
 
-            // 使用离线一次性推理
-            let asrText = recognizer.transcribeOffline(samples: samples)
+            // 流式推理 + 1s silence padding（与 Python sherpa-onnx benchmark 一致）
+            recognizer.reset()
+            let chunkSize = 4096
+            for i in stride(from: 0, to: samples.count, by: chunkSize) {
+                let end = min(i + chunkSize, samples.count)
+                let chunk = Array(samples[i..<end])
+                recognizer.acceptWaveform(samples: chunk)
+                while recognizer.isReady() { recognizer.decode() }
+            }
+            recognizer.acceptWaveform(samples: [Float](repeating: 0, count: 16000))
+            while recognizer.isReady() { recognizer.decode() }
+            recognizer.inputFinished()
+            while recognizer.isReady() { recognizer.decode() }
+            let asrText = recognizer.getResult()
+            recognizer.reset()
 
             // Cloud Rewrite 后处理（同步等待 async 调用）
             let semaphore = DispatchSemaphore(value: 0)

@@ -382,7 +382,7 @@ class RecordingManager {
 
         let itnFstPath = await loadITNFst()
 
-        guard let recognizer = StreamingParaformerRecognizer(
+        guard let recognizer = SherpaOnnxOnlineRecognizer(
             encoderPath: paths.encoderPath,
             decoderPath: paths.decoderPath,
             tokensPath: paths.tokensPath,
