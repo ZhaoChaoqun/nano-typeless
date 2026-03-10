@@ -23,15 +23,32 @@
 
 语音识别（ASR, Automatic Speech Recognition）的任务是把一段音频波形变成文字。Paraformer 是阿里达摩院开源的非自回归端到端 ASR 模型，整个处理流程可以分为 7 步：
 
-```
-麦克风录音                    最终文字
-   │                            ▲
-   ▼                            │
-┌─────────┐  ┌─────┐  ┌──────┐  ┌─────────┐  ┌─────┐  ┌─────────┐  ┌───────────┐
-│  Fbank  │→│ LFR │→│ CMVN │→│ Encoder │→│ CIF │→│ Decoder │→│ Token→Text│
-│ 提取特征 │  │压缩帧│  │归一化│  │理解语义 │  │定位字│  │  选字   │  │  拼成句子  │
-└─────────┘  └─────┘  └──────┘  └─────────┘  └─────┘  └─────────┘  └───────────┘
-  音频处理          特征预处理              神经网络推理                 后处理
+```mermaid
+graph LR
+    Input["🎤 麦克风录音"] --> S1
+
+    subgraph 音频处理
+        S1["**Fbank**<br/>提取特征"]
+    end
+
+    subgraph 特征预处理
+        S2["**LFR**<br/>压缩帧"]
+        S3["**CMVN**<br/>归一化"]
+    end
+
+    subgraph 神经网络推理
+        S4["**Encoder**<br/>理解语义"]
+        S5["**CIF**<br/>定位字"]
+        S6["**Decoder**<br/>选字"]
+    end
+
+    subgraph 后处理
+        S7["**Token→Text**<br/>拼成句子"]
+    end
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+
+    S7 --> Output["📝 最终文字"]
 ```
 
 前 3 步是传统信号处理（不涉及 AI），后 3 步是神经网络推理（ONNX Runtime），最后 1 步是简单的查表映射。
@@ -339,53 +356,32 @@ token ID:  1735  →  词表查找  →  "三十"
 
 ## 完整流程图
 
+```mermaid
+graph TD
+    Input["音频 PCM (16kHz, float32)"] --> S1
+
+    S1["**Stage 1: Fbank** [476, 80]<br/>分帧 → 去均值 → 预加重 → 加窗 → FFT → 功率谱 → 80 维 Mel 滤波 → Log"]
+    S2["**Stage 2: LFR** [79, 560]<br/>每 7 帧拼接一个（步长 6）· 帧数压缩 6 倍，维度扩展 7 倍"]
+    S3["**Stage 3: CMVN** [79, 560]<br/>(x + neg_mean) × inv_stddev · 统一不同录音环境的特征范围"]
+    S4["**Stage 4: Encoder** [79, 512] + alphas [79]<br/>Transformer 神经网络 · ONNX Runtime 推理 · 输出语义向量 + CIF alpha"]
+    S5["**Stage 5: CIF** [20, 512]<br/>累积 alpha → 达到 1.0 发放一个 token · 确定字数 + 每个字的声学表示"]
+    S6["**Stage 6: Decoder** [20] token IDs<br/>Transformer 神经网络 · ONNX Runtime 推理 · 从 8404 词表中选字"]
+    S7["**Stage 7: Text**<br/>token ID → 查词表 → 拼接 · 最终识别文字"]
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+
+    S7 --> Output["最终文字: cipipeline跑了三十分钟还没通过uniittest"]
+
+    style S1 fill:#e8f4fd,stroke:#4a90d9
+    style S2 fill:#e8f4fd,stroke:#4a90d9
+    style S3 fill:#e8f4fd,stroke:#4a90d9
+    style S4 fill:#fff3e0,stroke:#f5a623
+    style S5 fill:#fff3e0,stroke:#f5a623
+    style S6 fill:#fff3e0,stroke:#f5a623
+    style S7 fill:#e8f5e9,stroke:#4caf50
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                    Paraformer ASR Pipeline                       │
-│                                                                  │
-│  音频 PCM (16kHz, float32)                                       │
-│     │                                                            │
-│     ▼                                                            │
-│  ┌──────────────────┐                                            │
-│  │ Stage 1: Fbank   │  分帧 → 去均值 → 预加重 → 加窗 → FFT      │
-│  │ [476, 80]        │  → 功率谱 → 80 维 Mel 滤波 → Log          │
-│  └────────┬─────────┘                                            │
-│           ▼                                                      │
-│  ┌──────────────────┐                                            │
-│  │ Stage 2: LFR     │  每 7 帧拼接一个（步长 6）                  │
-│  │ [79, 560]        │  帧数压缩 6 倍，维度扩展 7 倍              │
-│  └────────┬─────────┘                                            │
-│           ▼                                                      │
-│  ┌──────────────────┐                                            │
-│  │ Stage 3: CMVN    │  (x + neg_mean) × inv_stddev              │
-│  │ [79, 560]        │  统一不同录音环境的特征范围                 │
-│  └────────┬─────────┘                                            │
-│           ▼                                                      │
-│  ┌──────────────────┐                                            │
-│  │ Stage 4: Encoder │  Transformer 神经网络                      │
-│  │ [79, 512]        │  ONNX Runtime 推理                         │
-│  │ + alphas [79]    │  输出语义向量 + CIF alpha                  │
-│  └────────┬─────────┘                                            │
-│           ▼                                                      │
-│  ┌──────────────────┐                                            │
-│  │ Stage 5: CIF     │  累积 alpha → 达到 1.0 发放一个 token      │
-│  │ [20, 512]        │  确定字数 + 每个字的声学表示                │
-│  └────────┬─────────┘                                            │
-│           ▼                                                      │
-│  ┌──────────────────┐                                            │
-│  │ Stage 6: Decoder │  Transformer 神经网络                       │
-│  │ [20] token IDs   │  ONNX Runtime 推理                         │
-│  │                  │  从 8404 词表中选字                         │
-│  └────────┬─────────┘                                            │
-│           ▼                                                      │
-│  ┌──────────────────┐                                            │
-│  │ Stage 7: Text    │  token ID → 查词表 → 拼接                  │
-│  │ "cipipeline..."  │  最终识别文字                               │
-│  └──────────────────┘                                            │
-│                                                                  │
-│  信号处理 (Stage 1-3)  │  AI 推理 (Stage 4-6)  │  后处理 (Stage 7) │
-└──────────────────────────────────────────────────────────────────┘
-```
+
+> 蓝色 = 信号处理 (Stage 1-3)，橙色 = AI 推理 (Stage 4-6)，绿色 = 后处理 (Stage 7)
 
 ---
 
