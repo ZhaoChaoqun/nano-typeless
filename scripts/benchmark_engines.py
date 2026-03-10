@@ -45,6 +45,7 @@ REAL_MANIFEST_JSON = FIXTURES_DIR / "real_manifest.json"
 MODELS_DIR = Path.home() / "Library" / "Application Support" / "Nano Typeless" / "models"
 QWEN_MODEL_DIR = MODELS_DIR / "Qwen3-ASR-0.6B"
 PARAFORMER_MODEL_DIR = MODELS_DIR / "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
+PARAFORMER_FP16_MODEL_DIR = MODELS_DIR / "sherpa-onnx-streaming-paraformer-bilingual-zh-en-fp16"
 SENSEVOICE_MODEL_DIR = MODELS_DIR / "sherpa-onnx-sense-voice-funasr-nano-int8-2025-12-17"
 ITN_FST_PATH = MODELS_DIR / "itn_zh_number.fst"
 CSC_MODEL_DIR = MODELS_DIR / "macbert4csc-base-chinese"
@@ -439,6 +440,46 @@ class ParaformerEngine:
         pass
 
 
+class ParaformerFP16Engine:
+    """Streaming Paraformer FP16（sherpa-onnx 流式）"""
+
+    def __init__(self, model_dir: str, itn_fst_path: Optional[str] = None):
+        import sherpa_onnx
+        encoder = os.path.join(model_dir, "encoder.fp16.onnx")
+        decoder = os.path.join(model_dir, "decoder.fp16.onnx")
+        tokens = os.path.join(model_dir, "tokens.txt")
+
+        self.recognizer = sherpa_onnx.OnlineRecognizer.from_paraformer(
+            tokens=tokens, encoder=encoder, decoder=decoder,
+            num_threads=2, sample_rate=16000, feature_dim=80,
+            enable_endpoint_detection=True,
+            rule1_min_trailing_silence=2.4, rule2_min_trailing_silence=1.2,
+            rule3_min_utterance_length=20, decoding_method="greedy_search",
+            provider="cpu", rule_fsts=itn_fst_path or "",
+        )
+
+    def transcribe(self, samples: list[float]) -> str:
+        stream = self.recognizer.create_stream()
+        chunk_size = 4096
+        for i in range(0, len(samples), chunk_size):
+            stream.accept_waveform(16000, samples[i:i+chunk_size])
+            while self.recognizer.is_ready(stream):
+                self.recognizer.decode_stream(stream)
+        stream.accept_waveform(16000, [0.0] * 16000)  # 1s silence padding
+        while self.recognizer.is_ready(stream):
+            self.recognizer.decode_stream(stream)
+        stream.input_finished()
+        while self.recognizer.is_ready(stream):
+            self.recognizer.decode_stream(stream)
+        text = self.recognizer.get_result(stream)
+        text = re.sub(r"([\u4e00-\u9fa5])\s+([a-zA-Z0-9])", r"\1\2", text)
+        text = re.sub(r"([a-zA-Z0-9])\s+([\u4e00-\u9fa5])", r"\1\2", text)
+        return text.strip()
+
+    def close(self):
+        pass
+
+
 class SenseVoiceEngine:
     """SenseVoice Nano（sherpa-onnx 离线）"""
 
@@ -542,8 +583,8 @@ class QwenASRStreamPipeline:
 
 
 class ParaformerPipeline:
-    """Pipeline: Streaming Paraformer + ITN → CSC → CT-Transformer 标点"""
-    NAME = "Paraformer Pipeline"
+    """Pipeline: Streaming Paraformer INT8 + ITN → CSC → CT-Transformer 标点"""
+    NAME = "Paraformer Pipeline (INT8)"
     SHORT = "paraformer"
     DESC = "ASR + ITN → CSC → 标点"
 
@@ -551,6 +592,31 @@ class ParaformerPipeline:
                  csc: Optional[ChineseSpellingCorrector],
                  punct: Optional[PunctuationProcessor]):
         self.asr = ParaformerEngine(model_dir, itn_fst)
+        self.csc = csc
+        self.punct = punct
+
+    def transcribe(self, samples: list[float]) -> str:
+        text = self.asr.transcribe(samples)
+        if self.csc:
+            text = self.csc.correct(text)
+        if self.punct:
+            text = self.punct.add_punctuation(text)
+        return text
+
+    def close(self):
+        self.asr.close()
+
+
+class ParaformerFP16Pipeline:
+    """Pipeline: Streaming Paraformer FP16 + ITN → CSC → CT-Transformer 标点"""
+    NAME = "Paraformer Pipeline (FP16)"
+    SHORT = "paraformer_fp16"
+    DESC = "ASR FP16 + ITN → CSC → 标点"
+
+    def __init__(self, model_dir: str, itn_fst: Optional[str],
+                 csc: Optional[ChineseSpellingCorrector],
+                 punct: Optional[PunctuationProcessor]):
+        self.asr = ParaformerFP16Engine(model_dir, itn_fst)
         self.csc = csc
         self.punct = punct
 
@@ -994,13 +1060,13 @@ def main():
     parser = argparse.ArgumentParser(description="ASR Pipeline 量化对比评估")
     parser.add_argument("--output", "-o", type=str, default=None, help="输出 Markdown 报告路径")
     parser.add_argument("--pipelines", type=str, default="all",
-                        help="要评估的 Pipeline，逗号分隔：qwen,qwen_stream,paraformer,paraformer_rewrite,sensevoice (默认 all)")
+                        help="要评估的 Pipeline，逗号分隔：qwen,qwen_stream,paraformer,paraformer_fp16,paraformer_rewrite,sensevoice (默认 all)")
     parser.add_argument("--entry", type=str, default=None,
                         help="仅运行指定 entry ID（逗号分隔可指定多条），例如：--entry ascend_cs_003")
     args = parser.parse_args()
 
     if args.pipelines == "all":
-        pipeline_list = ["qwen", "qwen_stream", "paraformer", "paraformer_rewrite", "paraformer_rewrite_base", "sensevoice"]
+        pipeline_list = ["qwen", "qwen_stream", "paraformer", "paraformer_fp16", "paraformer_rewrite", "paraformer_rewrite_base", "sensevoice"]
     else:
         pipeline_list = [e.strip() for e in args.pipelines.split(",")]
 
@@ -1034,7 +1100,7 @@ def main():
     punct = None
     rewriter = None
     rewriter_base = None
-    need_postprocessing = "paraformer" in pipeline_list or "sensevoice" in pipeline_list
+    need_postprocessing = any(p in pipeline_list for p in ["paraformer", "paraformer_fp16", "sensevoice"])
     need_rewriter = "paraformer_rewrite" in pipeline_list
     need_rewriter_base = "paraformer_rewrite_base" in pipeline_list
 
@@ -1090,9 +1156,9 @@ def main():
         else:
             print(f"  [SKIP] 模型或 dylib 不存在")
 
-    # Paraformer Pipeline
+    # Paraformer Pipeline (INT8)
     if "paraformer" in pipeline_list:
-        print(f"\n[{step}] 初始化 Paraformer Pipeline...")
+        print(f"\n[{step}] 初始化 Paraformer Pipeline (INT8)...")
         step += 1
         if PARAFORMER_MODEL_DIR.exists():
             itn = str(ITN_FST_PATH) if ITN_FST_PATH.exists() else None
@@ -1102,6 +1168,22 @@ def main():
             pipe.close()
         else:
             print(f"  [SKIP] 模型不存在")
+
+    # Paraformer Pipeline (FP16)
+    if "paraformer_fp16" in pipeline_list:
+        print(f"\n[{step}] 初始化 Paraformer Pipeline (FP16)...")
+        step += 1
+        if PARAFORMER_FP16_MODEL_DIR.exists():
+            itn = str(ITN_FST_PATH) if ITN_FST_PATH.exists() else None
+            try:
+                pipe = ParaformerFP16Pipeline(str(PARAFORMER_FP16_MODEL_DIR), itn, csc, punct)
+                print(f"  加载成功 (ITN: {'on' if itn else 'off'}, CSC: {'on' if csc else 'off'}, 标点: {'on' if punct else 'off'})，开始评估...")
+                all_results[ParaformerFP16Pipeline.NAME] = run_engine(pipe, ParaformerFP16Pipeline.NAME, entries, verbose)
+                pipe.close()
+            except Exception as e:
+                print(f"  [SKIP] FP16 模型加载失败: {e}")
+        else:
+            print(f"  [SKIP] FP16 模型不存在: {PARAFORMER_FP16_MODEL_DIR}")
 
     # SenseVoice Pipeline
     if "sensevoice" in pipeline_list:
