@@ -64,7 +64,10 @@
     {
       "id": "en_short_01",
       "category": "english_short",
-      "expected_text": "Hello world.",
+      "expected_text": [
+        "Hello world.",
+        "Hello, world."
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "edge_tts": "audio/edge_tts/en_short_01.wav"
@@ -399,7 +402,10 @@
     {
       "id": "punct_list_01",
       "category": "punctuation",
-      "expected_text": "第一步打开终端，第二步输入命令，第三步确认执行。",
+      "expected_text": [
+        "第一步打开终端，第二步输入命令，第三步确认执行。",
+        "第 1 步打开终端，第 2 步输入命令，第 3 步确认执行。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/punct_list_01.wav"

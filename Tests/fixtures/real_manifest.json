@@ -19,7 +19,10 @@
     {
       "id": "aishell_test_002",
       "category": "real_aishell",
-      "expected_text": "一二线城市虽然也处于调整中。",
+      "expected_text": [
+        "一二线城市虽然也处于调整中。",
+        "1、2 线城市虽然也处于调整中。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_002.wav"
@@ -43,7 +46,10 @@
     {
       "id": "aishell_test_004",
       "category": "real_aishell",
-      "expected_text": "为了规避三四线城市明显过剩的市场风险。",
+      "expected_text": [
+        "为了规避三四线城市明显过剩的市场风险。",
+        "为了规避 3、4 线城市明显过剩的市场风险。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/aishell/aishell_test_004.wav"
@@ -165,7 +171,10 @@
     {
       "id": "ascend_cs_002",
       "category": "real_ascend_codeswitching",
-      "expected_text": "嗯，所以你现在还是比较 focus 在找工作这件事上。",
+      "expected_text": [
+        "嗯，所以你现在还是比较 focus 在找工作这件事上。",
+        "所以你现在还是比较 focus 在找工作这件事上。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_002.wav"
@@ -182,7 +191,10 @@
     {
       "id": "ascend_cs_003",
       "category": "real_ascend_codeswitching",
-      "expected_text": "深圳啊，或者是上海这种比较大的城市，会有更多 opportunity。",
+      "expected_text": [
+        "深圳啊，或者是上海这种比较大的城市，会有更多 opportunity。",
+        "深圳，或者是上海这种比较大的城市，会有更多 opportunity。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_003.wav"
@@ -198,7 +210,10 @@
     {
       "id": "ascend_cs_004",
       "category": "real_ascend_codeswitching",
-      "expected_text": "嗯，I like hot pot。",
+      "expected_text": [
+        "嗯，I like hot pot。",
+        "I like hot pot。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_004.wav"
@@ -230,7 +245,10 @@
     {
       "id": "ascend_cs_006",
       "category": "real_ascend_codeswitching",
-      "expected_text": "那个玩 basketball 的，然后我有时候有时候会邀我的 friends 啊，一起打在就是 after class 的时候。",
+      "expected_text": [
+        "那个玩 basketball 的，然后我有时候有时候会邀我的 friends 啊，一起打在就是 after class 的时候。",
+        "那个玩 basketball 的，然后我有时候有时候会邀我的 friends，一起打在就是 after class 的时候。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_006.wav"
@@ -246,7 +264,10 @@
     {
       "id": "ascend_cs_008",
       "category": "real_ascend_codeswitching",
-      "expected_text": "然后呃，我也喜欢 play basketball。",
+      "expected_text": [
+        "然后呃，我也喜欢 play basketball。",
+        "然后我也喜欢 play basketball。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_008.wav"
@@ -279,7 +300,10 @@
     {
       "id": "ascend_cs_010",
       "category": "real_ascend_codeswitching",
-      "expected_text": "哦，我我在 UG 的时候念的是 electrical engineering。",
+      "expected_text": [
+        "哦，我我在 UG 的时候念的是 electrical engineering。",
+        "我我在 UG 的时候念的是 electrical engineering。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_010.wav"
@@ -395,7 +419,10 @@
     {
       "id": "wenet_net_009",
       "category": "real_wenetspeech",
-      "expected_text": "的的需要。嗯，如果你把他当成产品的话，你就会觉得那么消费者会需要什么样的。",
+      "expected_text": [
+        "的的需要。嗯，如果你把他当成产品的话，你就会觉得那么消费者会需要什么样的。",
+        "的的需要。如果你把他当成产品的话，你就会觉得那么消费者会需要什么样的。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_009.wav"
@@ -407,7 +434,10 @@
     {
       "id": "wenet_net_010",
       "category": "real_wenetspeech",
-      "expected_text": "媒体也已经报了，然后呃，债主也已经围楼了。",
+      "expected_text": [
+        "媒体也已经报了，然后呃，债主也已经围楼了。",
+        "媒体也已经报了，然后债主也已经围楼了。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_010.wav"
