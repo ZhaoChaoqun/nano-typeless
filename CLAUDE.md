@@ -133,3 +133,22 @@ QwenASR 的 Rust 源码统一在 `~/Github/QwenASR`（fork 仓库）的 main 分
 3. 构建脚本会自动：从 fork 拉取最新 main → 编译 → 复制 dylib 到 Frameworks
 
 不使用 patch 文件，所有改动都在上游 repo 完成。
+
+## Cloud Rewrite API
+
+Cerebras GPT-OSS-120B 用于 ASR 后处理（Cloud Rewrite）。
+
+- API Endpoint: `https://api.cerebras.ai/v1`
+- 模型名: `gpt-oss-120b`
+- API Key 存储在项目根目录 `.env` 文件中，变量名 `CLOUD_REWRITE_API_KEY`
+
+使用 benchmark 脚本时：
+
+```bash
+# 从 .env 加载后运行
+export $(cat .env | xargs) && uv run --with sherpa-onnx --with onnxruntime --with httpx \
+    python3 scripts/benchmark_cloud_rewrite.py \
+    --model gpt-oss-120b \
+    --base-url https://api.cerebras.ai/v1 \
+    --api-key-env CLOUD_REWRITE_API_KEY
+```

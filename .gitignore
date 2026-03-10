@@ -53,6 +53,15 @@ scripts/qwen3-asr-onnx/
 # Test audio fixtures (generated, large)
 tests/fixtures/audio/
 
+# Python cache
+__pycache__/
+
+# Environment variables
+.env
+
+# Claude Code instructions (private)
+CLAUDE.md
+
 # IDE
 .vscode/
 
