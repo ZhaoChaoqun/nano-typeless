@@ -113,10 +113,7 @@ class QwenASRRealWorldTests: XCTestCase {
             _ = recognizer.pushAudio(samples: samples, finalize: true)
             let result = recognizer.getResult()
 
-            let normalizedActual = FuzzyASRMatcher.normalize(result)
-            let normalizedExpected = FuzzyASRMatcher.normalize(entry.expectedText)
-            let cer = FuzzyASRMatcher.computeCER(
-                actual: normalizedActual, expected: normalizedExpected)
+            let cer = FuzzyASRMatcher.computeMinCER(actual: result, expectedTexts: entry.expectedTexts)
             results.append((id: entry.id, cer: cer))
         }
 
@@ -157,25 +154,22 @@ class QwenASRRealWorldTests: XCTestCase {
 
         // Logging
         print("[Real] \(id)")
-        print("  Expected: \(entry.expectedText)")
+        print("  Expected: \(entry.expectedTexts.first ?? "")")
         print("  Actual:   \(result)")
         print("  Elapsed:  \(String(format: "%.2f", elapsed))s")
 
         // Match via FuzzyASRMatcher
         let mode = FuzzyASRMatcher.matchMode(for: entry)
         let passed = FuzzyASRMatcher.matches(
-            actual: result, expected: entry.expectedText, mode: mode)
+            actual: result, expectedTexts: entry.expectedTexts, mode: mode)
 
         if !passed {
-            let normalizedActual = FuzzyASRMatcher.normalize(result)
-            let normalizedExpected = FuzzyASRMatcher.normalize(entry.expectedText)
-            let cer = FuzzyASRMatcher.computeCER(
-                actual: normalizedActual, expected: normalizedExpected)
+            let cer = FuzzyASRMatcher.computeMinCER(actual: result, expectedTexts: entry.expectedTexts)
             print("  CER: \(String(format: "%.3f", cer))")
         }
 
         XCTAssertTrue(passed,
-            "[\(id)] 识别不匹配。期望: '\(entry.expectedText)', 实际: '\(result)'")
+            "[\(id)] 识别不匹配。期望: '\(entry.expectedTexts.first ?? "")', 实际: '\(result)'")
     }
 
     private func loadRealAudio(_ entry: CorpusEntry) throws -> [Float] {

@@ -53,6 +53,7 @@ PUNCT_MODEL_DIR = MODELS_DIR / "sherpa-onnx-punct-ct-transformer-zh-en-vocab2727
 QWEN_DYLIB = PROJECT_ROOT / "Frameworks" / "qwen-asr" / "lib" / "libqwen_asr.dylib"
 QWEN3_REWRITE_DYLIB = PROJECT_ROOT / "Frameworks" / "qwen3-rewrite" / "lib" / "libqwen3_rewrite.dylib"
 QWEN3_REWRITE_MODEL_DIR = Path.home() / "Github" / "Qwen3-0.6B" / "models" / "Qwen3-0.6B-rewrite-lora"
+QWEN3_REWRITE_BASE_MODEL_DIR = Path.home() / "Github" / "QwenASR" / "qwen3-asr-0.6b"
 
 # ============================================================================
 # WAV 加载
@@ -115,6 +116,13 @@ def compute_cer(actual: str, expected: str) -> float:
     if not ne:
         return 0.0 if not na else 1.0
     return levenshtein_distance(na, ne) / len(ne)
+
+
+def compute_min_cer(actual: str, expected_texts: list[str]) -> float:
+    """多候选 CER：取所有候选中的最小值"""
+    if not expected_texts:
+        return 1.0
+    return min(compute_cer(actual, e) for e in expected_texts)
 
 
 # ============================================================================
@@ -587,7 +595,27 @@ class ParaformerQwen3RewritePipeline:
     """Pipeline: Streaming Paraformer + Qwen3-0.6B Rewrite 一站式后处理"""
     NAME = "Paraformer + Qwen3 Rewrite"
     SHORT = "paraformer_rewrite"
-    DESC = "ASR + Qwen3-0.6B 一站式后处理（ITN + 标点 + CSC）"
+    DESC = "ASR + Qwen3-0.6B LoRA 一站式后处理（ITN + 标点 + CSC）"
+
+    def __init__(self, model_dir: str, itn_fst: Optional[str],
+                 rewriter: Qwen3RewriteEngine):
+        self.asr = ParaformerEngine(model_dir, itn_fst)
+        self.rewriter = rewriter
+
+    def transcribe(self, samples: list[float]) -> str:
+        text = self.asr.transcribe(samples)
+        text = self.rewriter.rewrite(text)
+        return text
+
+    def close(self):
+        self.asr.close()
+
+
+class ParaformerQwen3RewriteBasePipeline:
+    """Pipeline: Streaming Paraformer + Qwen3-0.6B Base (ASR原始LLM) Rewrite"""
+    NAME = "Paraformer + Qwen3 Rewrite (Base)"
+    SHORT = "paraformer_rewrite_base"
+    DESC = "ASR + Qwen3-0.6B Base（无LoRA）一站式后处理"
 
     def __init__(self, model_dir: str, itn_fst: Optional[str],
                  rewriter: Qwen3RewriteEngine):
@@ -611,7 +639,7 @@ class ParaformerQwen3RewritePipeline:
 class Entry:
     id: str
     category: str
-    expected_text: str
+    expected_texts: list[str]
     audio_path: str
     language: str
     duration_sec: float
@@ -636,7 +664,14 @@ def load_entries() -> list[Entry]:
         for item in data["entries"]:
             if item.get("match_mode") == "empty_or_whitespace":
                 continue
-            if not item.get("expected_text", "").strip():
+            raw_expected = item.get("expected_text", "")
+            if isinstance(raw_expected, list):
+                expected_texts = [t for t in raw_expected if t.strip()]
+            elif isinstance(raw_expected, str) and raw_expected.strip():
+                expected_texts = [raw_expected]
+            else:
+                continue
+            if not expected_texts:
                 continue
             audio_files = item.get("audio_files", {})
             audio_path = None
@@ -650,7 +685,7 @@ def load_entries() -> list[Entry]:
                 continue
             entries.append(Entry(
                 id=item["id"], category=item.get("category", "unknown"),
-                expected_text=item["expected_text"], audio_path=audio_path,
+                expected_texts=expected_texts, audio_path=audio_path,
                 language=item.get("language", "zh"), duration_sec=item.get("duration_sec", 0),
             ))
     return entries
@@ -667,12 +702,12 @@ def run_engine(engine, engine_name: str, entries: list[Entry], verbose: bool = F
         t0 = time.monotonic()
         output = engine.transcribe(samples)
         elapsed = time.monotonic() - t0
-        cer = compute_cer(output, e.expected_text)
+        cer = compute_min_cer(output, e.expected_texts)
         results.append(Result(entry=e, engine_name=engine_name, output_text=output, cer=cer, elapsed_sec=elapsed))
         tag = "OK" if cer <= 0.15 else ("WARN" if cer <= 0.30 else "HIGH")
         print(f"  [{i+1:3d}/{len(entries)}] [{tag:4s}] CER={cer:.3f} | {e.id}")
         if verbose:
-            print(f"         期望: {e.expected_text}")
+            print(f"         期望: {e.expected_texts[0]}")
             print(f"         实际: {output}")
             print(f"         耗时: {elapsed:.2f}s")
     return results
@@ -841,7 +876,7 @@ def generate_report(
         w("|:-:|-----|:---:|---------|---------|---------|")
 
         for i, r in enumerate(errors):
-            expected_norm = normalize_text(r.entry.expected_text)
+            expected_norm = normalize_text(r.entry.expected_texts[0])
             actual_norm = normalize_text(r.output_text)
 
             # 分析错误类型
@@ -849,18 +884,18 @@ def generate_report(
             # 繁体字检测
             trad_indicators = set("書學數點機語認識經過國開會從發時問題這個應該進來說長給對門關電話東風車後飛運動員")
             found_trad = set(r.output_text) & trad_indicators
-            if found_trad and not (set(r.entry.expected_text) & found_trad):
+            if found_trad and not (set(r.entry.expected_texts[0]) & found_trad):
                 error_types.append("繁体字输出")
 
             # 英文词汇错误
-            en_expected = set(re.findall(r"[a-zA-Z]+", r.entry.expected_text.lower()))
+            en_expected = set(re.findall(r"[a-zA-Z]+", r.entry.expected_texts[0].lower()))
             en_actual = set(re.findall(r"[a-zA-Z]+", r.output_text.lower()))
             missed_en = en_expected - en_actual
             if missed_en:
                 error_types.append(f"英文词丢失: {','.join(list(missed_en)[:3])}")
 
             # 数字格式差异
-            if re.search(r"\d", r.entry.expected_text) or re.search(r"[一二三四五六七八九十百千万亿]", r.entry.expected_text):
+            if re.search(r"\d", r.entry.expected_texts[0]) or re.search(r"[一二三四五六七八九十百千万亿]", r.entry.expected_texts[0]):
                 if r.cer > 0.1:
                     error_types.append("数字/量词")
 
@@ -873,7 +908,7 @@ def generate_report(
             # 标点差异
             zh_punct = set("，。！？、；：""''（）【】《》…—·")
             en_punct = set(",.!?;:'\"()[]<>")
-            exp_puncts = set(r.entry.expected_text) & (zh_punct | en_punct)
+            exp_puncts = set(r.entry.expected_texts[0]) & (zh_punct | en_punct)
             act_puncts = set(r.output_text) & (zh_punct | en_punct)
             if exp_puncts != act_puncts and r.cer <= 0.15:
                 error_types.append("标点差异")
@@ -886,7 +921,7 @@ def generate_report(
                 error_types.append("综合误差")
 
             err_str = ", ".join(error_types)
-            exp_short = r.entry.expected_text[:40] + ("…" if len(r.entry.expected_text) > 40 else "")
+            exp_short = r.entry.expected_texts[0][:40] + ("…" if len(r.entry.expected_texts[0]) > 40 else "")
             out_short = r.output_text[:40] + ("…" if len(r.output_text) > 40 else "")
             cer_str = f"{r.cer:.3f}" if r.cer <= 1.0 else f"{r.cer:.1f}"
             w(f"| {i+1} | {r.entry.id} | {cer_str} | {exp_short} | {out_short} | {err_str} |")
@@ -965,7 +1000,7 @@ def main():
     args = parser.parse_args()
 
     if args.pipelines == "all":
-        pipeline_list = ["qwen", "qwen_stream", "paraformer", "paraformer_rewrite", "sensevoice"]
+        pipeline_list = ["qwen", "qwen_stream", "paraformer", "paraformer_rewrite", "paraformer_rewrite_base", "sensevoice"]
     else:
         pipeline_list = [e.strip() for e in args.pipelines.split(",")]
 
@@ -998,8 +1033,10 @@ def main():
     csc = None
     punct = None
     rewriter = None
+    rewriter_base = None
     need_postprocessing = "paraformer" in pipeline_list or "sensevoice" in pipeline_list
     need_rewriter = "paraformer_rewrite" in pipeline_list
+    need_rewriter_base = "paraformer_rewrite_base" in pipeline_list
 
     if need_postprocessing:
         print("\n[2] 初始化共享后处理模块...")
@@ -1090,11 +1127,13 @@ def main():
                 except Exception as e:
                     print(f"    [WARN] Qwen3 Rewrite 引擎加载失败: {e}")
             if rewriter:
-                itn = str(ITN_FST_PATH) if ITN_FST_PATH.exists() else None
-                pipe = ParaformerQwen3RewritePipeline(str(PARAFORMER_MODEL_DIR), itn, rewriter)
-                print(f"  加载成功 (ITN: {'on' if itn else 'off'})，开始评估...")
+                pipe = ParaformerQwen3RewritePipeline(str(PARAFORMER_MODEL_DIR), None, rewriter)
+                print(f"  加载成功 (ITN: off)，开始评估...")
                 all_results[ParaformerQwen3RewritePipeline.NAME] = run_engine(pipe, ParaformerQwen3RewritePipeline.NAME, entries, verbose)
                 pipe.close()
+                # Release LoRA rewriter before loading Base to save memory
+                rewriter.close()
+                rewriter = None
             else:
                 print(f"  [SKIP] Qwen3 Rewrite 引擎不可用")
         else:
@@ -1102,6 +1141,31 @@ def main():
             if not PARAFORMER_MODEL_DIR.exists(): missing.append("Paraformer 模型")
             if not QWEN3_REWRITE_DYLIB.exists(): missing.append("qwen3_rewrite dylib")
             if not QWEN3_REWRITE_MODEL_DIR.exists(): missing.append("Qwen3 Rewrite 模型")
+            print(f"  [SKIP] 缺少: {', '.join(missing)}")
+
+    # Paraformer + Qwen3 Rewrite Base (ASR 原始 LLM) Pipeline
+    if "paraformer_rewrite_base" in pipeline_list:
+        print(f"\n[{step}] 初始化 Paraformer + Qwen3 Rewrite (Base) Pipeline...")
+        step += 1
+        if PARAFORMER_MODEL_DIR.exists() and QWEN3_REWRITE_DYLIB.exists() and QWEN3_REWRITE_BASE_MODEL_DIR.exists():
+            if not rewriter_base:
+                try:
+                    rewriter_base = Qwen3RewriteEngine(str(QWEN3_REWRITE_BASE_MODEL_DIR), str(QWEN3_REWRITE_DYLIB))
+                    print(f"    Qwen3 Rewrite (Base) 引擎加载成功")
+                except Exception as e:
+                    print(f"    [WARN] Qwen3 Rewrite (Base) 引擎加载失败: {e}")
+            if rewriter_base:
+                pipe = ParaformerQwen3RewriteBasePipeline(str(PARAFORMER_MODEL_DIR), None, rewriter_base)
+                print(f"  加载成功 (ITN: off)，开始评估...")
+                all_results[ParaformerQwen3RewriteBasePipeline.NAME] = run_engine(pipe, ParaformerQwen3RewriteBasePipeline.NAME, entries, verbose)
+                pipe.close()
+            else:
+                print(f"  [SKIP] Qwen3 Rewrite (Base) 引擎不可用")
+        else:
+            missing = []
+            if not PARAFORMER_MODEL_DIR.exists(): missing.append("Paraformer 模型")
+            if not QWEN3_REWRITE_DYLIB.exists(): missing.append("qwen3_rewrite dylib")
+            if not QWEN3_REWRITE_BASE_MODEL_DIR.exists(): missing.append("Qwen3 ASR Base 模型")
             print(f"  [SKIP] 缺少: {', '.join(missing)}")
 
     if not all_results:

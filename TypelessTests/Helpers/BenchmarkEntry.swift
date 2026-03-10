@@ -4,7 +4,7 @@ import Foundation
 struct BenchmarkEntry {
     let id: String
     let category: String
-    let expectedText: String
+    let expectedTexts: [String]
     let audioPath: String
     let durationSec: Double
     let language: String
@@ -24,7 +24,7 @@ enum BenchmarkEntryLoader {
             for e in corpus.entries {
                 if let audioPath = resolveAudioPath(e, fixturesPath: fixturesPath, preference: ["edge_tts", "say"]) {
                     entries.append(BenchmarkEntry(
-                        id: e.id, category: e.category, expectedText: e.expectedText,
+                        id: e.id, category: e.category, expectedTexts: e.expectedTexts,
                         audioPath: audioPath, durationSec: e.durationSec,
                         language: e.language, source: "corpus"
                     ))
@@ -39,7 +39,7 @@ enum BenchmarkEntryLoader {
             for e in manifest.entries {
                 if let audioPath = resolveAudioPath(e, fixturesPath: fixturesPath, preference: ["real", "edge_tts", "say"]) {
                     entries.append(BenchmarkEntry(
-                        id: e.id, category: e.category, expectedText: e.expectedText,
+                        id: e.id, category: e.category, expectedTexts: e.expectedTexts,
                         audioPath: audioPath, durationSec: e.durationSec,
                         language: e.language, source: "real_manifest"
                     ))

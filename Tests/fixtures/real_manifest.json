@@ -332,7 +332,10 @@
     {
       "id": "wenet_net_004",
       "category": "real_wenetspeech",
-      "expected_text": "下车后望着 30 多层的大高楼发呆。",
+      "expected_text": [
+        "下车后望着 30 多层的大高楼发呆。",
+        "下车后望着三十多层的大高楼发呆。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_004.wav"
@@ -448,7 +451,10 @@
     {
       "id": "cs_edge_003",
       "category": "real_codeswitching",
-      "expected_text": "用 Docker Compose 部署了 3 个 microservice 到 staging 环境。",
+      "expected_text": [
+        "用 Docker Compose 部署了 3 个 microservice 到 staging 环境。",
+        "用 Docker Compose 部署了三个 microservice 到 staging 环境。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_003.wav"
@@ -528,7 +534,10 @@
     {
       "id": "cs_edge_008",
       "category": "real_codeswitching",
-      "expected_text": "CI pipeline 跑了 30 分钟，还没通过 unit test。",
+      "expected_text": [
+        "CI pipeline 跑了 30 分钟，还没通过 unit test。",
+        "CI pipeline 跑了三十分钟，还没通过 unit test。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_008.wav"

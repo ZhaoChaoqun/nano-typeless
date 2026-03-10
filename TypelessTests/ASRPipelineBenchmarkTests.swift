@@ -325,9 +325,10 @@ class ASRPipelineBenchmarkTests: XCTestCase {
                     cols += " - |"
                 }
             }
-            let truncated = entry.expectedText.count > 30
-                ? String(entry.expectedText.prefix(30)) + "..."
-                : entry.expectedText
+            let displayExpected = entry.expectedTexts.first ?? ""
+            let truncated = displayExpected.count > 30
+                ? String(displayExpected.prefix(30)) + "..."
+                : displayExpected
             cols += " \(truncated) |"
             w(cols)
         }
@@ -385,17 +386,17 @@ class ASRPipelineBenchmarkTests: XCTestCase {
             }
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
 
-            let cer = Self.computeBenchmarkCER(actual: output, expected: entry.expectedText)
+            let cer = Self.computeBenchmarkMinCER(actual: output, expectedTexts: entry.expectedTexts)
             results.append((
                 id: entry.id, category: entry.category,
-                expected: entry.expectedText, actual: output,
+                expected: entry.expectedTexts.first ?? "", actual: output,
                 cer: cer, elapsed: elapsed
             ))
 
             let tag = cer <= 0.15 ? "OK" : (cer <= 0.30 ? "WARN" : "HIGH")
             Self.log("  [\(String(format: "%3d", i+1))/\(Self.entries.count)] [\(tag)] CER=\(String(format: "%.3f", cer)) | \(entry.id)")
             if cer > 0.001 {
-                Self.log("    期望: \(entry.expectedText)")
+                Self.log("    期望: \(entry.expectedTexts.first ?? "")")
                 Self.log("    实际: \(output)")
             }
         }
@@ -423,6 +424,12 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let normActual = normalizeBenchmark(actual)
         let normExpected = normalizeBenchmark(expected)
         return FuzzyASRMatcher.computeCER(actual: normActual, expected: normExpected)
+    }
+
+    /// 多候选 CER 计算：取所有候选中的最小 CER
+    static func computeBenchmarkMinCER(actual: String, expectedTexts: [String]) -> Double {
+        guard !expectedTexts.isEmpty else { return 1.0 }
+        return expectedTexts.map { computeBenchmarkCER(actual: actual, expected: $0) }.min() ?? 1.0
     }
 
     /// Benchmark 专用标准化：仅 lower + 去空格，保留标点

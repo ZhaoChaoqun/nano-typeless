@@ -222,9 +222,9 @@ class QwenASRE2ETests: XCTestCase {
         XCTAssertFalse(result.isEmpty, "流式识别应有输出")
 
         let mode = FuzzyASRMatcher.matchMode(for: entry)
-        let passed = FuzzyASRMatcher.matches(actual: result, expected: entry.expectedText, mode: mode)
+        let passed = FuzzyASRMatcher.matches(actual: result, expectedTexts: entry.expectedTexts, mode: mode)
         XCTAssertTrue(passed,
-            "流式识别不匹配。期望: '\(entry.expectedText)', 实际: '\(result)'")
+            "流式识别不匹配。期望: '\(entry.expectedTexts.first ?? "")', 实际: '\(result)'")
     }
 
     // MARK: - UTF-8 边界条件压力测试 (Regression: Split UTF-8 BPE Tokens)
@@ -441,25 +441,23 @@ class QwenASRE2ETests: XCTestCase {
 
         // 输出详情
         print("[E2E] \(id)")
-        print("  Expected: \(entry.expectedText)")
+        print("  Expected: \(entry.expectedTexts.first ?? "")")
         print("  Actual:   \(result)")
         print("  Elapsed:  \(String(format: "%.2f", elapsed))s")
         print("  Memory:   \(String(format: "%.1f", memBefore)) → \(String(format: "%.1f", memAfter)) MB")
 
         // 匹配断言
         let mode = FuzzyASRMatcher.matchMode(for: entry)
-        let passed = FuzzyASRMatcher.matches(actual: result, expected: entry.expectedText, mode: mode)
+        let passed = FuzzyASRMatcher.matches(actual: result, expectedTexts: entry.expectedTexts, mode: mode)
 
         if !passed {
             // 额外输出 CER 辅助调试
-            let normalizedActual = FuzzyASRMatcher.normalize(result)
-            let normalizedExpected = FuzzyASRMatcher.normalize(entry.expectedText)
-            let cer = FuzzyASRMatcher.computeCER(actual: normalizedActual, expected: normalizedExpected)
+            let cer = FuzzyASRMatcher.computeMinCER(actual: result, expectedTexts: entry.expectedTexts)
             print("  CER: \(String(format: "%.3f", cer))")
         }
 
         XCTAssertTrue(passed,
-            "[\(id)] 识别不匹配。期望: '\(entry.expectedText)', 实际: '\(result)'")
+            "[\(id)] 识别不匹配。期望: '\(entry.expectedTexts.first ?? "")', 实际: '\(result)'")
     }
 
     private func findEntry(id: String) throws -> CorpusEntry {

@@ -136,6 +136,13 @@ def compute_cer(actual: str, expected: str) -> float:
     return levenshtein_distance(na, ne) / len(ne)
 
 
+def compute_min_cer(actual: str, expected_texts: list[str]) -> float:
+    """多候选 CER：取所有候选中的最小 CER"""
+    if not expected_texts:
+        return 1.0
+    return min(compute_cer(actual, e) for e in expected_texts)
+
+
 # ============================================================================
 # 数据加载
 # ============================================================================
@@ -144,7 +151,7 @@ def compute_cer(actual: str, expected: str) -> float:
 class Entry:
     id: str
     category: str
-    expected_text: str
+    expected_texts: list[str]
     audio_path: str
     language: str
     duration_sec: float
@@ -161,7 +168,14 @@ def load_entries() -> list[Entry]:
         for item in data["entries"]:
             if item.get("match_mode") == "empty_or_whitespace":
                 continue
-            if not item.get("expected_text", "").strip():
+            raw_expected = item.get("expected_text", "")
+            if isinstance(raw_expected, list):
+                expected_texts = [t for t in raw_expected if t.strip()]
+            elif isinstance(raw_expected, str) and raw_expected.strip():
+                expected_texts = [raw_expected]
+            else:
+                continue
+            if not expected_texts:
                 continue
             audio_files = item.get("audio_files", {})
             audio_path = None
@@ -175,7 +189,7 @@ def load_entries() -> list[Entry]:
                 continue
             entries.append(Entry(
                 id=item["id"], category=item.get("category", "unknown"),
-                expected_text=item["expected_text"], audio_path=audio_path,
+                expected_texts=expected_texts, audio_path=audio_path,
                 language=item.get("language", "zh"), duration_sec=item.get("duration_sec", 0),
             ))
     return entries
@@ -476,19 +490,19 @@ def run_engine(engine, engine_name: str, entries: list[Entry],
         t0 = time.monotonic()
         output = engine.transcribe(samples)
         elapsed = time.monotonic() - t0
-        cer = compute_cer(output, e.expected_text)
+        cer = compute_min_cer(output, e.expected_texts)
         results.append(Result(entry=e, engine_name=engine_name,
                               output_text=output, cer=cer, elapsed_sec=elapsed))
         tag = "OK" if cer <= 0.15 else ("WARN" if cer <= 0.30 else "HIGH")
         print(f"  [{i+1:3d}/{len(entries)}] [{tag:4s}] CER={cer:.3f} | {e.id}")
         if verbose:
-            print(f"         期望: {e.expected_text}")
+            print(f"         期望: {e.expected_texts[0]}")
             print(f"         实际: {output}")
             print(f"         耗时: {elapsed:.2f}s")
         # 诊断日志：CER > 0.1 时输出详细信息
         if cer > 0.1:
             print(f"         [DIAG] audio={audio_dur:.2f}s samples={len(samples)} sr={sr}")
-            print(f"         [DIAG] 期望: {e.expected_text}")
+            print(f"         [DIAG] 期望: {e.expected_texts[0]}")
             asr_raw = getattr(engine, "last_asr_raw", None)
             if asr_raw is not None:
                 print(f"         [DIAG] ASR原始: {asr_raw}")
@@ -569,7 +583,7 @@ def generate_report(
 
         w(f"### {e.id} ({e.category})")
         w()
-        w(f"**期望**: {e.expected_text}")
+        w(f"**期望**: {e.expected_texts[0]}")
         w()
         w("| Pipeline | CER | 输出文本 |")
         w("|----------|:---:|---------|")

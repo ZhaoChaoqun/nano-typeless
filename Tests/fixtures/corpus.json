@@ -46,7 +46,10 @@
     {
       "id": "mixed_02",
       "category": "mixed_technical",
-      "expected_text": "MacBook Pro M3 芯片性能提升了百分之 40。",
+      "expected_text": [
+        "MacBook Pro M3 芯片性能提升了百分之 40。",
+        "MacBook Pro M3 芯片性能提升了 40%。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/mixed_02.wav"
@@ -228,7 +231,10 @@
     {
       "id": "dev_debug_01",
       "category": "developer_corpus",
-      "expected_text": "在第 42 行设置一个 breakpoint。",
+      "expected_text": [
+        "在第 42 行设置一个 breakpoint。",
+        "在第四十二行设置一个 breakpoint。"
+      ],
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_debug_01.wav"
@@ -409,7 +415,10 @@
     {
       "id": "rate_fast_01",
       "category": "speech_rate",
-      "expected_text": "快速语音识别测试，1、2、3、4、5。",
+      "expected_text": [
+        "快速语音识别测试，1、2、3、4、5。",
+        "快速语音识别测试，一二三四五。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "edge_tts": "audio/edge_tts/rate_fast_01.wav"
@@ -433,7 +442,10 @@
     {
       "id": "long_30s_01",
       "category": "long_audio",
-      "expected_text": "人工智能技术在过去 10 年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
+      "expected_text": [
+        "人工智能技术在过去 10 年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
+        "人工智能技术在过去十年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。"
+      ],
       "match_mode": "character_error_rate",
       "audio_files": {
         "edge_tts": "audio/edge_tts/long_30s_01.wav"

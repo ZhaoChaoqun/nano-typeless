@@ -56,6 +56,18 @@ struct FuzzyASRMatcher {
         }
     }
 
+    /// 多候选匹配：遍历所有期望文本，任一匹配即视为通过
+    static func matches(actual: String, expectedTexts: [String], mode: MatchMode) -> Bool {
+        guard !expectedTexts.isEmpty else { return false }
+        return expectedTexts.contains { matches(actual: actual, expected: $0, mode: mode) }
+    }
+
+    /// 多候选最小 CER
+    static func computeMinCER(actual: String, expectedTexts: [String]) -> Double {
+        guard !expectedTexts.isEmpty else { return 1.0 }
+        return expectedTexts.map { computeCER(actual: normalize(actual), expected: normalize($0)) }.min() ?? 1.0
+    }
+
     // MARK: - 内部工具
 
     /// 标准化文本：去标点、去空白、小写
