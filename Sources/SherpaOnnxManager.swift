@@ -50,7 +50,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
     var modelSize: String {
         switch self {
         case .streamingParaformer:
-            return "~216MB"
+            return "~414MB"
         case .qwenASR:
             return "~834MB"
         }
@@ -135,17 +135,21 @@ class SherpaOnnxManager: NSObject {
 
     // MARK: - Streaming Paraformer 模型路径
 
-    /// 获取 Streaming Paraformer 模型路径（优先使用 FP32，否则使用 INT8）
+    /// FP16 模型目录名（原生 ORT 推理使用）
+    static let streamingParaformerFP16Folder = "sherpa-onnx-streaming-paraformer-bilingual-zh-en-fp16"
+
+    /// 获取 Streaming Paraformer 模型路径（优先级：INT8 > FP32）
+    /// 注意：FP16 模型暂时禁用 — 当前 FP16 模型与 ORT 1.17 不兼容
+    /// (SimplifiedLayerNormFusion 图优化错误)，待重新导出后再启用。
     func getStreamingParaformerPath() -> (encoderPath: String, decoderPath: String, tokensPath: String)? {
+        // 1. 使用 INT8 版本
         let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.streamingParaformer.folderName)
         let tokensPath = modelDir.appendingPathComponent("tokens.txt")
 
-        // 检查 tokens.txt 是否存在
         guard FileManager.default.fileExists(atPath: tokensPath.path) else {
             return nil
         }
 
-        // 优先使用 INT8 版本（内存占用更小）
         let encoderINT8 = modelDir.appendingPathComponent("encoder.int8.onnx")
         let decoderINT8 = modelDir.appendingPathComponent("decoder.int8.onnx")
 
@@ -154,7 +158,7 @@ class SherpaOnnxManager: NSObject {
             return (encoderINT8.path, decoderINT8.path, tokensPath.path)
         }
 
-        // 回退到 FP32 版本
+        // 2. 回退到 FP32 版本
         let encoderFP32 = modelDir.appendingPathComponent("encoder.onnx")
         let decoderFP32 = modelDir.appendingPathComponent("decoder.onnx")
 
