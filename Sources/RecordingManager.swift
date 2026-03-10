@@ -8,11 +8,13 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "RecordingM
 enum PostProcessingMode: String, CaseIterable {
     case cscPunctuation = "csc_punctuation"
     case qwen3Rewrite = "qwen3_rewrite"
+    case cloudRewrite = "cloud_rewrite"
 
     var displayName: String {
         switch self {
         case .cscPunctuation: return "CSC + 标点"
         case .qwen3Rewrite: return "Qwen3 Rewrite"
+        case .cloudRewrite: return "Cloud Rewrite"
         }
     }
 
@@ -20,6 +22,7 @@ enum PostProcessingMode: String, CaseIterable {
         switch self {
         case .cscPunctuation: return "CSC 纠错 + CT-Transformer 标点（二阶段）"
         case .qwen3Rewrite: return "Qwen3-0.6B 一站式后处理（ITN + 标点 + CSC）"
+        case .cloudRewrite: return "Cerebras Qwen3-32B 云端后处理（标点 + 纠错）"
         }
     }
 }
@@ -33,6 +36,7 @@ class RecordingManager {
     private var punctuator: SherpaOnnxPunctuation?
     private var corrector: ChineseSpellingCorrector?
     private var rewriter: Qwen3TextRewriter?
+    private var cloudRewriter: CloudRewriter?
 
     /// 所有状态变更必须且只能通过此队列
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
@@ -309,6 +313,24 @@ class RecordingManager {
                     let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
                     finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
                 }
+            case .cloudRewrite:
+                if let cloudRewriter = self.cloudRewriter {
+                    logger.info("使用 Cloud Rewrite 后处理")
+                    logger.info("原始文本: \(rawText, privacy: .public)")
+                    let semaphore = DispatchSemaphore(value: 0)
+                    var rewritten = rawText
+                    Task {
+                        rewritten = await cloudRewriter.rewrite(text: rawText)
+                        semaphore.signal()
+                    }
+                    semaphore.wait()
+                    logger.info("Cloud Rewrite 后: \(rewritten, privacy: .public)")
+                    finalText = rewritten
+                } else {
+                    logger.warning("CloudRewriter 未初始化，回退到 CSC + 标点模式")
+                    let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
+                    finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
+                }
             case .cscPunctuation:
                 let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
                 finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
@@ -334,6 +356,7 @@ class RecordingManager {
         punctuator = nil
         corrector = nil
         rewriter = nil
+        cloudRewriter = nil
         recognitionQueue.sync {}
 
         switch currentModel {
@@ -378,6 +401,11 @@ class RecordingManager {
         switch postProcessingMode {
         case .qwen3Rewrite:
             await initializeQwen3Rewriter()
+            // 也加载 CSC + 标点作为回退
+            await initializePunctuation()
+            initializeCSC()
+        case .cloudRewrite:
+            cloudRewriter = CloudRewriter()
             // 也加载 CSC + 标点作为回退
             await initializePunctuation()
             initializeCSC()
