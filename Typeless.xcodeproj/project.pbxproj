@@ -17,7 +17,7 @@
 		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
 		1A000042 /* SherpaOnnxManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000043 /* SherpaOnnxManager.swift */; };
 		1A000044 /* SherpaOnnxVAD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000045 /* SherpaOnnxVAD.swift */; };
-		1A000046 /* SherpaOnnxOnlineRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000047 /* SherpaOnnxOnlineRecognizer.swift */; };
+		1A000046 /* StreamingParaformerRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000047 /* StreamingParaformerRecognizer.swift */; };
 		1A000048 /* SherpaOnnxPunctuation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000049 /* SherpaOnnxPunctuation.swift */; };
 		1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; };
 		1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; };
@@ -82,7 +82,7 @@
 		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1A000043 /* SherpaOnnxManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxManager.swift; sourceTree = "<group>"; };
 		1A000045 /* SherpaOnnxVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxVAD.swift; sourceTree = "<group>"; };
-		1A000047 /* SherpaOnnxOnlineRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxOnlineRecognizer.swift; sourceTree = "<group>"; };
+		1A000047 /* StreamingParaformerRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingParaformerRecognizer.swift; sourceTree = "<group>"; };
 		1A000049 /* SherpaOnnxPunctuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxPunctuation.swift; sourceTree = "<group>"; };
 		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
 		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libonnxruntime.1.17.1.dylib; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
@@ -160,7 +160,7 @@
 				1A000070 /* OnboardingOverlay.swift */,
 				1A000015 /* TextInserter.swift */,
 				1A000016 /* SettingsView.swift */,
-				1A000047 /* SherpaOnnxOnlineRecognizer.swift */,
+				1A000047 /* StreamingParaformerRecognizer.swift */,
 				1A000049 /* SherpaOnnxPunctuation.swift */,
 				1A000043 /* SherpaOnnxManager.swift */,
 				1A000045 /* SherpaOnnxVAD.swift */,
@@ -337,7 +337,7 @@
 				1A000071 /* OnboardingOverlay.swift in Sources */,
 				1A000005 /* TextInserter.swift in Sources */,
 				1A000006 /* SettingsView.swift in Sources */,
-				1A000046 /* SherpaOnnxOnlineRecognizer.swift in Sources */,
+				1A000046 /* StreamingParaformerRecognizer.swift in Sources */,
 				1A000048 /* SherpaOnnxPunctuation.swift in Sources */,
 				1A000042 /* SherpaOnnxManager.swift in Sources */,
 				1A000044 /* SherpaOnnxVAD.swift in Sources */,

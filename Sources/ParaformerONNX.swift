@@ -187,7 +187,7 @@ class ParaformerONNX {
         if let e = env { api.pointee.ReleaseEnv(e) }
     }
 
-    // MARK: - 公开接口（与 SherpaOnnxOnlineRecognizer 一致）
+    // MARK: - 公开接口（与 StreamingParaformerRecognizer 一致）
 
     /// 接收音频 samples（float32, -1.0~1.0 范围，内部会转 int16 范围）
     func acceptWaveform(samples: [Float], sampleRate: Int32 = 16000) {
@@ -215,7 +215,7 @@ class ParaformerONNX {
     /// 获取当前识别结果
     func getResult() -> String {
         var text = idsToText(resultTokenIds)
-        // 移除中文和英文之间的空格（与 SherpaOnnxOnlineRecognizer 一致）
+        // 移除中文和英文之间的空格（与 StreamingParaformerRecognizer 一致）
         text = text.replacingOccurrences(of: "([\\u4e00-\\u9fa5])\\s+([a-zA-Z0-9])", with: "$1$2", options: .regularExpression)
         text = text.replacingOccurrences(of: "([a-zA-Z0-9])\\s+([\\u4e00-\\u9fa5])", with: "$1$2", options: .regularExpression)
         return text.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -20,7 +20,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
 
     // Pipeline 组件
     static var qwenRecognizer: QwenASRStreamRecognizer?
-    static var paraformerRecognizer: SherpaOnnxOnlineRecognizer?
+    static var paraformerRecognizer: StreamingParaformerRecognizer?
     static var vad: SherpaOnnxVAD?
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
@@ -107,7 +107,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         // Paraformer
         if let paths = TestEnvironment.paraformerPaths() {
             let itnPath = TestEnvironment.itnFstPath()
-            paraformerRecognizer = SherpaOnnxOnlineRecognizer(
+            paraformerRecognizer = StreamingParaformerRecognizer(
                 encoderPath: paths.encoder,
                 decoderPath: paths.decoder,
                 tokensPath: paths.tokens,

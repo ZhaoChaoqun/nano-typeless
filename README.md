@@ -140,7 +140,7 @@ typeless/
 │   ├── TypelessApp.swift          # 应用入口和生命周期
 │   ├── RecordingManager.swift     # 音频录制和引擎调度
 │   ├── ASREngine.swift            # ASR 引擎统一协议
-│   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer 流式识别
+│   ├── StreamingParaformerRecognizer.swift # Streaming Paraformer 流式识别
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR 流式识别
 │   ├── FunASRNanoLLMRecognizer.swift    # FunASR Nano LLM 离线识别
 │   ├── KeyMonitor.swift           # 全局 Fn 键检测
@@ -333,7 +333,7 @@ typeless/
 │   ├── TypelessApp.swift          # App entry & lifecycle
 │   ├── RecordingManager.swift     # Audio recording & engine dispatch
 │   ├── ASREngine.swift            # Unified ASR engine protocol
-│   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer
+│   ├── StreamingParaformerRecognizer.swift # Streaming Paraformer
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR streaming recognition
 │   ├── FunASRNanoLLMRecognizer.swift    # FunASR Nano LLM offline recognition
 │   ├── KeyMonitor.swift           # Global Fn key detection

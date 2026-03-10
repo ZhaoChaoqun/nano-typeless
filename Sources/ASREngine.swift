@@ -25,12 +25,12 @@ protocol ASREngine: AnyObject {
 
 /// Streaming Paraformer 引擎：原生流式识别
 class StreamingParaformerEngine: ASREngine {
-    private let recognizer: SherpaOnnxOnlineRecognizer
+    private let recognizer: StreamingParaformerRecognizer
     private let recognitionQueue: DispatchQueue
 
     let needsPunctuation = true
 
-    init(recognizer: SherpaOnnxOnlineRecognizer, recognitionQueue: DispatchQueue) {
+    init(recognizer: StreamingParaformerRecognizer, recognitionQueue: DispatchQueue) {
         self.recognizer = recognizer
         self.recognitionQueue = recognitionQueue
     }

@@ -1,18 +1,18 @@
 import Foundation
 import os
 
-private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnxOnlineRecognizer")
+private let logger = Logger(subsystem: "com.typeless.app", category: "StreamingParaformerRecognizer")
 
 /// 流式语音识别器（Streaming Paraformer）
 ///
 /// 使用原生 ONNX Runtime 替代 sherpa-onnx，修复尾部截断问题。
 /// 外部接口保持不变。
-class SherpaOnnxOnlineRecognizer {
+class StreamingParaformerRecognizer {
     private var engine: ParaformerONNX?
 
     /// 初始化流式识别器
     init?(encoderPath: String, decoderPath: String, tokensPath: String, ruleFstsPath: String? = nil) {
-        logger.info("SherpaOnnxOnlineRecognizer: 开始初始化（原生 ORT）...")
+        logger.info("StreamingParaformerRecognizer: 开始初始化（原生 ORT）...")
         logger.debug("Encoder路径: \(encoderPath, privacy: .public)")
         logger.debug("Decoder路径: \(decoderPath, privacy: .public)")
         logger.debug("Tokens路径: \(tokensPath, privacy: .public)")
@@ -24,11 +24,11 @@ class SherpaOnnxOnlineRecognizer {
         )
 
         guard engine != nil else {
-            logger.error("SherpaOnnxOnlineRecognizer: ParaformerONNX 初始化失败")
+            logger.error("StreamingParaformerRecognizer: ParaformerONNX 初始化失败")
             return nil
         }
 
-        logger.info("SherpaOnnxOnlineRecognizer: 初始化成功（原生 ORT）")
+        logger.info("StreamingParaformerRecognizer: 初始化成功（原生 ORT）")
     }
 
     /// 接收音频数据
