@@ -138,11 +138,24 @@ class SherpaOnnxManager: NSObject {
     /// FP16 模型目录名（原生 ORT 推理使用）
     static let streamingParaformerFP16Folder = "sherpa-onnx-streaming-paraformer-bilingual-zh-en-fp16"
 
-    /// 获取 Streaming Paraformer 模型路径（优先级：INT8 > FP32）
-    /// 注意：FP16 模型暂时禁用 — 当前 FP16 模型与 ORT 1.17 不兼容
-    /// (SimplifiedLayerNormFusion 图优化错误)，待重新导出后再启用。
+    /// 获取 Streaming Paraformer 模型路径（优先级：FP16 > INT8 > FP32）
+    ///
+    /// FP16 模型精度最高（与 Python 参考实现完全一致），优先使用。
+    /// INT8 量化模型在短音频上存在 token 重复/乱序问题。
     func getStreamingParaformerPath() -> (encoderPath: String, decoderPath: String, tokensPath: String)? {
-        // 1. 使用 INT8 版本
+        // 1. 优先使用 FP16 版本（独立目录）
+        let fp16Dir = modelsDirectory.appendingPathComponent(Self.streamingParaformerFP16Folder)
+        let fp16Tokens = fp16Dir.appendingPathComponent("tokens.txt")
+        let encoderFP16 = fp16Dir.appendingPathComponent("encoder.fp16.onnx")
+        let decoderFP16 = fp16Dir.appendingPathComponent("decoder.fp16.onnx")
+
+        if FileManager.default.fileExists(atPath: encoderFP16.path),
+           FileManager.default.fileExists(atPath: decoderFP16.path),
+           FileManager.default.fileExists(atPath: fp16Tokens.path) {
+            return (encoderFP16.path, decoderFP16.path, fp16Tokens.path)
+        }
+
+        // 2. 回退到 INT8 版本
         let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.streamingParaformer.folderName)
         let tokensPath = modelDir.appendingPathComponent("tokens.txt")
 
@@ -158,7 +171,7 @@ class SherpaOnnxManager: NSObject {
             return (encoderINT8.path, decoderINT8.path, tokensPath.path)
         }
 
-        // 2. 回退到 FP32 版本
+        // 3. 回退到 FP32 版本
         let encoderFP32 = modelDir.appendingPathComponent("encoder.onnx")
         let decoderFP32 = modelDir.appendingPathComponent("decoder.onnx")
 
