@@ -148,7 +148,7 @@
     {
       "id": "ascend_cs_001",
       "category": "real_ascend_codeswitching",
-      "expected_text": "No，我专业是那个ISM，Information Systems Management。",
+      "expected_text": "No，我专业是那个 ISM，Information Systems Management。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_001.wav"
@@ -165,7 +165,7 @@
     {
       "id": "ascend_cs_002",
       "category": "real_ascend_codeswitching",
-      "expected_text": "嗯，所以你现在还是比较focus在找工作这件事上。",
+      "expected_text": "嗯，所以你现在还是比较 focus 在找工作这件事上。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_002.wav"
@@ -182,7 +182,7 @@
     {
       "id": "ascend_cs_003",
       "category": "real_ascend_codeswitching",
-      "expected_text": "深圳啊，或者是上海这种比较大的城市，会有更多opportunity。",
+      "expected_text": "深圳啊，或者是上海这种比较大的城市，会有更多 opportunity。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_003.wav"
@@ -213,7 +213,7 @@
     {
       "id": "ascend_cs_005",
       "category": "real_ascend_codeswitching",
-      "expected_text": "所以我的我的parents，我的妈妈是chemistry老师，and我的爸爸是history老师。",
+      "expected_text": "所以我的我的 parents，我的妈妈是 chemistry 老师，and 我的爸爸是 history 老师。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_005.wav"
@@ -230,7 +230,7 @@
     {
       "id": "ascend_cs_006",
       "category": "real_ascend_codeswitching",
-      "expected_text": "那个玩basketball的，然后我有时候有时候会邀我的friends啊，一起打在就是after class的时候。",
+      "expected_text": "那个玩 basketball 的，然后我有时候有时候会邀我的 friends 啊，一起打在就是 after class 的时候。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_006.wav"
@@ -246,7 +246,7 @@
     {
       "id": "ascend_cs_008",
       "category": "real_ascend_codeswitching",
-      "expected_text": "然后呃，我也喜欢play basketball。",
+      "expected_text": "然后呃，我也喜欢 play basketball。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_008.wav"
@@ -262,7 +262,7 @@
     {
       "id": "ascend_cs_009",
       "category": "real_ascend_codeswitching",
-      "expected_text": "然后刚忘了讲，你你是念什么major的？",
+      "expected_text": "然后刚忘了讲，你你是念什么 major 的？",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_009.wav"
@@ -279,7 +279,7 @@
     {
       "id": "ascend_cs_010",
       "category": "real_ascend_codeswitching",
-      "expected_text": "哦，我我在UG的时候念的是electrical engineering。",
+      "expected_text": "哦，我我在 UG 的时候念的是 electrical engineering。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/ascend/ascend_cs_010.wav"
@@ -332,7 +332,7 @@
     {
       "id": "wenet_net_004",
       "category": "real_wenetspeech",
-      "expected_text": "下车后望着30多层的大高楼发呆。",
+      "expected_text": "下车后望着 30 多层的大高楼发呆。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_004.wav"
@@ -356,7 +356,7 @@
     {
       "id": "wenet_net_006",
       "category": "real_wenetspeech",
-      "expected_text": "这位叫皮特的FBI探员一上来就一顿物理分析，认为阿曼达不可能吊起比她还重的女警官。",
+      "expected_text": "这位叫皮特的 FBI 探员一上来就一顿物理分析，认为阿曼达不可能吊起比她还重的女警官。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "real": "audio/real/wenetspeech/wenet_net_006.wav"
@@ -416,7 +416,7 @@
     {
       "id": "cs_edge_001",
       "category": "real_codeswitching",
-      "expected_text": "我们团队最近在用React和TypeScript重构前端项目。",
+      "expected_text": "我们团队最近在用 React 和 TypeScript 重构前端项目。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_001.wav"
@@ -432,7 +432,7 @@
     {
       "id": "cs_edge_002",
       "category": "real_codeswitching",
-      "expected_text": "这个bug是因为race condition导致的memory leak。",
+      "expected_text": "这个 bug 是因为 race condition 导致的 memory leak。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_002.wav"
@@ -448,7 +448,7 @@
     {
       "id": "cs_edge_003",
       "category": "real_codeswitching",
-      "expected_text": "用Docker Compose部署了3个microservice到staging环境。",
+      "expected_text": "用 Docker Compose 部署了 3 个 microservice 到 staging 环境。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_003.wav"
@@ -464,7 +464,7 @@
     {
       "id": "cs_edge_004",
       "category": "real_codeswitching",
-      "expected_text": "在GitHub上提了一个issue，关于performance optimization。",
+      "expected_text": "在 GitHub 上提了一个 issue，关于 performance optimization。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_004.wav"
@@ -480,7 +480,7 @@
     {
       "id": "cs_edge_005",
       "category": "real_codeswitching",
-      "expected_text": "这个function的return type应该是Optional，而不是force unwrap。",
+      "expected_text": "这个 function 的 return type 应该是 Optional，而不是 force unwrap。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_005.wav"
@@ -496,7 +496,7 @@
     {
       "id": "cs_edge_006",
       "category": "real_codeswitching",
-      "expected_text": "用Xcode的Instruments做了一下profiling，发现CPU占用太高。",
+      "expected_text": "用 Xcode 的 Instruments 做了一下 profiling，发现 CPU 占用太高。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_006.wav"
@@ -512,7 +512,7 @@
     {
       "id": "cs_edge_007",
       "category": "real_codeswitching",
-      "expected_text": "GraphQL的schema定义比RESTful API更灵活一些。",
+      "expected_text": "GraphQL 的 schema 定义比 RESTful API 更灵活一些。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_007.wav"
@@ -528,7 +528,7 @@
     {
       "id": "cs_edge_008",
       "category": "real_codeswitching",
-      "expected_text": "CI pipeline跑了30分钟，还没通过unit test。",
+      "expected_text": "CI pipeline 跑了 30 分钟，还没通过 unit test。",
       "match_mode": "contains_all",
       "audio_files": {
         "real": "audio/real/codeswitching/cs_edge_008.wav"

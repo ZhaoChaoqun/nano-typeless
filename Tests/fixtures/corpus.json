@@ -31,7 +31,7 @@
     {
       "id": "mixed_01",
       "category": "mixed_zh_en",
-      "expected_text": "我今天用Python写了一个API接口。",
+      "expected_text": "我今天用 Python 写了一个 API 接口。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/mixed_01.wav"
@@ -46,7 +46,7 @@
     {
       "id": "mixed_02",
       "category": "mixed_technical",
-      "expected_text": "MacBook Pro M3芯片性能提升了百分之40。",
+      "expected_text": "MacBook Pro M3 芯片性能提升了百分之 40。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/mixed_02.wav"
@@ -73,7 +73,7 @@
     {
       "id": "tech_num_01",
       "category": "technical_numbers",
-      "expected_text": "服务器IP地址是192.168.1.100，端口号8080。",
+      "expected_text": "服务器 IP 地址是 192.168.1.100，端口号 8080。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/tech_num_01.wav"
@@ -122,7 +122,7 @@
     {
       "id": "dev_git_01",
       "category": "developer_corpus",
-      "expected_text": "执行git commit，修复登录bug。",
+      "expected_text": "执行 git commit，修复登录 bug。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_git_01.wav"
@@ -138,7 +138,7 @@
     {
       "id": "dev_swift_01",
       "category": "developer_corpus",
-      "expected_text": "定义一个struct叫做UserModel。",
+      "expected_text": "定义一个 struct 叫做 UserModel。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_swift_01.wav"
@@ -152,7 +152,7 @@
     {
       "id": "dev_rust_01",
       "category": "developer_corpus",
-      "expected_text": "在Rust里面用async await处理并发。",
+      "expected_text": "在 Rust 里面用 async await 处理并发。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_rust_01.wav"
@@ -167,7 +167,7 @@
     {
       "id": "dev_k8s_01",
       "category": "developer_corpus",
-      "expected_text": "Kubernetes的pod状态是CrashLoopBackOff。",
+      "expected_text": "Kubernetes 的 pod 状态是 CrashLoopBackOff。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_k8s_01.wav"
@@ -182,7 +182,7 @@
     {
       "id": "dev_api_01",
       "category": "developer_corpus",
-      "expected_text": "调用RESTful API返回JSON格式数据。",
+      "expected_text": "调用 RESTful API 返回 JSON 格式数据。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_api_01.wav"
@@ -197,7 +197,7 @@
     {
       "id": "dev_db_01",
       "category": "developer_corpus",
-      "expected_text": "执行SQL查询SELECT FROM users WHERE id = 1。",
+      "expected_text": "执行 SQL 查询 SELECT FROM users WHERE id = 1。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_db_01.wav"
@@ -213,7 +213,7 @@
     {
       "id": "dev_url_01",
       "category": "developer_corpus",
-      "expected_text": "访问github.com。",
+      "expected_text": "访问 github.com。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_url_01.wav"
@@ -228,7 +228,7 @@
     {
       "id": "dev_debug_01",
       "category": "developer_corpus",
-      "expected_text": "在第42行设置一个breakpoint。",
+      "expected_text": "在第 42 行设置一个 breakpoint。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/dev_debug_01.wav"
@@ -242,7 +242,7 @@
     {
       "id": "cs_var_01",
       "category": "code_switching",
-      "expected_text": "把这个variable赋值给constant。",
+      "expected_text": "把这个 variable 赋值给 constant。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/cs_var_01.wav"
@@ -257,7 +257,7 @@
     {
       "id": "cs_build_01",
       "category": "code_switching",
-      "expected_text": "在macOS上运行swift build。",
+      "expected_text": "在 macOS 上运行 swift build。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/cs_build_01.wav"
@@ -273,7 +273,7 @@
     {
       "id": "cs_error_01",
       "category": "code_switching",
-      "expected_text": "这个error是null pointer exception。",
+      "expected_text": "这个 error 是 null pointer exception。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/cs_error_01.wav"
@@ -288,7 +288,7 @@
     {
       "id": "cs_deploy_01",
       "category": "code_switching",
-      "expected_text": "把Docker image push到registry。",
+      "expected_text": "把 Docker image push 到 registry。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/cs_deploy_01.wav"
@@ -303,7 +303,7 @@
     {
       "id": "cs_review_01",
       "category": "code_switching",
-      "expected_text": "帮我review一下这个pull request。",
+      "expected_text": "帮我 review 一下这个 pull request。",
       "match_mode": "contains_all",
       "audio_files": {
         "edge_tts": "audio/edge_tts/cs_review_01.wav"
@@ -433,7 +433,7 @@
     {
       "id": "long_30s_01",
       "category": "long_audio",
-      "expected_text": "人工智能技术在过去10年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
+      "expected_text": "人工智能技术在过去 10 年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "edge_tts": "audio/edge_tts/long_30s_01.wav"
@@ -444,7 +444,7 @@
     {
       "id": "long_60s_01",
       "category": "long_audio",
-      "expected_text": "软件工程是一门研究用工程化方法构建和维护有效的实用的和高质量的软件的学科。它涉及到程序设计语言、数据库、软件开发工具、系统平台等方面的知识。现代软件开发通常采用敏捷开发方法，强调快速迭代和持续交付。版本控制系统如Git是团队协作开发的基础工具。持续集成和持续部署能够自动化测试和发布流程，提高开发效率。代码审查是保证代码质量的重要实践，团队成员互相审阅代码修改。单元测试和集成测试帮助开发者在早期发现和修复缺陷。微服务架构将大型应用拆分为多个独立的小型服务。容器化技术如Docker简化了应用的部署和运维管理。云计算平台提供了弹性的计算资源，支持应用的快速扩展。DevOps实践将开发和运维紧密结合，促进软件的快速可靠交付。性能优化需要从算法、数据结构、系统架构等多个层面综合考虑。",
+      "expected_text": "软件工程是一门研究用工程化方法构建和维护有效的实用的和高质量的软件的学科。它涉及到程序设计语言、数据库、软件开发工具、系统平台等方面的知识。现代软件开发通常采用敏捷开发方法，强调快速迭代和持续交付。版本控制系统如 Git 是团队协作开发的基础工具。持续集成和持续部署能够自动化测试和发布流程，提高开发效率。代码审查是保证代码质量的重要实践，团队成员互相审阅代码修改。单元测试和集成测试帮助开发者在早期发现和修复缺陷。微服务架构将大型应用拆分为多个独立的小型服务。容器化技术如 Docker 简化了应用的部署和运维管理。云计算平台提供了弹性的计算资源，支持应用的快速扩展。DevOps 实践将开发和运维紧密结合，促进软件的快速可靠交付。性能优化需要从算法、数据结构、系统架构等多个层面综合考虑。",
       "match_mode": "character_error_rate",
       "audio_files": {
         "edge_tts": "audio/edge_tts/long_60s_01.wav"
