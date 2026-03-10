@@ -24,10 +24,12 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     static var vad: SherpaOnnxVAD?
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
+    static var cloudRewriter: CloudRewriter?
 
     // 可用性标记
     static var qwenAvailable = false
     static var paraformerAvailable = false
+    static var cloudRewriteAvailable = false
 
     // 日志文件
     static var logPath: String = ""
@@ -126,6 +128,11 @@ class ASRPipelineBenchmarkTests: XCTestCase {
             punctuator = SherpaOnnxPunctuation(modelPath: punctPath)
             log("[Benchmark] 标点: \(punctuator != nil ? "✓" : "✗")")
         }
+
+        // Cloud Rewriter (Cerebras GPT-OSS-120B)
+        cloudRewriter = CloudRewriter()
+        cloudRewriteAvailable = cloudRewriter != nil
+        log("[Benchmark] Cloud Rewrite: \(cloudRewriteAvailable ? "✓" : "✗") (CLOUD_REWRITE_API_KEY)")
     }
 
     override class func tearDown() {
@@ -137,6 +144,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         vad = nil
         punctuator = nil
         corrector = nil
+        cloudRewriter = nil
         super.tearDown()
     }
 
@@ -191,33 +199,9 @@ class ASRPipelineBenchmarkTests: XCTestCase {
 
         let results = runPipeline(name: "Paraformer Pipeline") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
-            recognizer.reset()
 
-            // 逐 chunk 送入并解码（与产品代码一致）
-            let chunkSize = 4096
-            for i in stride(from: 0, to: samples.count, by: chunkSize) {
-                let end = min(i + chunkSize, samples.count)
-                let chunk = Array(samples[i..<end])
-                recognizer.acceptWaveform(samples: chunk)
-                while recognizer.isReady() {
-                    recognizer.decode()
-                }
-            }
-
-            // 1s silence padding + inputFinished 确保流式解码器完成尾部帧
-            let silencePadding = [Float](repeating: 0.0, count: 16000)
-            recognizer.acceptWaveform(samples: silencePadding)
-            while recognizer.isReady() {
-                recognizer.decode()
-            }
-
-            recognizer.inputFinished()
-            while recognizer.isReady() {
-                recognizer.decode()
-            }
-
-            var text = recognizer.getResult()
-            recognizer.reset()
+            // 使用离线一次性推理（避免流式 chunk 分割的 LFR 边界问题）
+            var text = recognizer.transcribeOffline(samples: samples)
 
             // 后处理：CSC → 标点
             text = Self.applyPostProcessing(text)
@@ -225,6 +209,32 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         }
 
         Self.allResults.append(PipelineResult(pipelineName: "Paraformer Pipeline", results: results))
+    }
+
+    func testParaformerCloudRewritePipeline() throws {
+        try XCTSkipUnless(Self.paraformerAvailable, "Paraformer 模型不可用")
+        try XCTSkipUnless(Self.cloudRewriteAvailable, "Cloud Rewrite 不可用 (需要 CLOUD_REWRITE_API_KEY)")
+        let recognizer = Self.paraformerRecognizer!
+        let rewriter = Self.cloudRewriter!
+
+        let results = runPipeline(name: "Paraformer + Cloud Rewrite") { entry in
+            let samples = try WAVLoader.load(path: entry.audioPath).samples
+
+            // 使用离线一次性推理
+            let asrText = recognizer.transcribeOffline(samples: samples)
+
+            // Cloud Rewrite 后处理（同步等待 async 调用）
+            let semaphore = DispatchSemaphore(value: 0)
+            var rewritten = asrText
+            Task {
+                rewritten = await rewriter.rewrite(text: asrText)
+                semaphore.signal()
+            }
+            semaphore.wait()
+            return rewritten
+        }
+
+        Self.allResults.append(PipelineResult(pipelineName: "Paraformer + Cloud Rewrite", results: results))
     }
 
     // MARK: - 报告生成
