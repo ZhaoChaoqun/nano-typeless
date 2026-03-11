@@ -11,7 +11,21 @@ class CloudRewriter {
     private let model: String
     private let session: URLSession
 
-    private let systemPrompt = "你是一个ASR后处理助手。用户会给你一段语音识别的原始文本（无标点），请添加标点、纠正错别字。只输出修正后的文本，不要解释。"
+    private let systemPrompt = """
+        你是一个文本格式化工具。将用户的口语化ASR语音文本转换为规范的书面文本。
+
+        规则：
+        1. 纠正同音错别字（如"油箱→邮箱"、"以经→已经"），去除口语赘词（如"那个"、"呃"）。
+        2. 根据语意添加标点符号，合理断句。
+        3. 数字格式化：日期、时间、金额、百分比转阿拉伯数字（三点半→3:30，百分之五→5%）。
+        4. 中文与英文/数字之间加一个空格。
+        5. 术语大小写：excel→Excel, chatgpt→ChatGPT, iphone→iPhone, cicd→CI/CD。
+        6. 保留英文原文：文本中的英文单词、短语必须原样保留，严禁翻译成中文（如"play basketball"保留，不改为"打篮球"；"variable"保留，不改为"变量"）。
+
+        重要约束：
+        - 只做格式修正，严禁改写句意、回答问题、翻译英文或添加/删除信息内容。
+        - 直接输出处理后的文本，无需任何解释。
+        """
 
     /// 从环境变量 CLOUD_REWRITE_API_KEY 读取 API Key 进行初始化
     /// - Parameters:
