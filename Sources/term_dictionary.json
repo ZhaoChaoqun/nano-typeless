@@ -160,7 +160,7 @@
       { "patterns": ["ali pay", "alipay"], "canonical": "Alipay" },
       { "patterns": ["dou yin", "douyin"], "canonical": "抖音" },
       { "patterns": ["xiao hong shu", "xiaohongshu"], "canonical": "小红书" },
-      { "patterns": ["bi li bi li", "bilibili", "b站"], "canonical": "bilibili" },
+      { "patterns": ["bi li bi li", "bilibili", "b站"], "canonical": "哔哩哔哩" },
       { "patterns": ["pin duo duo", "pinduoduo"], "canonical": "拼多多" },
       { "patterns": ["wei bo", "weibo"], "canonical": "微博" },
       { "patterns": ["tai bao", "taobao"], "canonical": "淘宝" },
@@ -235,7 +235,19 @@
       { "patterns": ["chat bot", "chatbot"], "canonical": "chatbot" },
       { "patterns": ["dev ops", "devops"], "canonical": "DevOps" },
       { "patterns": ["site reliability", "sre"], "canonical": "SRE" },
-      { "patterns": ["silicon valley", "siliconvalley"], "canonical": "硅谷" }
+      { "patterns": ["silicon valley", "siliconvalley"], "canonical": "硅谷" },
+
+      { "patterns": ["千问三", "千问3"], "canonical": "Qwen3" },
+      { "patterns": ["千问2", "千问二"], "canonical": "Qwen2" },
+      { "patterns": ["文馨一言"], "canonical": "文心一言" },
+      { "patterns": ["michael s"], "canonical": "macOS" },
+      { "patterns": ["飞马"], "canonical": "Figma" },
+      { "patterns": ["拉马模型", "拉玛模型"], "canonical": "LLaMA模型" },
+      { "patterns": ["奥了么"], "canonical": "Ollama" },
+      { "patterns": ["哈ggface", "哈格face"], "canonical": "Hugging Face" },
+      { "patterns": ["next jazz"], "canonical": "Next.js" },
+      { "patterns": ["node jazz"], "canonical": "Node.js" },
+      { "patterns": ["lunch e", "lunch chain"], "canonical": "LangChain" }
     ],
     "casing": [
       { "term": "github", "canonical": "GitHub" },
