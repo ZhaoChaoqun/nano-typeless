@@ -37,6 +37,7 @@ class RecordingManager {
     private var corrector: ChineseSpellingCorrector?
     private var rewriter: Qwen3TextRewriter?
     private var cloudRewriter: CloudRewriter?
+    private var termNormalizer: TermNormalizer?
 
     /// 所有状态变更必须且只能通过此队列
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
@@ -115,7 +116,7 @@ class RecordingManager {
             }
 
             self.state = newState
-            if oldState != newState {
+            if oldState.description != newState.description {
                 logger.debug("状态转换: \(oldState, privacy: .public) → \(newState, privacy: .public) [事件: \(event, privacy: .public)]")
             }
             self.handleSideEffects(from: oldState, to: newState, event: event)
@@ -293,9 +294,15 @@ class RecordingManager {
                 return
             }
 
+            // 专有名词标准化（在所有后处理之前）
+            let normalizedText = self.termNormalizer?.normalize(rawText) ?? rawText
+            if normalizedText != rawText {
+                logger.info("TermNormalizer: \(rawText, privacy: .public) → \(normalizedText, privacy: .public)")
+            }
+
             guard let engine = self.currentEngine, engine.needsPunctuation else {
-                logger.info("最终结果: \(rawText, privacy: .public)")
-                self.handleEvent(.postProcessComplete(finalText: rawText))
+                logger.info("最终结果: \(normalizedText, privacy: .public)")
+                self.handleEvent(.postProcessComplete(finalText: normalizedText))
                 return
             }
 
@@ -304,23 +311,23 @@ class RecordingManager {
             case .qwen3Rewrite:
                 if let rewriter = self.rewriter {
                     logger.info("使用 Qwen3 Rewrite 后处理")
-                    let rewritten = rewriter.rewrite(text: rawText)
-                    logger.info("原始文本: \(rawText, privacy: .public)")
+                    let rewritten = rewriter.rewrite(text: normalizedText)
+                    logger.info("原始文本: \(normalizedText, privacy: .public)")
                     logger.info("Rewrite 后: \(rewritten, privacy: .public)")
                     finalText = rewritten
                 } else {
                     logger.warning("Qwen3 Rewriter 未加载，回退到 CSC + 标点模式")
-                    let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
+                    let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
                     finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
                 }
             case .cloudRewrite:
                 if let cloudRewriter = self.cloudRewriter {
                     logger.info("使用 Cloud Rewrite 后处理")
-                    logger.info("原始文本: \(rawText, privacy: .public)")
+                    logger.info("原始文本: \(normalizedText, privacy: .public)")
                     let semaphore = DispatchSemaphore(value: 0)
-                    var rewritten = rawText
+                    var rewritten = normalizedText
                     Task {
-                        rewritten = await cloudRewriter.rewrite(text: rawText)
+                        rewritten = await cloudRewriter.rewrite(text: normalizedText)
                         semaphore.signal()
                     }
                     semaphore.wait()
@@ -328,14 +335,14 @@ class RecordingManager {
                     finalText = rewritten
                 } else {
                     logger.warning("CloudRewriter 未初始化，回退到 CSC + 标点模式")
-                    let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
+                    let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
                     finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
                 }
             case .cscPunctuation:
-                let correctedText = self.corrector?.correctSpelling(rawText) ?? rawText
+                let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
                 finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
-                logger.info("原始文本: \(rawText, privacy: .public)")
-                if correctedText != rawText {
+                logger.info("原始文本: \(normalizedText, privacy: .public)")
+                if correctedText != normalizedText {
                     logger.info("CSC 纠正: \(correctedText, privacy: .public)")
                 } else {
                     logger.info("CSC 未修改文本")
@@ -357,6 +364,7 @@ class RecordingManager {
         corrector = nil
         rewriter = nil
         cloudRewriter = nil
+        termNormalizer = nil
         recognitionQueue.sync {}
 
         switch currentModel {
@@ -364,6 +372,14 @@ class RecordingManager {
             await initializeStreamingParaformer()
         case .qwenASR:
             await initializeQwenASR()
+        }
+
+        // 加载专有名词词典（所有引擎共用）
+        termNormalizer = TermNormalizer()
+        if termNormalizer != nil {
+            logger.info("TermNormalizer 词典加载成功")
+        } else {
+            logger.warning("TermNormalizer 词典加载失败，跳过专有名词标准化")
         }
 
         if currentEngine != nil {

@@ -37,6 +37,8 @@
 		1AR00001 /* Qwen3TextRewriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AR00010 /* Qwen3TextRewriter.swift */; };
 		1AR00002 /* libqwen3_rewrite.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AR00011 /* libqwen3_rewrite.dylib */; };
 		1AR00003 /* libqwen3_rewrite.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1AR00011 /* libqwen3_rewrite.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		1ATN0001 /* TermNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ATN0010 /* TermNormalizer.swift */; };
+		1ATN0002 /* term_dictionary.json in Resources */ = {isa = PBXBuildFile; fileRef = 1ATN0011 /* term_dictionary.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,6 +99,8 @@
 		1AQ00014 /* ASREngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASREngine.swift; sourceTree = "<group>"; };
 		1AR00010 /* Qwen3TextRewriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3TextRewriter.swift; sourceTree = "<group>"; };
 		1AR00011 /* libqwen3_rewrite.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqwen3_rewrite.dylib; path = "Frameworks/qwen3-rewrite/lib/libqwen3_rewrite.dylib"; sourceTree = "<group>"; };
+		1ATN0010 /* TermNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermNormalizer.swift; sourceTree = "<group>"; };
+		1ATN0011 /* term_dictionary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = term_dictionary.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -169,6 +173,8 @@
 				1AC00011 /* ChineseSpellingCorrector.swift */,
 				1AR00010 /* Qwen3TextRewriter.swift */,
 				1ACR0010 /* CloudRewriter.swift */,
+				1ATN0010 /* TermNormalizer.swift */,
+				1ATN0011 /* term_dictionary.json */,
 				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
 				1A000017 /* Info.plist */,
 				1A000018 /* Typeless.entitlements */,
@@ -290,6 +296,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A000030 /* AppIcon.icns in Resources */,
+				1ATN0002 /* term_dictionary.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +351,7 @@
 				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,
 				1AR00001 /* Qwen3TextRewriter.swift in Sources */,
 				1ACR0001 /* CloudRewriter.swift in Sources */,
+				1ATN0001 /* TermNormalizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -577,7 +585,7 @@
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
-				MARKETING_VERSION = 1.2.18;
+				MARKETING_VERSION = 1.2.19;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -617,7 +625,7 @@
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
-				MARKETING_VERSION = 1.2.18;
+				MARKETING_VERSION = 1.2.19;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
