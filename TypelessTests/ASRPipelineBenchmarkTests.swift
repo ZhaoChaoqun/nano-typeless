@@ -25,6 +25,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
     static var cloudRewriter: CloudRewriter?
+    static var termNormalizer: TermNormalizer?
 
     // 可用性标记
     static var qwenAvailable = false
@@ -133,6 +134,12 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         cloudRewriter = CloudRewriter()
         cloudRewriteAvailable = cloudRewriter != nil
         log("[Benchmark] Cloud Rewrite: \(cloudRewriteAvailable ? "✓" : "✗") (CLOUD_REWRITE_API_KEY)")
+
+        // TermNormalizer
+        let bundleURL = Bundle(for: ASRPipelineBenchmarkTests.self).url(forResource: "term_dictionary", withExtension: "json")
+        let dictURL = bundleURL ?? URL(fileURLWithPath: TestEnvironment.projectRoot() + "/Sources/term_dictionary.json")
+        termNormalizer = TermNormalizer(dictionaryURL: dictURL)
+        log("[Benchmark] TermNormalizer: \(termNormalizer != nil ? "✓" : "✗")")
     }
 
     override class func tearDown() {
@@ -145,6 +152,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         punctuator = nil
         corrector = nil
         cloudRewriter = nil
+        termNormalizer = nil
         super.tearDown()
     }
 
@@ -259,6 +267,40 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         }
 
         Self.allResults.append(PipelineResult(pipelineName: "Paraformer + Cloud Rewrite", results: results))
+    }
+
+    func testParaformerTermNormalizerPipeline() throws {
+        try XCTSkipUnless(Self.paraformerAvailable, "Paraformer 模型不可用")
+        let recognizer = Self.paraformerRecognizer!
+        guard let normalizer = Self.termNormalizer else {
+            throw XCTSkip("TermNormalizer 不可用")
+        }
+
+        let results = runPipeline(name: "Paraformer + TermNormalizer") { entry in
+            let samples = try WAVLoader.load(path: entry.audioPath).samples
+
+            // 流式推理 + is_final tail flush
+            recognizer.reset()
+            let chunkSize = 4096
+            for i in stride(from: 0, to: samples.count, by: chunkSize) {
+                let end = min(i + chunkSize, samples.count)
+                let chunk = Array(samples[i..<end])
+                recognizer.acceptWaveform(samples: chunk)
+                while recognizer.isReady() { recognizer.decode() }
+            }
+            recognizer.setFinalChunk()
+            recognizer.inputFinished()
+            while recognizer.isReady() { recognizer.decode() }
+            var text = recognizer.getResult()
+            recognizer.reset()
+
+            // TermNormalizer → CSC → 标点
+            text = normalizer.normalize(text)
+            text = Self.applyPostProcessing(text)
+            return text
+        }
+
+        Self.allResults.append(PipelineResult(pipelineName: "Paraformer + TermNormalizer", results: results))
     }
 
     // MARK: - 报告生成
