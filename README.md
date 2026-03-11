@@ -13,7 +13,7 @@
   <a href="#"><img src="https://img.shields.io/badge/platform-macOS%2014.0+-blue?logo=apple&logoColor=white" alt="Platform"></a>
   <a href="#"><img src="https://img.shields.io/badge/Swift-5.9-orange?logo=swift&logoColor=white" alt="Swift"></a>
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
-  <a href="#"><img src="https://img.shields.io/badge/ASR-3%20Engines-purple" alt="ASR Engines"></a>
+  <a href="#"><img src="https://img.shields.io/badge/ASR-2%20Engines-purple" alt="ASR Engines"></a>
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 |------|------|
 | 🎤 **按键说话** | 按住 `Fn` 键录音，松开即转文字 |
 | 🔒 **完全本地** | 所有模型完全在本地运行，数据不出设备 |
-| 🌐 **中英混合** | 三种引擎均原生支持中英文混合输入 |
+| 🌐 **中英混合** | 双引擎均原生支持中英文混合输入 |
 | ⚡ **快速轻量** | 菜单栏应用，资源占用极低 |
 | 🎯 **通用输入** | 任意应用可用 - 光标在哪，文字就输入到哪 |
 | 💻 **通用版本** | **同时支持 Apple Silicon (M1/M2/M3/M4) 和 Intel Mac** |
@@ -139,17 +139,25 @@ typeless/
 ├── Sources/
 │   ├── TypelessApp.swift          # 应用入口和生命周期
 │   ├── RecordingManager.swift     # 音频录制和引擎调度
+│   ├── RecordingState.swift       # 录音状态机管理
 │   ├── ASREngine.swift            # ASR 引擎统一协议
+│   ├── ASRStreamRecognizing.swift # 流式识别器协议
 │   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer 流式识别
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR 流式识别
-│   ├── FunASRNanoLLMRecognizer.swift    # FunASR Nano LLM 离线识别
+│   ├── SherpaOnnxManager.swift    # 模型下载和管理
+│   ├── SherpaOnnxPunctuation.swift # CT-Transformer 标点模型
+│   ├── SherpaOnnxVAD.swift        # Silero VAD 语音活动检测
+│   ├── CloudRewriter.swift        # 云端 LLM 文本纠错
+│   ├── Qwen3TextRewriter.swift    # Qwen3-0.6B 本地文本纠错
+│   ├── TermNormalizer.swift       # 词典后处理（术语规范化）
 │   ├── KeyMonitor.swift           # 全局 Fn 键检测
 │   ├── TextInserter.swift         # 光标文字插入
 │   ├── OverlayWindow.swift        # 录音 UI 遮罩
 │   └── SettingsView.swift         # 偏好设置 UI
 ├── Frameworks/
-│   ├── sherpa-onnx/               # FunASR + Paraformer 推理框架
-│   └── qwen-asr/                  # Qwen3-ASR Rust FFI 库
+│   ├── sherpa-onnx/               # Paraformer 推理框架
+│   ├── qwen-asr/                  # Qwen3-ASR Rust FFI 库
+│   └── qwen3-rewrite/             # Qwen3-0.6B 文本纠错 C FFI 库
 ├── Package.swift                  # Swift Package 依赖
 └── Typeless.xcodeproj/            # Xcode 项目
 ```
@@ -159,7 +167,8 @@ typeless/
 | 组件 | 技术 |
 |------|------|
 | **UI 框架** | SwiftUI |
-| **语音识别** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Streaming Paraformer + FunASR Nano LLM) / Qwen3-ASR (Rust FFI) |
+| **语音识别** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Streaming Paraformer) / Qwen3-ASR (Rust FFI) |
+| **文本后处理** | Cloud LLM Rewriter / Qwen3-0.6B 本地纠错 / 词典规范化 |
 | **音频采集** | AVFoundation |
 | **按键监听** | CGEvent Tap API |
 | **文字插入** | CGEvent（键盘模拟） |
@@ -176,13 +185,12 @@ typeless/
 
 ## 🔧 配置说明
 
-应用内置三种 ASR 引擎，可在设置中切换。默认使用 `Streaming Paraformer`。
+应用内置两种 ASR 引擎，可在设置中切换。默认使用 `Streaming Paraformer`。
 
 | 引擎 | 大小 | 模式 | 标点 | 适用场景 |
 |------|------|------|------|----------|
-| `Streaming Paraformer` | ~216MB + 标点 62MB | 流式 | 需 CT-Transformer | 日常使用（默认） |
-| `Qwen3-ASR` | ~1.2GB | 流式 | 自带标点 | 高精度，长文本 |
-| `FunASR Nano LLM` | ~716MB | 离线（VAD 分段） | 自带标点 | 高质量输出 |
+| `Streaming Paraformer` | ~414MB（含标点模型） | 流式 | CT-Transformer | 日常使用（默认） |
+| `Qwen3-ASR` | ~834MB | 流式 | 自带标点 | 高精度，长文本 |
 
 ## 🤝 参与贡献
 
@@ -197,6 +205,17 @@ typeless/
 ## 📄 许可证
 
 本项目基于 MIT 许可证开源 - 详见 [LICENSE](LICENSE) 文件。
+
+## 🔗 关联项目
+
+Nano Typeless 的部分能力由以下子项目提供支持：
+
+| 项目 | 说明 | 语言 |
+|------|------|------|
+| [QwenASR](https://github.com/ZhaoChaoqun/QwenASR) | Qwen3-ASR 流式推理引擎，编译为 dylib 供本项目调用 | Rust |
+| [mlx-qwen-asr-streaming](https://github.com/ZhaoChaoqun/mlx-qwen-asr-streaming) | Qwen3-ASR 流式推理的 MLX 实现，用于 Apple Silicon 上的快速实验 | Python |
+| [Qwen3-0.6B](https://github.com/ZhaoChaoqun/Qwen3-0.6B) | Qwen3 0.6B 微调模型，支持 ASR 文本二阶段 rewrite（纠错+格式化） | Python |
+| [sherpa-onnx](https://github.com/ZhaoChaoqun/sherpa-onnx) | sherpa-onnx fork，修复 Streaming Paraformer 流式尾部截断问题 | C++ |
 
 ## 🙏 致谢
 
@@ -233,7 +252,7 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 |---------|-------------|
 | 🎤 **Push-to-Talk** | Hold `Fn` key to record, release to transcribe |
 | 🔒 **100% Local** | All models run entirely on-device, no data leaves your Mac |
-| 🌐 **Multilingual** | Three ASR engines with native Chinese-English mixed input support |
+| 🌐 **Multilingual** | Two ASR engines with native Chinese-English mixed input support |
 | ⚡ **Fast & Lightweight** | Menu bar app with minimal resource usage |
 | 🎯 **Universal Input** | Works in any app - just position your cursor and speak |
 | 💻 **Universal Binary** | **Runs natively on both Apple Silicon (M1/M2/M3/M4) and Intel Macs - one app, all Macs** |
@@ -332,17 +351,25 @@ typeless/
 ├── Sources/
 │   ├── TypelessApp.swift          # App entry & lifecycle
 │   ├── RecordingManager.swift     # Audio recording & engine dispatch
+│   ├── RecordingState.swift       # Recording state machine
 │   ├── ASREngine.swift            # Unified ASR engine protocol
+│   ├── ASRStreamRecognizing.swift # Stream recognizer protocol
 │   ├── SherpaOnnxOnlineRecognizer.swift # Streaming Paraformer
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR streaming recognition
-│   ├── FunASRNanoLLMRecognizer.swift    # FunASR Nano LLM offline recognition
+│   ├── SherpaOnnxManager.swift    # Model download & management
+│   ├── SherpaOnnxPunctuation.swift # CT-Transformer punctuation
+│   ├── SherpaOnnxVAD.swift        # Silero VAD voice activity detection
+│   ├── CloudRewriter.swift        # Cloud LLM text correction
+│   ├── Qwen3TextRewriter.swift    # Qwen3-0.6B local text correction
+│   ├── TermNormalizer.swift       # Dictionary post-processing (term normalization)
 │   ├── KeyMonitor.swift           # Global Fn key detection
 │   ├── TextInserter.swift         # Cursor text insertion
 │   ├── OverlayWindow.swift        # Recording UI overlay
 │   └── SettingsView.swift         # Preferences UI
 ├── Frameworks/
-│   ├── sherpa-onnx/               # FunASR + Paraformer inference
-│   └── qwen-asr/                  # Qwen3-ASR Rust FFI library
+│   ├── sherpa-onnx/               # Paraformer inference framework
+│   ├── qwen-asr/                  # Qwen3-ASR Rust FFI library
+│   └── qwen3-rewrite/             # Qwen3-0.6B text correction C FFI library
 ├── Package.swift                  # Swift Package dependencies
 └── Typeless.xcodeproj/            # Xcode project
 ```
@@ -352,7 +379,8 @@ typeless/
 | Component | Technology |
 |-----------|------------|
 | **UI Framework** | SwiftUI |
-| **Speech Recognition** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Streaming Paraformer + FunASR Nano LLM) / Qwen3-ASR (Rust FFI) |
+| **Speech Recognition** | [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Streaming Paraformer) / Qwen3-ASR (Rust FFI) |
+| **Post-Processing** | Cloud LLM Rewriter / Qwen3-0.6B local correction / Term normalization |
 | **Audio Capture** | AVFoundation |
 | **Key Monitoring** | CGEvent Tap API |
 | **Text Insertion** | CGEvent (Keyboard Simulation) |
@@ -369,13 +397,12 @@ typeless/
 
 ## 🔧 Configuration
 
-The app includes three built-in ASR engines, switchable in Settings. Default is `Streaming Paraformer`.
+The app includes two built-in ASR engines, switchable in Settings. Default is `Streaming Paraformer`.
 
 | Engine | Size | Mode | Punctuation | Best For |
 |--------|------|------|-------------|----------|
-| `Streaming Paraformer` | ~216MB + punct 62MB | Streaming | CT-Transformer | Daily use (default) |
-| `Qwen3-ASR` | ~1.2GB | Streaming | Built-in | High accuracy, long text |
-| `FunASR Nano LLM` | ~716MB | Offline (VAD) | Built-in | High quality output |
+| `Streaming Paraformer` | ~414MB (incl. punct model) | Streaming | CT-Transformer | Daily use (default) |
+| `Qwen3-ASR` | ~834MB | Streaming | Built-in | High accuracy, long text |
 
 ## 🤝 Contributing
 
@@ -390,6 +417,17 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Related Projects
+
+Some capabilities of Nano Typeless are powered by these sub-projects:
+
+| Project | Description | Language |
+|---------|-------------|----------|
+| [QwenASR](https://github.com/ZhaoChaoqun/QwenASR) | Qwen3-ASR streaming inference engine, compiled as dylib for this project | Rust |
+| [mlx-qwen-asr-streaming](https://github.com/ZhaoChaoqun/mlx-qwen-asr-streaming) | MLX implementation of Qwen3-ASR streaming inference for rapid prototyping on Apple Silicon | Python |
+| [Qwen3-0.6B](https://github.com/ZhaoChaoqun/Qwen3-0.6B) | Fine-tuned Qwen3 0.6B model for two-stage ASR text rewriting (correction + formatting) | Python |
+| [sherpa-onnx](https://github.com/ZhaoChaoqun/sherpa-onnx) | sherpa-onnx fork with fix for Streaming Paraformer tail truncation issue | C++ |
 
 ## 🙏 Acknowledgments
 
