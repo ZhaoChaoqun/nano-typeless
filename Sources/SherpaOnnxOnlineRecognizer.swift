@@ -131,6 +131,14 @@ class SherpaOnnxOnlineRecognizer {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// 标记当前 chunk 为最终 chunk（流式 Paraformer 专用）
+    /// 启用短 chunk 接受 + CIF 尾部 token flush
+    /// 必须在最后一次 acceptWaveform 之后、decode 之前调用
+    func setFinalChunk() {
+        guard let stream = stream else { return }
+        SherpaOnnxOnlineStreamSetFinalChunk(stream)
+    }
+
     /// 标记输入结束，通知解码器不会再有新的音频数据
     func inputFinished() {
         guard let stream = stream else { return }

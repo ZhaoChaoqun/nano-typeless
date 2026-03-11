@@ -200,7 +200,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let results = runPipeline(name: "Paraformer Pipeline") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
 
-            // 流式推理 + 1s silence padding
+            // 流式推理 + is_final tail flush
             recognizer.reset()
             let chunkSize = 4096
             for i in stride(from: 0, to: samples.count, by: chunkSize) {
@@ -209,8 +209,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
                 recognizer.acceptWaveform(samples: chunk)
                 while recognizer.isReady() { recognizer.decode() }
             }
-            recognizer.acceptWaveform(samples: [Float](repeating: 0, count: 16000))
-            while recognizer.isReady() { recognizer.decode() }
+            recognizer.setFinalChunk()
             recognizer.inputFinished()
             while recognizer.isReady() { recognizer.decode() }
             var text = recognizer.getResult()
@@ -233,7 +232,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let results = runPipeline(name: "Paraformer + Cloud Rewrite") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
 
-            // 流式推理 + 1s silence padding（与 Python sherpa-onnx benchmark 一致）
+            // 流式推理 + is_final tail flush
             recognizer.reset()
             let chunkSize = 4096
             for i in stride(from: 0, to: samples.count, by: chunkSize) {
@@ -242,8 +241,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
                 recognizer.acceptWaveform(samples: chunk)
                 while recognizer.isReady() { recognizer.decode() }
             }
-            recognizer.acceptWaveform(samples: [Float](repeating: 0, count: 16000))
-            while recognizer.isReady() { recognizer.decode() }
+            recognizer.setFinalChunk()
             recognizer.inputFinished()
             while recognizer.isReady() { recognizer.decode() }
             let asrText = recognizer.getResult()

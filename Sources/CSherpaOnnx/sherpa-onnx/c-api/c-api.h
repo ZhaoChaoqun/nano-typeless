@@ -380,6 +380,18 @@ SHERPA_ONNX_API void SherpaOnnxOnlineStreamReset(
 SHERPA_ONNX_API void SherpaOnnxOnlineStreamInputFinished(
     const SherpaOnnxOnlineStream *stream);
 
+/// Signal that the current chunk is the final chunk for streaming Paraformer.
+/// This enables:
+///   1. Short chunk acceptance (less than 61 frames)
+///   2. Right-side alpha preservation (no zeroing)
+///   3. Tail token flush via tail_threshold
+///
+/// Call this BEFORE the last InputFinished() + DecodeStream() cycle.
+///
+/// @param stream A pointer returned by SherpaOnnxCreateOnlineStream()
+SHERPA_ONNX_API void SherpaOnnxOnlineStreamSetFinalChunk(
+    const SherpaOnnxOnlineStream *stream);
+
 /// Return 1 if an endpoint has been detected.
 ///
 /// @param recognizer A pointer returned by SherpaOnnxCreateOnlineRecognizer()
@@ -1148,6 +1160,16 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsPocketModelConfig {
   int32_t voice_embedding_cache_capacity;
 } SherpaOnnxOfflineTtsPocketModelConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsSupertonicModelConfig {
+  const char *duration_predictor;
+  const char *text_encoder;
+  const char *vector_estimator;
+  const char *vocoder;
+  const char *tts_json;
+  const char *unicode_indexer;
+  const char *voice_style;
+} SherpaOnnxOfflineTtsSupertonicModelConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsModelConfig {
   SherpaOnnxOfflineTtsVitsModelConfig vits;
   int32_t num_threads;
@@ -1158,6 +1180,7 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsModelConfig {
   SherpaOnnxOfflineTtsKittenModelConfig kitten;
   SherpaOnnxOfflineTtsZipvoiceModelConfig zipvoice;
   SherpaOnnxOfflineTtsPocketModelConfig pocket;
+  SherpaOnnxOfflineTtsSupertonicModelConfig supertonic;
 } SherpaOnnxOfflineTtsModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsConfig {

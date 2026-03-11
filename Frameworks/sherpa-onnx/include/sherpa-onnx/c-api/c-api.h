@@ -380,6 +380,18 @@ SHERPA_ONNX_API void SherpaOnnxOnlineStreamReset(
 SHERPA_ONNX_API void SherpaOnnxOnlineStreamInputFinished(
     const SherpaOnnxOnlineStream *stream);
 
+/// Signal that the current chunk is the final chunk for streaming Paraformer.
+/// This enables:
+///   1. Short chunk acceptance (less than 61 frames)
+///   2. Right-side alpha preservation (no zeroing)
+///   3. Tail token flush via tail_threshold
+///
+/// Call this BEFORE the last InputFinished() + DecodeStream() cycle.
+///
+/// @param stream A pointer returned by SherpaOnnxCreateOnlineStream()
+SHERPA_ONNX_API void SherpaOnnxOnlineStreamSetFinalChunk(
+    const SherpaOnnxOnlineStream *stream);
+
 /// Return 1 if an endpoint has been detected.
 ///
 /// @param recognizer A pointer returned by SherpaOnnxCreateOnlineRecognizer()
@@ -431,6 +443,17 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineWhisperModelConfig {
   const char *language;
   const char *task;
   int32_t tail_paddings;
+
+  // If non-zero, use cross-attention weights and DTW to compute token-level
+  // timestamps. This requires ONNX models exported with attention outputs.
+  int32_t enable_token_timestamps;
+
+  // If non-zero, use Whisper's native timestamp token mode to produce
+  // segment-level timestamps. The decoder outputs timestamp tokens like
+  // <|0.00|> interleaved with text, creating segments with start/end times.
+  // Does not require attention outputs. Can be combined with
+  // enable_token_timestamps for both segment-level and token-level timestamps.
+  int32_t enable_segment_timestamps;
 } SherpaOnnxOfflineWhisperModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineCanaryModelConfig {
@@ -446,11 +469,16 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineFireRedAsrModelConfig {
   const char *decoder;
 } SherpaOnnxOfflineFireRedAsrModelConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineFireRedAsrCtcModelConfig {
+  const char *model;
+} SherpaOnnxOfflineFireRedAsrCtcModelConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineMoonshineModelConfig {
   const char *preprocessor;
   const char *encoder;
   const char *uncached_decoder;
   const char *cached_decoder;
+  const char *merged_decoder;
 } SherpaOnnxOfflineMoonshineModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTdnnModelConfig {
@@ -495,6 +523,9 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineFunASRNanoModelConfig {
   float temperature;
   float top_p;
   int32_t seed;
+  const char *language;
+  int32_t itn;
+  const char *hotwords;
 } SherpaOnnxOfflineFunASRNanoModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineMedAsrCtcModelConfig {
@@ -530,6 +561,7 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineModelConfig {
   SherpaOnnxOfflineOmnilingualAsrCtcModelConfig omnilingual;
   SherpaOnnxOfflineMedAsrCtcModelConfig medasr;
   SherpaOnnxOfflineFunASRNanoModelConfig funasr_nano;
+  SherpaOnnxOfflineFireRedAsrCtcModelConfig fire_red_asr_ctc;
 } SherpaOnnxOfflineModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizerConfig {
@@ -690,6 +722,25 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizerResult {
   // for each token. It is NULL if the model does not support probabilities.
   // ys_log_probs[i] is the log probability for token i.
   float *ys_log_probs;
+
+  // Segment-level timestamps (from Whisper with segment timestamps enabled).
+  // These are parallel arrays: segment_count entries in each.
+  // NULL if the model does not produce segment-level timestamps.
+
+  // Start time (in seconds) of each segment
+  const float *segment_timestamps;
+
+  // Duration (in seconds) of each segment
+  const float *segment_durations;
+
+  // Pointer to continuous memory which holds segment texts separated by \0
+  const char *segment_texts;
+
+  // A pointer array containing the address of each segment text
+  const char *const *segment_texts_arr;
+
+  // Number of segments
+  int32_t segment_count;
 } SherpaOnnxOfflineRecognizerResult;
 
 /// Get the result of the offline stream.
@@ -1098,6 +1149,27 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsZipvoiceModelConfig {
   float guidance_scale;
 } SherpaOnnxOfflineTtsZipvoiceModelConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsPocketModelConfig {
+  const char *lm_flow;
+  const char *lm_main;
+  const char *encoder;
+  const char *decoder;
+  const char *text_conditioner;
+  const char *vocab_json;
+  const char *token_scores_json;
+  int32_t voice_embedding_cache_capacity;
+} SherpaOnnxOfflineTtsPocketModelConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsSupertonicModelConfig {
+  const char *duration_predictor;
+  const char *text_encoder;
+  const char *vector_estimator;
+  const char *vocoder;
+  const char *tts_json;
+  const char *unicode_indexer;
+  const char *voice_style;
+} SherpaOnnxOfflineTtsSupertonicModelConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsModelConfig {
   SherpaOnnxOfflineTtsVitsModelConfig vits;
   int32_t num_threads;
@@ -1107,6 +1179,8 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsModelConfig {
   SherpaOnnxOfflineTtsKokoroModelConfig kokoro;
   SherpaOnnxOfflineTtsKittenModelConfig kitten;
   SherpaOnnxOfflineTtsZipvoiceModelConfig zipvoice;
+  SherpaOnnxOfflineTtsPocketModelConfig pocket;
+  SherpaOnnxOfflineTtsSupertonicModelConfig supertonic;
 } SherpaOnnxOfflineTtsModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsConfig {
@@ -1199,6 +1273,27 @@ SherpaOnnxOfflineTtsGenerateWithZipvoice(const SherpaOnnxOfflineTts *tts,
                                          const float *prompt_samples,
                                          int32_t n_prompt, int32_t prompt_sr,
                                          float speed, int32_t num_steps);
+
+SHERPA_ONNX_API typedef struct SherpaOnnxGenerationConfig {
+  float silence_scale;
+  float speed;                    // used only by some models.
+  int32_t sid;                    // used only by models support multi-speakers
+  const float *reference_audio;   // mono, [-1, 1]
+  int32_t reference_audio_len;    // length in samples
+  int32_t reference_sample_rate;  // sample rate of reference_audio
+  const char *reference_text;     // not all models require this
+  int32_t num_steps;              // number of steps in flow matching
+  const char *extra;              // extra attrs in JSON object, model specific
+} SherpaOnnxGenerationConfig;
+
+// Generate audio from the given text with config params.
+// The user has to use SherpaOnnxDestroyOfflineTtsGeneratedAudio() to free the
+// returned pointer to avoid memory leak.
+SHERPA_ONNX_API const SherpaOnnxGeneratedAudio *
+SherpaOnnxOfflineTtsGenerateWithConfig(
+    const SherpaOnnxOfflineTts *tts, const char *text,
+    const SherpaOnnxGenerationConfig *config,
+    SherpaOnnxGeneratedAudioProgressCallbackWithArg callback, void *arg);
 
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTtsGeneratedAudio(
     const SherpaOnnxGeneratedAudio *p);

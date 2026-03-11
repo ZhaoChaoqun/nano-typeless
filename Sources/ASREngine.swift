@@ -58,14 +58,8 @@ class StreamingParaformerEngine: ASREngine {
                 return
             }
 
-            // 1s silence padding + inputFinished 确保流式解码器完成尾部帧
-            let silencePadding = [Float](repeating: 0.0, count: 16000)
-            self.recognizer.acceptWaveform(samples: silencePadding)
-
-            while self.recognizer.isReady() {
-                self.recognizer.decode()
-            }
-
+            // is_final: 标记最终 chunk，启用短 chunk 接受 + CIF 尾部 token flush
+            self.recognizer.setFinalChunk()
             self.recognizer.inputFinished()
 
             while self.recognizer.isReady() {
