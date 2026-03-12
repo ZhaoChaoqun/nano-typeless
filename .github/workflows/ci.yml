@@ -112,7 +112,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tests/fixtures/audio
-          key: test-audio-v2-${{ hashFiles('scripts/generate_extended_corpus.py') }}
+          key: test-audio-v3-${{ hashFiles('scripts/generate_extended_corpus.py', 'scripts/corpus_entries.yaml') }}
 
       - name: Install uv
         if: steps.cache-audio.outputs.cache-hit != 'true'
@@ -120,7 +120,7 @@ jobs:
 
       - name: Generate Test Corpus
         if: steps.cache-audio.outputs.cache-hit != 'true'
-        run: uv run python scripts/generate_extended_corpus.py
+        run: uv run --with pyyaml python scripts/generate_extended_corpus.py
 
       # ── 运行 E2E 测试 ──
       - name: Run E2E Tests
@@ -174,7 +174,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tests/fixtures/audio
-          key: test-audio-v2-${{ hashFiles('scripts/generate_extended_corpus.py') }}
+          key: test-audio-v3-${{ hashFiles('scripts/generate_extended_corpus.py', 'scripts/corpus_entries.yaml') }}
 
       - name: Install uv
         if: steps.cache-audio.outputs.cache-hit != 'true'
@@ -182,7 +182,7 @@ jobs:
 
       - name: Generate Test Corpus
         if: steps.cache-audio.outputs.cache-hit != 'true'
-        run: uv run python scripts/generate_extended_corpus.py
+        run: uv run --with pyyaml python scripts/generate_extended_corpus.py
 
       - name: Run Boundary & Concurrency Tests
         run: |

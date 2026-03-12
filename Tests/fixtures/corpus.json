@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-03-11T08:09:23.045166+00:00",
+  "generated_at": "2026-03-12T13:32:44.892373+00:00",
   "sample_rate": 16000,
   "format": "16-bit PCM WAV, mono",
   "entries": [
@@ -9,10 +9,8 @@
       "category": "chinese_short",
       "expected_text": "今天天气真好。",
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/zh_short_01.wav"
-      },
-      "duration_sec": 1.99,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_threshold": 0.15
     },
@@ -21,10 +19,8 @@
       "category": "chinese_long",
       "expected_text": "人工智能正在深刻地改变我们的生活方式，从语音识别到自动驾驶，从医疗诊断到金融分析。",
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/zh_long_01.wav"
-      },
-      "duration_sec": 9.0,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_threshold": 0.15
     },
@@ -33,10 +29,8 @@
       "category": "mixed_zh_en",
       "expected_text": "我今天用Python写了一个API接口。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/mixed_01.wav"
-      },
-      "duration_sec": 3.82,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Python",
@@ -46,12 +40,13 @@
     {
       "id": "mixed_02",
       "category": "mixed_technical",
-      "expected_text": "MacBook Pro M3芯片性能提升了百分之40。",
+      "expected_text": [
+        "MacBook Pro M3芯片性能提升了百分之40。",
+        "MacBook Pro M3芯片性能提升了40%。"
+      ],
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/mixed_02.wav"
-      },
-      "duration_sec": 4.61,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "MacBook",
@@ -61,12 +56,13 @@
     {
       "id": "en_short_01",
       "category": "english_short",
-      "expected_text": "Hello world.",
+      "expected_text": [
+        "Hello world.",
+        "Hello, world."
+      ],
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/en_short_01.wav"
-      },
-      "duration_sec": 1.8,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "en",
       "match_threshold": 0.2
     },
@@ -75,10 +71,8 @@
       "category": "technical_numbers",
       "expected_text": "服务器IP地址是192.168.1.100，端口号8080。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/tech_num_01.wav"
-      },
-      "duration_sec": 7.25,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "服务器",
@@ -112,11 +106,8 @@
       "category": "speech_trailing_silence",
       "expected_text": "你好。",
       "match_mode": "contains",
-      "audio_files": {
-        "synthetic": "audio/synthetic/noise_01.wav",
-        "edge_tts": "audio/edge_tts/noise_01.wav"
-      },
-      "duration_sec": 6.2,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh"
     },
     {
@@ -124,10 +115,8 @@
       "category": "developer_corpus",
       "expected_text": "执行git commit，修复登录bug。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_git_01.wav"
-      },
-      "duration_sec": 3.31,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "git",
@@ -140,10 +129,8 @@
       "category": "developer_corpus",
       "expected_text": "定义一个struct叫做UserModel。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_swift_01.wav"
-      },
-      "duration_sec": 3.0,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "struct"
@@ -154,10 +141,8 @@
       "category": "developer_corpus",
       "expected_text": "在Rust里面用async await处理并发。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_rust_01.wav"
-      },
-      "duration_sec": 3.98,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Rust",
@@ -169,10 +154,8 @@
       "category": "developer_corpus",
       "expected_text": "Kubernetes的pod状态是CrashLoopBackOff。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_k8s_01.wav"
-      },
-      "duration_sec": 3.91,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "crash",
@@ -184,10 +167,8 @@
       "category": "developer_corpus",
       "expected_text": "调用RESTful API返回JSON格式数据。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_api_01.wav"
-      },
-      "duration_sec": 4.7,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "API",
@@ -199,10 +180,8 @@
       "category": "developer_corpus",
       "expected_text": "执行SQL查询SELECT FROM users WHERE id = 1。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_db_01.wav"
-      },
-      "duration_sec": 5.06,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SQL",
@@ -215,10 +194,8 @@
       "category": "developer_corpus",
       "expected_text": "访问github.com。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_url_01.wav"
-      },
-      "duration_sec": 2.18,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "访问",
@@ -228,12 +205,13 @@
     {
       "id": "dev_debug_01",
       "category": "developer_corpus",
-      "expected_text": "在第42行设置一个breakpoint。",
+      "expected_text": [
+        "在第42行设置一个breakpoint。",
+        "在第四十二行设置一个breakpoint。"
+      ],
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/dev_debug_01.wav"
-      },
-      "duration_sec": 3.58,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "breakpoint"
@@ -244,10 +222,8 @@
       "category": "code_switching",
       "expected_text": "把这个variable赋值给constant。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/cs_var_01.wav"
-      },
-      "duration_sec": 3.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "variable",
@@ -259,10 +235,8 @@
       "category": "code_switching",
       "expected_text": "在macOS上运行swift build。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/cs_build_01.wav"
-      },
-      "duration_sec": 3.38,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "macOS",
@@ -275,10 +249,8 @@
       "category": "code_switching",
       "expected_text": "这个error是null pointer exception。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/cs_error_01.wav"
-      },
-      "duration_sec": 3.19,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "error",
@@ -290,10 +262,8 @@
       "category": "code_switching",
       "expected_text": "把Docker image push到registry。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/cs_deploy_01.wav"
-      },
-      "duration_sec": 3.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "push",
@@ -305,10 +275,8 @@
       "category": "code_switching",
       "expected_text": "帮我review一下这个pull request。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/cs_review_01.wav"
-      },
-      "duration_sec": 3.14,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "review",
@@ -365,10 +333,8 @@
       "category": "punctuation",
       "expected_text": "你今天吃饭了吗？",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/punct_question_01.wav"
-      },
-      "duration_sec": 1.9,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "吃饭",
@@ -380,10 +346,8 @@
       "category": "punctuation",
       "expected_text": "太好了，我成功了。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/punct_exclaim_01.wav"
-      },
-      "duration_sec": 2.23,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "成功",
@@ -393,12 +357,13 @@
     {
       "id": "punct_list_01",
       "category": "punctuation",
-      "expected_text": "第一步打开终端，第二步输入命令，第三步确认执行。",
+      "expected_text": [
+        "第一步打开终端，第二步输入命令，第三步确认执行。",
+        "第1步打开终端，第2步输入命令，第3步确认执行。"
+      ],
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/punct_list_01.wav"
-      },
-      "duration_sec": 5.3,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "终端",
@@ -409,12 +374,13 @@
     {
       "id": "rate_fast_01",
       "category": "speech_rate",
-      "expected_text": "快速语音识别测试，1、2、3、4、5。",
+      "expected_text": [
+        "快速语音识别测试，1、2、3、4、5。",
+        "快速语音识别测试，一二三四五。"
+      ],
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/rate_fast_01.wav"
-      },
-      "duration_sec": 3.17,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_threshold": 0.2
     },
@@ -423,22 +389,21 @@
       "category": "speech_rate",
       "expected_text": "慢速语音识别测试。",
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/rate_slow_01.wav"
-      },
-      "duration_sec": 4.06,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_threshold": 0.15
     },
     {
       "id": "long_30s_01",
       "category": "long_audio",
-      "expected_text": "人工智能技术在过去10年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
+      "expected_text": [
+        "人工智能技术在过去10年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。",
+        "人工智能技术在过去十年中取得了巨大的进步。深度学习算法使得计算机能够处理和理解自然语言。语音识别技术已经广泛应用于智能手机和智能音箱。自动驾驶汽车使用多种传感器和人工智能算法来感知环境。医疗领域的人工智能可以辅助医生进行疾病诊断。自然语言处理技术让机器能够理解人类的语言并做出回应。计算机视觉技术使得机器能够识别和分析图像中的内容。强化学习技术让人工智能系统能够通过试错来学习最优策略。"
+      ],
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/long_30s_01.wav"
-      },
-      "duration_sec": 43.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh"
     },
     {
@@ -446,10 +411,8 @@
       "category": "long_audio",
       "expected_text": "软件工程是一门研究用工程化方法构建和维护有效的实用的和高质量的软件的学科。它涉及到程序设计语言、数据库、软件开发工具、系统平台等方面的知识。现代软件开发通常采用敏捷开发方法，强调快速迭代和持续交付。版本控制系统如Git是团队协作开发的基础工具。持续集成和持续部署能够自动化测试和发布流程，提高开发效率。代码审查是保证代码质量的重要实践，团队成员互相审阅代码修改。单元测试和集成测试帮助开发者在早期发现和修复缺陷。微服务架构将大型应用拆分为多个独立的小型服务。容器化技术如Docker简化了应用的部署和运维管理。云计算平台提供了弹性的计算资源，支持应用的快速扩展。DevOps实践将开发和运维紧密结合，促进软件的快速可靠交付。性能优化需要从算法、数据结构、系统架构等多个层面综合考虑。",
       "match_mode": "character_error_rate",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/long_60s_01.wav"
-      },
-      "duration_sec": 74.9,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh"
     },
     {
@@ -457,10 +420,8 @@
       "category": "mid_sentence_pause",
       "expected_text": "打开终端。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/pause_mid_01.wav"
-      },
-      "duration_sec": 4.52,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "打开",
@@ -472,10 +433,8 @@
       "category": "mid_sentence_pause",
       "expected_text": "我想要一杯咖啡。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/pause_long_01.wav"
-      },
-      "duration_sec": 8.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "想",
@@ -487,10 +446,8 @@
       "category": "td_acronym",
       "expected_text": "调用API返回JSON格式数据。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_01.wav"
-      },
-      "duration_sec": 4.22,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "API",
@@ -502,10 +459,8 @@
       "category": "td_acronym",
       "expected_text": "通过HTTP请求访问URL地址。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_02.wav"
-      },
-      "duration_sec": 4.13,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "HTTP",
@@ -517,10 +472,8 @@
       "category": "td_acronym",
       "expected_text": "HTTPS比HTTP更安全。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_03.wav"
-      },
-      "duration_sec": 3.7,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "HTTPS",
@@ -532,10 +485,8 @@
       "category": "td_acronym",
       "expected_text": "配置CI/CD流水线自动部署。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_04.wav"
-      },
-      "duration_sec": 3.72,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "CI",
@@ -547,10 +498,8 @@
       "category": "td_acronym",
       "expected_text": "LLM和NLP是人工智能的核心技术。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_05.wav"
-      },
-      "duration_sec": 4.34,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "LLM",
@@ -562,10 +511,8 @@
       "category": "td_acronym",
       "expected_text": "GPU加速比CPU快很多倍。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_06.wav"
-      },
-      "duration_sec": 3.36,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "GPU",
@@ -577,10 +524,8 @@
       "category": "td_acronym",
       "expected_text": "使用SSH连接远程服务器。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_07.wav"
-      },
-      "duration_sec": 3.48,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SSH"
@@ -591,10 +536,8 @@
       "category": "td_acronym",
       "expected_text": "RAG技术结合了检索和生成。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_08.wav"
-      },
-      "duration_sec": 3.12,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "RAG"
@@ -605,10 +548,8 @@
       "category": "td_acronym",
       "expected_text": "RLHF是大模型对齐的关键方法。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_09.wav"
-      },
-      "duration_sec": 4.01,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "RLHF"
@@ -619,10 +560,8 @@
       "category": "td_acronym",
       "expected_text": "用SDK集成第三方支付功能。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_10.wav"
-      },
-      "duration_sec": 3.67,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SDK"
@@ -633,10 +572,8 @@
       "category": "td_acronym",
       "expected_text": "TTS和ASR是语音技术的两大方向。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_11.wav"
-      },
-      "duration_sec": 4.27,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "TTS",
@@ -648,10 +585,8 @@
       "category": "td_acronym",
       "expected_text": "通过VPN连接公司内网。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_12.wav"
-      },
-      "duration_sec": 3.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "VPN"
@@ -662,10 +597,8 @@
       "category": "td_acronym",
       "expected_text": "BERT模型在NER任务上表现很好。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_13.wav"
-      },
-      "duration_sec": 3.46,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "BERT",
@@ -677,10 +610,8 @@
       "category": "td_acronym",
       "expected_text": "ORM框架简化了SQL操作。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_14.wav"
-      },
-      "duration_sec": 3.65,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "ORM",
@@ -692,10 +623,8 @@
       "category": "td_acronym",
       "expected_text": "用JWT实现OAuth认证。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_acronym_15.wav"
-      },
-      "duration_sec": 3.53,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "JWT",
@@ -707,10 +636,8 @@
       "category": "td_ai_product",
       "expected_text": "ChatGPT是OpenAI开发的对话模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_01.wav"
-      },
-      "duration_sec": 4.13,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "ChatGPT",
@@ -722,10 +649,8 @@
       "category": "td_ai_product",
       "expected_text": "Claude是Anthropic推出的AI助手。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_02.wav"
-      },
-      "duration_sec": 3.72,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Claude",
@@ -737,10 +662,8 @@
       "category": "td_ai_product",
       "expected_text": "DeepSeek的推理模型性能很强。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_03.wav"
-      },
-      "duration_sec": 3.29,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "DeepSeek"
@@ -751,10 +674,8 @@
       "category": "td_ai_product",
       "expected_text": "用Midjourney生成一张插图。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_04.wav"
-      },
-      "duration_sec": 3.07,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Midjourney"
@@ -765,10 +686,8 @@
       "category": "td_ai_product",
       "expected_text": "Stable Diffusion可以本地运行。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_05.wav"
-      },
-      "duration_sec": 3.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Stable",
@@ -780,10 +699,8 @@
       "category": "td_ai_product",
       "expected_text": "Copilot帮我写了一段代码。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_06.wav"
-      },
-      "duration_sec": 2.86,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Copilot"
@@ -794,10 +711,8 @@
       "category": "td_ai_product",
       "expected_text": "LangChain用于构建LLM应用。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_07.wav"
-      },
-      "duration_sec": 3.46,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "LangChain",
@@ -809,10 +724,8 @@
       "category": "td_ai_product",
       "expected_text": "Hugging Face上有很多开源模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_08.wav"
-      },
-      "duration_sec": 3.19,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Hugging",
@@ -824,10 +737,8 @@
       "category": "td_ai_product",
       "expected_text": "用Ollama在本地跑LLaMA模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_09.wav"
-      },
-      "duration_sec": 3.17,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Ollama",
@@ -839,10 +750,8 @@
       "category": "td_ai_product",
       "expected_text": "Whisper是OpenAI的语音识别模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_10.wav"
-      },
-      "duration_sec": 3.6,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Whisper",
@@ -854,10 +763,8 @@
       "category": "td_ai_product",
       "expected_text": "文心一言和通义千问是国产大模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_11.wav"
-      },
-      "duration_sec": 3.84,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "文心一言",
@@ -869,10 +776,8 @@
       "category": "td_ai_product",
       "expected_text": "豆包是字节跳动的AI助手。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_12.wav"
-      },
-      "duration_sec": 3.17,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "豆包",
@@ -884,10 +789,8 @@
       "category": "td_ai_product",
       "expected_text": "Gemini是Google的多模态模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_13.wav"
-      },
-      "duration_sec": 3.12,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Gemini",
@@ -899,10 +802,8 @@
       "category": "td_ai_product",
       "expected_text": "Qwen是阿里巴巴的开源大模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_14.wav"
-      },
-      "duration_sec": 3.26,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Qwen",
@@ -914,10 +815,8 @@
       "category": "td_ai_product",
       "expected_text": "Kimi擅长处理长文本。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_ai_product_15.wav"
-      },
-      "duration_sec": 2.74,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Kimi"
@@ -928,10 +827,8 @@
       "category": "td_apple_hw",
       "expected_text": "在MacBook Pro上安装Xcode。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_01.wav"
-      },
-      "duration_sec": 3.26,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "MacBook",
@@ -943,10 +840,8 @@
       "category": "td_apple_hw",
       "expected_text": "iPhone和iPad都运行iOS系统。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_02.wav"
-      },
-      "duration_sec": 3.84,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "iPhone",
@@ -959,10 +854,8 @@
       "category": "td_apple_hw",
       "expected_text": "AirPods连接到iCloud账号。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_03.wav"
-      },
-      "duration_sec": 3.12,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "AirPods",
@@ -974,10 +867,8 @@
       "category": "td_apple_hw",
       "expected_text": "macOS和iPadOS共享很多功能。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_04.wav"
-      },
-      "duration_sec": 3.91,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "macOS",
@@ -989,10 +880,8 @@
       "category": "td_apple_hw",
       "expected_text": "Apple Watch支持watchOS系统。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_05.wav"
-      },
-      "duration_sec": 3.19,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Apple",
@@ -1005,10 +894,8 @@
       "category": "td_apple_hw",
       "expected_text": "把Wi-Fi密码分享给MacBook Air。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_06.wav"
-      },
-      "duration_sec": 3.36,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Wi-Fi",
@@ -1020,10 +907,8 @@
       "category": "td_apple_hw",
       "expected_text": "NVIDIA的GPU性能领先AMD。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_07.wav"
-      },
-      "duration_sec": 3.65,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "NVIDIA",
@@ -1036,10 +921,8 @@
       "category": "td_apple_hw",
       "expected_text": "SSD比HDD读写速度快很多。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_08.wav"
-      },
-      "duration_sec": 3.79,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SSD",
@@ -1051,10 +934,8 @@
       "category": "td_apple_hw",
       "expected_text": "用HDMI线连接到OLED显示器。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_09.wav"
-      },
-      "duration_sec": 4.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "HDMI",
@@ -1066,10 +947,8 @@
       "category": "td_apple_hw",
       "expected_text": "USB接口支持数据传输和充电。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_10.wav"
-      },
-      "duration_sec": 3.77,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "USB"
@@ -1080,10 +959,8 @@
       "category": "td_apple_hw",
       "expected_text": "Tesla和SpaceX都是马斯克的公司。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_11.wav"
-      },
-      "duration_sec": 3.89,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Tesla",
@@ -1095,10 +972,8 @@
       "category": "td_apple_hw",
       "expected_text": "VR和AR技术在游戏中广泛应用。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_apple_12.wav"
-      },
-      "duration_sec": 3.91,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "VR",
@@ -1110,10 +985,8 @@
       "category": "td_cn_app",
       "expected_text": "在抖音上看到一个有趣的视频。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_01.wav"
-      },
-      "duration_sec": 3.26,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "抖音"
@@ -1124,10 +997,8 @@
       "category": "td_cn_app",
       "expected_text": "小红书上有很多好的笔记。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_02.wav"
-      },
-      "duration_sec": 3.0,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "小红书"
@@ -1136,15 +1007,13 @@
     {
       "id": "td_cn_app_03",
       "category": "td_cn_app",
-      "expected_text": "bilibili上有很多编程教程。",
+      "expected_text": "哔哩哔哩上有很多编程教程。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_03.wav"
-      },
-      "duration_sec": 3.19,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
-        "bilibili"
+        "哔哩哔哩"
       ]
     },
     {
@@ -1152,10 +1021,8 @@
       "category": "td_cn_app",
       "expected_text": "用WeChat给朋友发消息。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_04.wav"
-      },
-      "duration_sec": 2.81,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "WeChat"
@@ -1166,10 +1033,8 @@
       "category": "td_cn_app",
       "expected_text": "在淘宝上买东西用Alipay付款。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_05.wav"
-      },
-      "duration_sec": 3.5,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "淘宝",
@@ -1181,10 +1046,8 @@
       "category": "td_cn_app",
       "expected_text": "美团外卖和滴滴打车很方便。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_06.wav"
-      },
-      "duration_sec": 3.38,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "美团",
@@ -1196,10 +1059,8 @@
       "category": "td_cn_app",
       "expected_text": "拼多多的百亿补贴很划算。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_07.wav"
-      },
-      "duration_sec": 3.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "拼多多"
@@ -1210,10 +1071,8 @@
       "category": "td_cn_app",
       "expected_text": "腾讯和百度都在做AI大模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_08.wav"
-      },
-      "duration_sec": 3.72,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "腾讯",
@@ -1225,10 +1084,8 @@
       "category": "td_cn_app",
       "expected_text": "华为和小米是国产手机品牌。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_09.wav"
-      },
-      "duration_sec": 3.41,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "华为",
@@ -1240,10 +1097,8 @@
       "category": "td_cn_app",
       "expected_text": "京东物流配送速度很快。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_10.wav"
-      },
-      "duration_sec": 2.74,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "京东"
@@ -1254,10 +1109,8 @@
       "category": "td_cn_app",
       "expected_text": "用飞书和钉钉开视频会议。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_11.wav"
-      },
-      "duration_sec": 3.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "飞书",
@@ -1269,10 +1122,8 @@
       "category": "td_cn_app",
       "expected_text": "在微博上看热搜新闻。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_cn_app_12.wav"
-      },
-      "duration_sec": 2.62,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "微博"
@@ -1283,10 +1134,8 @@
       "category": "td_devtool",
       "expected_text": "在VS Code里安装ESLint插件。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_01.wav"
-      },
-      "duration_sec": 3.77,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "VS Code",
@@ -1298,10 +1147,8 @@
       "category": "td_devtool",
       "expected_text": "用TypeScript开发React前端项目。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_02.wav"
-      },
-      "duration_sec": 3.58,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "TypeScript",
@@ -1313,10 +1160,8 @@
       "category": "td_devtool",
       "expected_text": "Node.js后端用Express框架。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_03.wav"
-      },
-      "duration_sec": 3.46,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Node.js",
@@ -1328,10 +1173,8 @@
       "category": "td_devtool",
       "expected_text": "Vue.js和Angular都是前端框架。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_04.wav"
-      },
-      "duration_sec": 3.79,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Vue",
@@ -1343,10 +1186,8 @@
       "category": "td_devtool",
       "expected_text": "FastAPI比Django更适合做微服务。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_05.wav"
-      },
-      "duration_sec": 3.94,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "FastAPI",
@@ -1358,10 +1199,8 @@
       "category": "td_devtool",
       "expected_text": "用Docker部署Kubernetes集群。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_06.wav"
-      },
-      "duration_sec": 3.22,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Docker",
@@ -1373,10 +1212,8 @@
       "category": "td_devtool",
       "expected_text": "Terraform和Ansible管理云基础设施。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_07.wav"
-      },
-      "duration_sec": 3.74,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Terraform",
@@ -1388,10 +1225,8 @@
       "category": "td_devtool",
       "expected_text": "在GitHub上提交PR等待代码审查。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_08.wav"
-      },
-      "duration_sec": 3.94,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "GitHub",
@@ -1403,10 +1238,8 @@
       "category": "td_devtool",
       "expected_text": "用Webpack打包JavaScript代码。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_09.wav"
-      },
-      "duration_sec": 3.29,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Webpack",
@@ -1418,10 +1251,8 @@
       "category": "td_devtool",
       "expected_text": "Vite比Webpack构建速度更快。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_10.wav"
-      },
-      "duration_sec": 3.14,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Vite",
@@ -1433,10 +1264,8 @@
       "category": "td_devtool",
       "expected_text": "Flutter可以同时开发iOS和Android应用。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_11.wav"
-      },
-      "duration_sec": 4.3,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Flutter",
@@ -1449,10 +1278,8 @@
       "category": "td_devtool",
       "expected_text": "React Native和Swift都能开发手机应用。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_12.wav"
-      },
-      "duration_sec": 4.25,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "React Native",
@@ -1464,10 +1291,8 @@
       "category": "td_devtool",
       "expected_text": "用Postman测试GraphQL接口。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_13.wav"
-      },
-      "duration_sec": 3.46,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Postman",
@@ -1479,10 +1304,8 @@
       "category": "td_devtool",
       "expected_text": "Homebrew是macOS上的包管理器。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_14.wav"
-      },
-      "duration_sec": 3.46,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Homebrew",
@@ -1494,10 +1317,8 @@
       "category": "td_devtool",
       "expected_text": "Next.js用于服务端渲染的React应用。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_devtool_15.wav"
-      },
-      "duration_sec": 4.39,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Next.js",
@@ -1509,10 +1330,8 @@
       "category": "td_db_cloud",
       "expected_text": "MySQL和PostgreSQL都是关系型数据库。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_01.wav"
-      },
-      "duration_sec": 4.92,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "MySQL",
@@ -1524,10 +1343,8 @@
       "category": "td_db_cloud",
       "expected_text": "MongoDB是流行的NoSQL数据库。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_02.wav"
-      },
-      "duration_sec": 4.01,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "MongoDB",
@@ -1539,10 +1356,8 @@
       "category": "td_db_cloud",
       "expected_text": "Redis做缓存，Kafka做消息队列。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_03.wav"
-      },
-      "duration_sec": 3.74,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Redis",
@@ -1554,10 +1369,8 @@
       "category": "td_db_cloud",
       "expected_text": "Elasticsearch支持全文搜索功能。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_04.wav"
-      },
-      "duration_sec": 3.5,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Elasticsearch"
@@ -1568,10 +1381,8 @@
       "category": "td_db_cloud",
       "expected_text": "部署在AWS上用CDN加速。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_05.wav"
-      },
-      "duration_sec": 4.06,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "AWS",
@@ -1583,10 +1394,8 @@
       "category": "td_db_cloud",
       "expected_text": "Cloudflare提供DNS和CDN服务。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_06.wav"
-      },
-      "duration_sec": 3.82,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Cloudflare",
@@ -1599,10 +1408,8 @@
       "category": "td_db_cloud",
       "expected_text": "Vercel部署Next.js应用非常方便。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_07.wav"
-      },
-      "duration_sec": 3.84,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Vercel",
@@ -1614,10 +1421,8 @@
       "category": "td_db_cloud",
       "expected_text": "用Supabase替代Firebase做后端。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_08.wav"
-      },
-      "duration_sec": 3.62,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Supabase",
@@ -1629,10 +1434,8 @@
       "category": "td_db_cloud",
       "expected_text": "Prometheus监控加Grafana看板。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_09.wav"
-      },
-      "duration_sec": 3.34,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Prometheus",
@@ -1644,10 +1447,8 @@
       "category": "td_db_cloud",
       "expected_text": "Milvus和Pinecone是向量数据库。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_10.wav"
-      },
-      "duration_sec": 3.43,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Milvus",
@@ -1659,10 +1460,8 @@
       "category": "td_db_cloud",
       "expected_text": "Nginx做反向代理非常稳定。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_11.wav"
-      },
-      "duration_sec": 3.12,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Nginx"
@@ -1673,10 +1472,8 @@
       "category": "td_db_cloud",
       "expected_text": "ClickHouse适合OLAP分析场景。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_db_cloud_12.wav"
-      },
-      "duration_sec": 3.62,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "ClickHouse"
@@ -1687,10 +1484,8 @@
       "category": "td_business",
       "expected_text": "公司的KPI和OKR要按季度制定。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_01.wav"
-      },
-      "duration_sec": 4.08,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "KPI",
@@ -1702,10 +1497,8 @@
       "category": "td_business",
       "expected_text": "这个MVP产品需要做POC验证。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_02.wav"
-      },
-      "duration_sec": 4.01,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "MVP",
@@ -1717,10 +1510,8 @@
       "category": "td_business",
       "expected_text": "SaaS产品关注ARR和MRR指标。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_03.wav"
-      },
-      "duration_sec": 3.91,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SaaS",
@@ -1731,12 +1522,13 @@
     {
       "id": "td_biz_04",
       "category": "td_business",
-      "expected_text": "投资ROI达到了百分之二十。",
+      "expected_text": [
+        "投资ROI达到了百分之二十。",
+        "投资ROI达到了20%。"
+      ],
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_04.wav"
-      },
-      "duration_sec": 3.43,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "ROI"
@@ -1747,10 +1539,8 @@
       "category": "td_business",
       "expected_text": "签了NDA之后才能看文档。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_05.wav"
-      },
-      "duration_sec": 3.26,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "NDA"
@@ -1761,10 +1551,8 @@
       "category": "td_business",
       "expected_text": "公司准备IPO上市了。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_06.wav"
-      },
-      "duration_sec": 2.76,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "IPO"
@@ -1775,10 +1563,8 @@
       "category": "td_business",
       "expected_text": "CRM系统管理客户关系。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_07.wav"
-      },
-      "duration_sec": 3.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "CRM"
@@ -1789,10 +1575,8 @@
       "category": "td_business",
       "expected_text": "ERP系统整合了HR和财务模块。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_08.wav"
-      },
-      "duration_sec": 4.08,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "ERP",
@@ -1804,10 +1588,8 @@
       "category": "td_business",
       "expected_text": "SLA要求服务可用性达到四个九。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_09.wav"
-      },
-      "duration_sec": 3.58,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SLA"
@@ -1818,10 +1600,8 @@
       "category": "td_business",
       "expected_text": "制定标准的SOP操作流程。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_biz_10.wav"
-      },
-      "duration_sec": 3.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "SOP"
@@ -1832,10 +1612,8 @@
       "category": "td_saas_tool",
       "expected_text": "在Notion里写文档，用Figma做设计。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_01.wav"
-      },
-      "duration_sec": 3.65,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Notion",
@@ -1847,10 +1625,8 @@
       "category": "td_saas_tool",
       "expected_text": "Slack消息和Jira任务要同步。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_02.wav"
-      },
-      "duration_sec": 3.26,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Slack",
@@ -1862,10 +1638,8 @@
       "category": "td_saas_tool",
       "expected_text": "Trello看板管理项目进度。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_03.wav"
-      },
-      "duration_sec": 2.71,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Trello"
@@ -1876,10 +1650,8 @@
       "category": "td_saas_tool",
       "expected_text": "用Zoom开远程会议。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_04.wav"
-      },
-      "duration_sec": 2.35,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Zoom"
@@ -1890,10 +1662,8 @@
       "category": "td_saas_tool",
       "expected_text": "Obsidian是很好的笔记工具。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_05.wav"
-      },
-      "duration_sec": 2.93,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Obsidian"
@@ -1904,10 +1674,8 @@
       "category": "td_saas_tool",
       "expected_text": "Linear比Jira更轻量级。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_06.wav"
-      },
-      "duration_sec": 2.86,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Linear",
@@ -1919,10 +1687,8 @@
       "category": "td_saas_tool",
       "expected_text": "YouTube和Netflix是视频平台。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_07.wav"
-      },
-      "duration_sec": 3.55,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "YouTube",
@@ -1934,10 +1700,8 @@
       "category": "td_saas_tool",
       "expected_text": "Spotify上有很多播客节目。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_08.wav"
-      },
-      "duration_sec": 3.14,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Spotify"
@@ -1948,10 +1712,8 @@
       "category": "td_saas_tool",
       "expected_text": "Dropbox和iCloud都是云存储。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_09.wav"
-      },
-      "duration_sec": 3.48,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Dropbox",
@@ -1963,10 +1725,8 @@
       "category": "td_saas_tool",
       "expected_text": "用Sentry监控线上错误日志。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_saas_10.wav"
-      },
-      "duration_sec": 3.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Sentry"
@@ -1977,10 +1737,8 @@
       "category": "td_mixed",
       "expected_text": "在GitHub上用Copilot写TypeScript代码。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_01.wav"
-      },
-      "duration_sec": 4.1,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "GitHub",
@@ -1993,10 +1751,8 @@
       "category": "td_mixed",
       "expected_text": "ChatGPT的API通过HTTPS协议调用。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_02.wav"
-      },
-      "duration_sec": 4.9,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "ChatGPT",
@@ -2009,10 +1765,8 @@
       "category": "td_mixed",
       "expected_text": "用PyTorch在GPU上训练LLM模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_03.wav"
-      },
-      "duration_sec": 4.27,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "PyTorch",
@@ -2025,10 +1779,8 @@
       "category": "td_mixed",
       "expected_text": "iPhone上安装了WeChat和抖音。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_04.wav"
-      },
-      "duration_sec": 3.38,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "iPhone",
@@ -2041,10 +1793,8 @@
       "category": "td_mixed",
       "expected_text": "DevOps团队用Docker和Kubernetes做CI/CD。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_05.wav"
-      },
-      "duration_sec": 5.02,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "DevOps",
@@ -2057,10 +1807,8 @@
       "category": "td_mixed",
       "expected_text": "Stack Overflow上有很多React和Vue.js的问题。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_06.wav"
-      },
-      "duration_sec": 4.8,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Stack Overflow",
@@ -2073,10 +1821,8 @@
       "category": "td_mixed",
       "expected_text": "用TensorFlow和ONNX部署深度学习模型。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_07.wav"
-      },
-      "duration_sec": 4.7,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "TensorFlow",
@@ -2088,10 +1834,8 @@
       "category": "td_mixed",
       "expected_text": "阿里巴巴的Qwen和百度的文心一言都在竞争。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_08.wav"
-      },
-      "duration_sec": 4.22,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "阿里巴巴",
@@ -2105,10 +1849,8 @@
       "category": "td_mixed",
       "expected_text": "在Vercel上部署用Prisma连接PostgreSQL。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_09.wav"
-      },
-      "duration_sec": 4.68,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Vercel",
@@ -2121,10 +1863,8 @@
       "category": "td_mixed",
       "expected_text": "Microsoft收购了GitHub和LinkedIn。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_10.wav"
-      },
-      "duration_sec": 3.62,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Microsoft",
@@ -2137,10 +1877,8 @@
       "category": "td_mixed",
       "expected_text": "Stripe和PayPal是主要的支付网关。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_11.wav"
-      },
-      "duration_sec": 3.53,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Stripe",
@@ -2152,10 +1890,8 @@
       "category": "td_mixed",
       "expected_text": "在Discord上讨论Web3和DeFi项目。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_12.wav"
-      },
-      "duration_sec": 3.98,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Discord",
@@ -2168,10 +1904,8 @@
       "category": "td_mixed",
       "expected_text": "Airbnb和Uber改变了出行和住宿行业。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_13.wav"
-      },
-      "duration_sec": 4.32,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Airbnb",
@@ -2183,10 +1917,8 @@
       "category": "td_mixed",
       "expected_text": "NVIDIA的GPU运行vLLM做推理服务。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_14.wav"
-      },
-      "duration_sec": 4.66,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "NVIDIA",
@@ -2199,16 +1931,24 @@
       "category": "td_mixed",
       "expected_text": "Shopify用Cloudflare做CDN加速。",
       "match_mode": "contains_all",
-      "audio_files": {
-        "edge_tts": "audio/edge_tts/td_mixed_15.wav"
-      },
-      "duration_sec": 3.82,
+      "audio_files": {},
+      "duration_sec": 0.0,
       "language": "zh",
       "match_keywords": [
         "Shopify",
         "Cloudflare",
         "CDN"
       ]
+    },
+    {
+      "id": "repro_qwen_repeat_01",
+      "category": "qwen_streaming_bug",
+      "expected_text": "帮我写一个Python脚本，读取这个CSV文件，按date字段分组，计算每个月的Revenue总和，然后用Matplotlib画一个柱状图，保存为PNG格式。",
+      "match_mode": "character_error_rate",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "mixed",
+      "match_threshold": 0.15
     }
   ]
 }
