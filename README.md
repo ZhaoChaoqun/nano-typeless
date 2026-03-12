@@ -61,14 +61,14 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 
 ```bash
 # 安装
-brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
+brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless
 ```
 
 ### 升级
 
 ```bash
 # 升级到最新版本
-brew update && brew upgrade nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
+brew update && brew upgrade nano-typeless
 ```
 
 ### 从源码编译
@@ -273,14 +273,14 @@ https://github.com/user-attachments/assets/c99ec06a-e728-448b-9563-4a2872ebfef5
 
 ```bash
 # Install
-brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
+brew tap ZhaoChaoqun/typeless && brew install --cask nano-typeless
 ```
 
 ### Upgrade
 
 ```bash
 # Upgrade to latest version
-brew update && brew upgrade nano-typeless && xattr -cr "/Applications/Nano Typeless.app"
+brew update && brew upgrade nano-typeless
 ```
 
 ### Build from Source
