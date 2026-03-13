@@ -284,7 +284,7 @@ class QwenASRBoundaryTests: XCTestCase {
 
     private func loadTestAudioOrSkip() throws -> [Float] {
         // 尝试从 fixtures 加载
-        let fixturesPath = findProjectRoot() + "/tests/fixtures/audio/say/zh_short_01.wav"
+        let fixturesPath = findProjectRoot() + "/tests/fixtures/audio/synthetic/zh_short_01.wav"
         if FileManager.default.fileExists(atPath: fixturesPath) {
             let wav = try WAVLoader.load(path: fixturesPath)
             return wav.samples

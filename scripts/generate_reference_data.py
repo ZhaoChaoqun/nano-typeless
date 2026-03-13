@@ -44,7 +44,7 @@ def main():
         "--audio",
         default=str(
             Path(__file__).resolve().parent.parent
-            / "Tests/fixtures/audio/real/codeswitching/cs_edge_008.wav"
+            / "Tests/fixtures/audio/synthetic/cs_edge_008.wav"
         ),
         help="测试音频路径",
     )

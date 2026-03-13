@@ -1,6 +1,6 @@
 import Foundation
 
-/// 测试语料条目（对应 corpus.json 中的 entry）
+/// 测试语料条目（对应 manifest JSON 中的 entry）
 struct CorpusEntry: Codable {
     let id: String
     let category: String
@@ -43,7 +43,7 @@ struct CorpusEntry: Codable {
     }
 }
 
-/// corpus.json 的顶层结构
+/// manifest JSON 的顶层结构
 struct Corpus: Codable {
     let version: Int
     let generatedAt: String

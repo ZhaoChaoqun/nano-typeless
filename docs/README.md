@@ -72,6 +72,8 @@ Bug 根因分析报告、功能回滚复盘、问题修复记录。
 | 文档 | 说明 |
 |------|------|
 | [test-coverage-expansion.md](testing/test-coverage-expansion.md) | Qwen3-ASR 测试覆盖文档（109 个测试，5 个测试类）|
+| [test-corpus-maintenance.md](testing/test-corpus-maintenance.md) | 测试语料维护指南（synthetic_manifest.json + recorded_manifest.json 结构与日常操作）|
+| [benchmark-usage.md](testing/benchmark-usage.md) | ASR Benchmark 使用指南（运行、筛选、结果分析）|
 
 ---
 

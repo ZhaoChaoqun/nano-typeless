@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Qwen3-ASR 扩展测试语料生成脚本
+合成测试语料生成脚本
 
-语料定义在 corpus_entries.yaml 中维护（~152 条）。
-本脚本负责读取 YAML、生成音频、输出 corpus.json。
+语料定义在 synthetic_corpus.yaml 中维护（~160 条）。
+本脚本负责读取 YAML、生成音频、输出 synthetic_manifest.json。
 
 用法:
-    uv run --with edge-tts --with pyyaml python scripts/generate_extended_corpus.py
-    uv run --with pyyaml python scripts/generate_extended_corpus.py --only-synthetic
+    uv run --with edge-tts --with pyyaml python scripts/generate_synthetic_corpus.py
+    uv run --with pyyaml python scripts/generate_synthetic_corpus.py --only-synthetic
 """
 
 import argparse
@@ -38,7 +38,7 @@ def load_corpus_entries(yaml_path: Path) -> list[dict]:
         import yaml
     except ImportError:
         sys.exit(
-            "需要 pyyaml，请使用: uv run --with pyyaml python scripts/generate_extended_corpus.py"
+            "需要 pyyaml，请使用: uv run --with pyyaml python scripts/generate_synthetic_corpus.py"
         )
 
     with open(yaml_path, "r", encoding="utf-8") as f:
@@ -268,15 +268,12 @@ def main():
     random.seed(42)
 
     # 从 YAML 加载语料定义
-    yaml_path = Path(__file__).resolve().parent / "corpus_entries.yaml"
+    yaml_path = Path(__file__).resolve().parent / "synthetic_corpus.yaml"
     corpus_entries = load_corpus_entries(yaml_path)
 
     # 创建输出目录
-    edge_tts_dir = AUDIO_DIR / "edge_tts"
-    say_dir = AUDIO_DIR / "say"
     synthetic_dir = AUDIO_DIR / "synthetic"
-    for d in [edge_tts_dir, say_dir, synthetic_dir]:
-        d.mkdir(parents=True, exist_ok=True)
+    synthetic_dir.mkdir(parents=True, exist_ok=True)
 
     corpus_output = []
 
@@ -313,43 +310,44 @@ def main():
                 # macOS say 模式 (离线备选)
                 say_rate = entry.get("say_rate")
                 if entry.get("composite"):
-                    composite_wav = say_dir / f"{entry_id}.wav"
+                    composite_wav = synthetic_dir / f"{entry_id}.wav"
                     if generate_composite_audio(
-                        entry["segments"], entry["say_voice"], composite_wav, say_dir
+                        entry["segments"], entry["say_voice"], composite_wav, synthetic_dir
                     ):
-                        audio_files["say"] = f"audio/say/{entry_id}.wav"
+                        audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
                 else:
-                    say_wav = say_dir / f"{entry_id}.wav"
-                    if generate_with_say(text, entry["say_voice"], say_wav, rate=say_rate):
+                    wav_path = synthetic_dir / f"{entry_id}.wav"
+                    if generate_with_say(text, entry["say_voice"], wav_path, rate=say_rate):
                         if entry.get("trailing_silence_sec"):
-                            final_wav = synthetic_dir / f"{entry_id}.wav"
+                            final_wav = synthetic_dir / f"{entry_id}_with_silence.wav"
                             append_silence_to_wav(
-                                say_wav, final_wav, entry["trailing_silence_sec"]
+                                wav_path, final_wav, entry["trailing_silence_sec"]
                             )
-                            audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
-                        audio_files["say"] = f"audio/say/{entry_id}.wav"
+                            # 用带静音的版本替换原文件
+                            final_wav.rename(wav_path)
+                        audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
             else:
                 # Edge-TTS 模式 (默认)
                 edge_rate = entry.get("edge_tts_rate")
                 if entry.get("composite"):
-                    composite_wav = edge_tts_dir / f"{entry_id}.wav"
+                    composite_wav = synthetic_dir / f"{entry_id}.wav"
                     if generate_composite_audio(
                         entry["segments"], entry["edge_tts_voice"],
-                        composite_wav, edge_tts_dir
+                        composite_wav, synthetic_dir
                     ):
-                        audio_files["edge_tts"] = f"audio/edge_tts/{entry_id}.wav"
+                        audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
                 else:
-                    edge_wav = edge_tts_dir / f"{entry_id}.wav"
+                    wav_path = synthetic_dir / f"{entry_id}.wav"
                     if generate_with_edge_tts(
-                        text, entry["edge_tts_voice"], edge_wav, rate=edge_rate
+                        text, entry["edge_tts_voice"], wav_path, rate=edge_rate
                     ):
                         if entry.get("trailing_silence_sec"):
-                            final_wav = synthetic_dir / f"{entry_id}.wav"
+                            final_wav = synthetic_dir / f"{entry_id}_with_silence.wav"
                             append_silence_to_wav(
-                                edge_wav, final_wav, entry["trailing_silence_sec"]
+                                wav_path, final_wav, entry["trailing_silence_sec"]
                             )
-                            audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
-                        audio_files["edge_tts"] = f"audio/edge_tts/{entry_id}.wav"
+                            final_wav.rename(wav_path)
+                        audio_files["synthetic"] = f"audio/synthetic/{entry_id}.wav"
 
         # 计算时长
         duration = 0.0
@@ -378,7 +376,7 @@ def main():
 
         corpus_output.append(corpus_entry)
 
-    # 写入 corpus.json
+    # 写入 synthetic_manifest.json
     corpus_json = {
         "version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -387,14 +385,14 @@ def main():
         "entries": corpus_output,
     }
 
-    corpus_path = FIXTURES_DIR / "corpus.json"
+    corpus_path = FIXTURES_DIR / "synthetic_manifest.json"
     with open(corpus_path, "w", encoding="utf-8") as f:
         json.dump(corpus_json, f, ensure_ascii=False, indent=2)
 
     # 统计
     print(f"\n{'='*60}")
     print(f"语料生成完成!")
-    print(f"  corpus.json: {corpus_path}")
+    print(f"  synthetic_manifest.json: {corpus_path}")
     print(f"  条目总数: {len(corpus_output)}")
 
     categories = {}

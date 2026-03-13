@@ -8,7 +8,7 @@ ASR Pipeline 量化对比评估脚本
   3. Paraformer Pipeline（ASR + ITN → CSC → CT-Transformer 标点）
   4. SenseVoice Pipeline（ASR + 内置ITN → CSC → CT-Transformer 标点）
 
-使用项目已有测试语料（corpus.json + real_manifest.json），
+使用项目已有测试语料（synthetic_manifest.json + recorded_manifest.json），
 计算逐条 CER 并输出 Markdown 报告。
 
 用法：
@@ -39,8 +39,8 @@ import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES_DIR = PROJECT_ROOT / "tests" / "fixtures"
-CORPUS_JSON = FIXTURES_DIR / "corpus.json"
-REAL_MANIFEST_JSON = FIXTURES_DIR / "real_manifest.json"
+CORPUS_JSON = FIXTURES_DIR / "synthetic_manifest.json"
+REAL_MANIFEST_JSON = FIXTURES_DIR / "recorded_manifest.json"
 
 MODELS_DIR = Path.home() / "Library" / "Application Support" / "Nano Typeless" / "models"
 QWEN_MODEL_DIR = MODELS_DIR / "Qwen3-ASR-0.6B"
@@ -741,7 +741,7 @@ def load_entries() -> list[Entry]:
                 continue
             audio_files = item.get("audio_files", {})
             audio_path = None
-            for key in ["edge_tts", "real", "synthetic"]:
+            for key in ["synthetic", "recorded"]:
                 if key in audio_files:
                     candidate = FIXTURES_DIR / audio_files[key]
                     if candidate.exists():
@@ -795,7 +795,7 @@ def generate_report(
     w(f"# ASR Pipeline 量化对比评估报告")
     w()
     w(f"*生成时间：{timestamp}*")
-    w(f"*测试集：{len(entries)} 条音频（corpus.json + real_manifest.json）*")
+    w(f"*测试集：{len(entries)} 条音频（synthetic_manifest.json + recorded_manifest.json）*")
     w(f"*Pipeline：{', '.join(engine_names)}*")
     w()
     w("**CER 计算方式**：保留标点符号，仅做 lower + 去空格后计算字符错误率。")

@@ -1,6 +1,6 @@
 # Qwen3-ASR 测试语料定义
 #
-# 公共字段 (写入 corpus.json):
+# 公共字段 (写入 synthetic_manifest.json):
 #   id, category, expected_text, match_mode, language
 #   match_keywords (可选), match_threshold (可选)
 # TTS 字段 (仅用于音频生成，由 defaults 自动填充):
@@ -1139,3 +1139,64 @@ entries:
     match_mode: character_error_rate
     match_threshold: 0.15
     language: mixed
+
+  # ── Edge-TTS 中英代码切换（从 recorded 迁移，本质是合成音频）──
+  - id: cs_edge_001
+    category: code_switching
+    expected_text: "我们团队最近在用 React 和 TypeScript 重构前端项目。"
+    match_mode: contains_all
+    match_keywords: [React, TypeScript, 重构]
+    language: zh
+
+  - id: cs_edge_002
+    category: code_switching
+    expected_text: "这个 bug 是因为 race condition 导致的 memory leak。"
+    match_mode: contains_all
+    match_keywords: [bug, race, memory]
+    language: zh
+
+  - id: cs_edge_003
+    category: code_switching
+    expected_text:
+      - "用 Docker Compose 部署了 3 个 microservice 到 staging 环境。"
+      - "用 Docker Compose 部署了三个 microservice 到 staging 环境。"
+    match_mode: contains_all
+    match_keywords: [Docker, microservice, staging]
+    language: zh
+
+  - id: cs_edge_004
+    category: code_switching
+    expected_text: "在 GitHub 上提了一个 issue，关于 performance optimization。"
+    match_mode: contains_all
+    match_keywords: [GitHub, issue, performance]
+    language: zh
+
+  - id: cs_edge_005
+    category: code_switching
+    expected_text: "这个 function 的 return type 应该是 Optional，而不是 force unwrap。"
+    match_mode: contains_all
+    match_keywords: [function, return, Optional]
+    language: zh
+
+  - id: cs_edge_006
+    category: code_switching
+    expected_text: "用 Xcode 的 Instruments 做了一下 profiling，发现 CPU 占用太高。"
+    match_mode: contains_all
+    match_keywords: [Instruments, profiling, CPU]
+    language: zh
+
+  - id: cs_edge_007
+    category: code_switching
+    expected_text: "GraphQL 的 schema 定义比 RESTful API 更灵活一些。"
+    match_mode: contains_all
+    match_keywords: [GraphQL, schema, API]
+    language: zh
+
+  - id: cs_edge_008
+    category: code_switching
+    expected_text:
+      - "CI pipeline 跑了 30 分钟，还没通过 unit test。"
+      - "CI pipeline 跑了三十分钟，还没通过 unit test。"
+    match_mode: contains_all
+    match_keywords: [CI, pipeline, unit]
+    language: zh

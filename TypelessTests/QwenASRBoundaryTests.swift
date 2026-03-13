@@ -274,12 +274,12 @@ class QwenASRBoundaryTests: XCTestCase {
     // MARK: - Helpers
 
     private func loadTestAudioOrSkip() throws -> [Float] {
-        let audioPath = TestEnvironment.fixturesPath() + "/audio/say/zh_short_01.wav"
+        let audioPath = TestEnvironment.fixturesPath() + "/audio/synthetic/zh_short_01.wav"
         if FileManager.default.fileExists(atPath: audioPath) {
             let wav = try WAVLoader.load(path: audioPath)
             return wav.samples
         }
 
-        throw XCTSkip("测试语音音频不可用（tests/fixtures/audio/say/zh_short_01.wav），请先运行 scripts/generate_test_corpus.py 生成测试语料")
+        throw XCTSkip("测试语音音频不可用（tests/fixtures/audio/synthetic/zh_short_01.wav），请先运行 scripts/generate_synthetic_corpus.py 生成测试语料")
     }
 }

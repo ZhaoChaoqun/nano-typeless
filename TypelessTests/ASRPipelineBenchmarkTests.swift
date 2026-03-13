@@ -26,6 +26,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     static var corrector: ChineseSpellingCorrector?
     static var cloudRewriter: CloudRewriter?
     static var termNormalizer: TermNormalizer?
+    static var itn: SherpaOnnxITN?
 
     // 可用性标记
     static var qwenAvailable = false
@@ -140,6 +141,14 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let dictURL = bundleURL ?? URL(fileURLWithPath: TestEnvironment.projectRoot() + "/Sources/term_dictionary.json")
         termNormalizer = TermNormalizer(dictionaryURL: dictURL)
         log("[Benchmark] TermNormalizer: \(termNormalizer != nil ? "✓" : "✗")")
+
+        // 独立 ITN（Qwen3-ASR 使用）
+        if let itnFstPath = TestEnvironment.itnFstPath() {
+            itn = SherpaOnnxITN(ruleFsts: itnFstPath)
+            log("[Benchmark] ITN (standalone): \(itn != nil ? "✓" : "✗")")
+        } else {
+            log("[Benchmark] ITN (standalone): ✗ (FST 未下载)")
+        }
     }
 
     override class func tearDown() {
@@ -153,6 +162,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         corrector = nil
         cloudRewriter = nil
         termNormalizer = nil
+        itn = nil
         super.tearDown()
     }
 
@@ -164,7 +174,9 @@ class ASRPipelineBenchmarkTests: XCTestCase {
 
         let results = runPipeline(name: "Qwen3-ASR (离线)") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
-            return recognizer.transcribeOffline(samples: samples)
+            var text = recognizer.transcribeOffline(samples: samples)
+            text = Self.applyQwenPostProcessing(text)
+            return text
         }
 
         Self.allResults.append(PipelineResult(pipelineName: "Qwen3-ASR (离线)", results: results))
@@ -195,7 +207,9 @@ class ASRPipelineBenchmarkTests: XCTestCase {
             // 不用 1s silence——长音频上 decoder 会 hallucinate 重复文本
             let minimalSilence = [Float](repeating: 0.0, count: 1600)
             _ = recognizer.pushAudio(samples: minimalSilence, finalize: true)
-            return recognizer.getResult()
+            var text = recognizer.getResult()
+            text = Self.applyQwenPostProcessing(text)
+            return text
         }
 
         Self.allResults.append(PipelineResult(pipelineName: "Qwen3-ASR (流式)", results: results))
@@ -321,7 +335,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         w("# ASR Pipeline 量化对比评估报告 (Swift)")
         w()
         w("*生成时间：\(timestamp)*")
-        w("*测试集：\(entries.count) 条音频（corpus.json + real_manifest.json）*")
+        w("*测试集：\(entries.count) 条音频（synthetic_manifest.json + recorded_manifest.json）*")
         w("*Pipeline：\(Self.allResults.map(\.pipelineName).joined(separator: ", "))*")
         w("*运行方式：Swift XCTest（直接复用产品代码）*")
         w()
@@ -491,6 +505,18 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         }
         if let punctuator = punctuator {
             result = punctuator.addPunctuation(text: result)
+        }
+        return result
+    }
+
+    /// 后处理：TermNormalizer → ITN（Qwen3-ASR 使用）
+    static func applyQwenPostProcessing(_ text: String) -> String {
+        var result = text
+        if let normalizer = termNormalizer {
+            result = normalizer.normalize(result)
+        }
+        if let itn = itn {
+            result = itn.normalize(text: result)
         }
         return result
     }

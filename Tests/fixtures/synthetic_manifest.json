@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-03-12T13:32:44.892373+00:00",
+  "generated_at": "2026-03-12T14:32:05.017724+00:00",
   "sample_rate": 16000,
   "format": "16-bit PCM WAV, mono",
   "entries": [
@@ -1949,6 +1949,124 @@
       "duration_sec": 0.0,
       "language": "mixed",
       "match_threshold": 0.15
+    },
+    {
+      "id": "cs_edge_001",
+      "category": "code_switching",
+      "expected_text": "我们团队最近在用 React 和 TypeScript 重构前端项目。",
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "React",
+        "TypeScript",
+        "重构"
+      ]
+    },
+    {
+      "id": "cs_edge_002",
+      "category": "code_switching",
+      "expected_text": "这个 bug 是因为 race condition 导致的 memory leak。",
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "bug",
+        "race",
+        "memory"
+      ]
+    },
+    {
+      "id": "cs_edge_003",
+      "category": "code_switching",
+      "expected_text": [
+        "用 Docker Compose 部署了 3 个 microservice 到 staging 环境。",
+        "用 Docker Compose 部署了三个 microservice 到 staging 环境。"
+      ],
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "Docker",
+        "microservice",
+        "staging"
+      ]
+    },
+    {
+      "id": "cs_edge_004",
+      "category": "code_switching",
+      "expected_text": "在 GitHub 上提了一个 issue，关于 performance optimization。",
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "GitHub",
+        "issue",
+        "performance"
+      ]
+    },
+    {
+      "id": "cs_edge_005",
+      "category": "code_switching",
+      "expected_text": "这个 function 的 return type 应该是 Optional，而不是 force unwrap。",
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "function",
+        "return",
+        "Optional"
+      ]
+    },
+    {
+      "id": "cs_edge_006",
+      "category": "code_switching",
+      "expected_text": "用 Xcode 的 Instruments 做了一下 profiling，发现 CPU 占用太高。",
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "Instruments",
+        "profiling",
+        "CPU"
+      ]
+    },
+    {
+      "id": "cs_edge_007",
+      "category": "code_switching",
+      "expected_text": "GraphQL 的 schema 定义比 RESTful API 更灵活一些。",
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "GraphQL",
+        "schema",
+        "API"
+      ]
+    },
+    {
+      "id": "cs_edge_008",
+      "category": "code_switching",
+      "expected_text": [
+        "CI pipeline 跑了 30 分钟，还没通过 unit test。",
+        "CI pipeline 跑了三十分钟，还没通过 unit test。"
+      ],
+      "match_mode": "contains_all",
+      "audio_files": {},
+      "duration_sec": 0.0,
+      "language": "zh",
+      "match_keywords": [
+        "CI",
+        "pipeline",
+        "unit"
+      ]
     }
   ]
 }

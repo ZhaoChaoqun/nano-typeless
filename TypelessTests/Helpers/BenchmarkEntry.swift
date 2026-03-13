@@ -8,40 +8,40 @@ struct BenchmarkEntry {
     let audioPath: String
     let durationSec: Double
     let language: String
-    let source: String  // "corpus" or "real_manifest"
+    let source: String  // "synthetic" or "recorded"
 }
 
-/// 从 corpus.json 和 real_manifest.json 加载并合并所有可用的 benchmark 条目
+/// 从 synthetic_manifest.json 和 recorded_manifest.json 加载并合并所有可用的 benchmark 条目
 enum BenchmarkEntryLoader {
 
     static func loadAll(fixturesPath: String) -> [BenchmarkEntry] {
         var entries: [BenchmarkEntry] = []
 
-        // corpus.json
-        let corpusPath = fixturesPath + "/corpus.json"
+        // synthetic_manifest.json
+        let corpusPath = fixturesPath + "/synthetic_manifest.json"
         if let data = try? Data(contentsOf: URL(fileURLWithPath: corpusPath)),
            let corpus = try? JSONDecoder().decode(Corpus.self, from: data) {
             for e in corpus.entries {
-                if let audioPath = resolveAudioPath(e, fixturesPath: fixturesPath, preference: ["edge_tts", "say"]) {
+                if let audioPath = resolveAudioPath(e, fixturesPath: fixturesPath, preference: ["synthetic"]) {
                     entries.append(BenchmarkEntry(
                         id: e.id, category: e.category, expectedTexts: e.expectedTexts,
                         audioPath: audioPath, durationSec: e.durationSec,
-                        language: e.language, source: "corpus"
+                        language: e.language, source: "synthetic"
                     ))
                 }
             }
         }
 
-        // real_manifest.json
-        let realPath = fixturesPath + "/real_manifest.json"
+        // recorded_manifest.json
+        let realPath = fixturesPath + "/recorded_manifest.json"
         if let data = try? Data(contentsOf: URL(fileURLWithPath: realPath)),
            let manifest = try? JSONDecoder().decode(Corpus.self, from: data) {
             for e in manifest.entries {
-                if let audioPath = resolveAudioPath(e, fixturesPath: fixturesPath, preference: ["real", "edge_tts", "say"]) {
+                if let audioPath = resolveAudioPath(e, fixturesPath: fixturesPath, preference: ["recorded"]) {
                     entries.append(BenchmarkEntry(
                         id: e.id, category: e.category, expectedTexts: e.expectedTexts,
                         audioPath: audioPath, durationSec: e.durationSec,
-                        language: e.language, source: "real_manifest"
+                        language: e.language, source: "recorded"
                     ))
                 }
             }

@@ -18,7 +18,7 @@ class QwenASRE2ETests: XCTestCase {
         modelAvailable = recognizer != nil
 
         fixturesPath = TestEnvironment.fixturesPath()
-        let corpusPath = fixturesPath + "/corpus.json"
+        let corpusPath = fixturesPath + "/synthetic_manifest.json"
         if let data = try? Data(contentsOf: URL(fileURLWithPath: corpusPath)) {
             corpus = try? JSONDecoder().decode(Corpus.self, from: data)
         }
@@ -31,7 +31,7 @@ class QwenASRE2ETests: XCTestCase {
 
     override func setUpWithError() throws {
         try XCTSkipUnless(Self.modelAvailable, "Qwen3-ASR 模型不可用")
-        try XCTSkipIf(Self.corpus == nil, "corpus.json 不可用，请先运行 generate_test_corpus.py")
+        try XCTSkipIf(Self.corpus == nil, "synthetic_manifest.json 不可用，请先运行 generate_synthetic_corpus.py")
     }
 
     // MARK: - 逐条语料测试
@@ -190,6 +190,17 @@ class QwenASRE2ETests: XCTestCase {
         try runCorpusEntry(id: "pause_long_01")
     }
 
+    // MARK: - Edge-TTS 中英代码切换
+
+    func testCodeSwitchEdge001() throws { try runCorpusEntry(id: "cs_edge_001") }
+    func testCodeSwitchEdge002() throws { try runCorpusEntry(id: "cs_edge_002") }
+    func testCodeSwitchEdge003() throws { try runCorpusEntry(id: "cs_edge_003") }
+    func testCodeSwitchEdge004() throws { try runCorpusEntry(id: "cs_edge_004") }
+    func testCodeSwitchEdge005() throws { try runCorpusEntry(id: "cs_edge_005") }
+    func testCodeSwitchEdge006() throws { try runCorpusEntry(id: "cs_edge_006") }
+    func testCodeSwitchEdge007() throws { try runCorpusEntry(id: "cs_edge_007") }
+    func testCodeSwitchEdge008() throws { try runCorpusEntry(id: "cs_edge_008") }
+
     // MARK: - 流式模拟测试
 
     /// 以 0.5 秒 chunk 模拟真实流式识别
@@ -238,7 +249,7 @@ class QwenASRE2ETests: XCTestCase {
         let recognizer = Self.recognizer!
         recognizer.reset()
 
-        // 使用 edge_tts 中文音频
+        // 使用合成中文音频
         let entry = try findEntry(id: "zh_short_01")
         let samples = try loadAudioForEntry(entry)
 
@@ -325,7 +336,7 @@ class QwenASRE2ETests: XCTestCase {
         let recognizer = Self.recognizer!
         let chunkSize = 640  // 40ms
 
-        let audioDir = Self.fixturesPath + "/audio/real/aishell"
+        let audioDir = Self.fixturesPath + "/audio/recorded/aishell"
         let fm = FileManager.default
         guard fm.fileExists(atPath: audioDir) else {
             throw XCTSkip("AISHELL 测试音频目录不存在")
@@ -462,14 +473,14 @@ class QwenASRE2ETests: XCTestCase {
 
     private func findEntry(id: String) throws -> CorpusEntry {
         guard let entry = Self.corpus?.entries.first(where: { $0.id == id }) else {
-            throw XCTSkip("语料条目 '\(id)' 在 corpus.json 中不存在")
+            throw XCTSkip("语料条目 '\(id)' 在 synthetic_manifest.json 中不存在")
         }
         return entry
     }
 
     private func loadAudioForEntry(_ entry: CorpusEntry) throws -> [Float] {
-        // 优先 edge_tts > say > synthetic
-        let preference = ["edge_tts", "say", "synthetic"]
+        // 优先 synthetic
+        let preference = ["synthetic"]
 
         for source in preference {
             if let relPath = entry.audioFiles[source] {

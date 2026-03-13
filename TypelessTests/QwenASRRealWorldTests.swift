@@ -1,9 +1,9 @@
 import XCTest
 @testable import Nano_Typeless
 
-/// Qwen3-ASR 真实世界语音识别测试
-/// 使用 AISHELL-1、MINDS-14、ASCEND、WenetSpeech 和 edge-tts code-switching 数据
-/// 音频数据需先运行: uv run python scripts/download_real_test_data.py
+/// Qwen3-ASR 真实录音识别测试
+/// 使用 AISHELL-1、MINDS-14、ASCEND、WenetSpeech 数据
+/// 音频数据需先运行: uv run python scripts/download_recorded_corpus.py
 class QwenASRRealWorldTests: XCTestCase {
 
     static var recognizer: QwenASRStreamRecognizer?
@@ -20,13 +20,13 @@ class QwenASRRealWorldTests: XCTestCase {
         modelAvailable = recognizer != nil
 
         fixturesPath = TestEnvironment.fixturesPath()
-        let manifestPath = fixturesPath + "/real_manifest.json"
+        let manifestPath = fixturesPath + "/recorded_manifest.json"
         if let data = try? Data(contentsOf: URL(fileURLWithPath: manifestPath)) {
             corpus = try? JSONDecoder().decode(Corpus.self, from: data)
         }
 
         // Check if real audio directory exists with content
-        let realAudioDir = fixturesPath + "/audio/real"
+        let realAudioDir = fixturesPath + "/audio/recorded"
         audioAvailable = FileManager.default.fileExists(atPath: realAudioDir)
     }
 
@@ -38,8 +38,8 @@ class QwenASRRealWorldTests: XCTestCase {
     override func setUpWithError() throws {
         try XCTSkipUnless(Self.modelAvailable, "Qwen3-ASR 模型不可用")
         try XCTSkipUnless(Self.audioAvailable,
-            "真实世界测试音频不可用。运行: uv run python scripts/download_real_test_data.py")
-        try XCTSkipIf(Self.corpus == nil, "real_manifest.json 不存在或无法解析")
+            "真实录音测试音频不可用。运行: uv run python scripts/download_recorded_corpus.py")
+        try XCTSkipIf(Self.corpus == nil, "recorded_manifest.json 不存在或无法解析")
     }
 
     // MARK: - AISHELL-1 (标准普通话基准)
@@ -58,17 +58,6 @@ class QwenASRRealWorldTests: XCTestCase {
     func testConversational001() throws { try runRealEntry(id: "conv_zh_001") }
     func testConversational004() throws { try runRealEntry(id: "conv_zh_004") }
     func testConversational005() throws { try runRealEntry(id: "conv_zh_005") }
-
-    // MARK: - Code-Switching (中英混合，edge-tts 高质量 TTS)
-
-    func testCodeSwitchEdge001() throws { try runRealEntry(id: "cs_edge_001") }
-    func testCodeSwitchEdge002() throws { try runRealEntry(id: "cs_edge_002") }
-    func testCodeSwitchEdge003() throws { try runRealEntry(id: "cs_edge_003") }
-    func testCodeSwitchEdge004() throws { try runRealEntry(id: "cs_edge_004") }
-    func testCodeSwitchEdge005() throws { try runRealEntry(id: "cs_edge_005") }
-    func testCodeSwitchEdge006() throws { try runRealEntry(id: "cs_edge_006") }
-    func testCodeSwitchEdge007() throws { try runRealEntry(id: "cs_edge_007") }
-    func testCodeSwitchEdge008() throws { try runRealEntry(id: "cs_edge_008") }
 
     // MARK: - ASCEND Code-Switching (真实中英代码切换对话)
 
@@ -99,7 +88,7 @@ class QwenASRRealWorldTests: XCTestCase {
 
     func testAggregateCERReport() throws {
         guard let entries = Self.corpus?.entries else {
-            throw XCTSkip("real_manifest.json 中无条目")
+            throw XCTSkip("recorded_manifest.json 中无条目")
         }
 
         var results: [(id: String, cer: Double)] = []
@@ -139,7 +128,7 @@ class QwenASRRealWorldTests: XCTestCase {
 
     private func runRealEntry(id: String) throws {
         guard let entry = Self.corpus?.entries.first(where: { $0.id == id }) else {
-            throw XCTSkip("条目 '\(id)' 在 real_manifest.json 中不存在")
+            throw XCTSkip("条目 '\(id)' 在 recorded_manifest.json 中不存在")
         }
 
         let samples = try loadRealAudio(entry)
@@ -173,7 +162,7 @@ class QwenASRRealWorldTests: XCTestCase {
     }
 
     private func loadRealAudio(_ entry: CorpusEntry) throws -> [Float] {
-        let preference = ["real", "edge_tts", "say"]
+        let preference = ["recorded"]
 
         for source in preference {
             if let relPath = entry.audioFiles[source] {
@@ -186,6 +175,6 @@ class QwenASRRealWorldTests: XCTestCase {
         }
 
         throw XCTSkip("'\(entry.id)' 的音频文件不可用。"
-            + "运行: uv run python scripts/download_real_test_data.py")
+            + "运行: uv run python scripts/download_recorded_corpus.py")
     }
 }

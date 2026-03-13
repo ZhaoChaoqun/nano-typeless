@@ -33,7 +33,7 @@ class QwenASRE2ETests: XCTestCase {
 
         // 查找 fixtures 目录
         fixturesPath = findProjectRoot() + "/tests/fixtures"
-        let corpusPath = fixturesPath + "/corpus.json"
+        let corpusPath = fixturesPath + "/synthetic_manifest.json"
         if let data = try? Data(contentsOf: URL(fileURLWithPath: corpusPath)) {
             corpus = try? JSONDecoder().decode(Corpus.self, from: data)
         }
@@ -46,7 +46,7 @@ class QwenASRE2ETests: XCTestCase {
 
     override func setUpWithError() throws {
         try XCTSkipUnless(Self.modelAvailable, "Qwen3-ASR 模型不可用")
-        try XCTSkipIf(Self.corpus == nil, "corpus.json 不可用，请先运行 generate_test_corpus.py")
+        try XCTSkipIf(Self.corpus == nil, "synthetic_manifest.json 不可用，请先运行 generate_synthetic_corpus.py")
     }
 
     // MARK: - 逐条语料测试
@@ -179,14 +179,14 @@ class QwenASRE2ETests: XCTestCase {
 
     private func findEntry(id: String) throws -> CorpusEntry {
         guard let entry = Self.corpus?.entries.first(where: { $0.id == id }) else {
-            throw XCTSkip("语料条目 '\(id)' 在 corpus.json 中不存在")
+            throw XCTSkip("语料条目 '\(id)' 在 synthetic_manifest.json 中不存在")
         }
         return entry
     }
 
     private func loadAudioForEntry(_ entry: CorpusEntry) throws -> [Float] {
-        // 优先 edge_tts > say > synthetic
-        let preference = ["edge_tts", "say", "synthetic"]
+        // 优先 synthetic
+        let preference = ["synthetic"]
 
         for source in preference {
             if let relPath = entry.audioFiles[source] {

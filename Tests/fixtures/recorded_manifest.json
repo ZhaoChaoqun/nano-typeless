@@ -6,11 +6,11 @@
   "entries": [
     {
       "id": "aishell_test_001",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": "甚至出现交易几乎停滞的情况。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_001.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_001.wav"
       },
       "duration_sec": 4.2,
       "language": "zh",
@@ -18,14 +18,14 @@
     },
     {
       "id": "aishell_test_002",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": [
         "一二线城市虽然也处于调整中。",
         "1、2 线城市虽然也处于调整中。"
       ],
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_002.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_002.wav"
       },
       "duration_sec": 4.12,
       "language": "zh",
@@ -33,11 +33,11 @@
     },
     {
       "id": "aishell_test_003",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": "但因为聚集了过多公共资源。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_003.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_003.wav"
       },
       "duration_sec": 4.0,
       "language": "zh",
@@ -45,14 +45,14 @@
     },
     {
       "id": "aishell_test_004",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": [
         "为了规避三四线城市明显过剩的市场风险。",
         "为了规避 3、4 线城市明显过剩的市场风险。"
       ],
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_004.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_004.wav"
       },
       "duration_sec": 5.24,
       "language": "zh",
@@ -60,11 +60,11 @@
     },
     {
       "id": "aishell_test_005",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": "标杆房企必然调整市场战略。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_005.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_005.wav"
       },
       "duration_sec": 4.31,
       "language": "zh",
@@ -72,11 +72,11 @@
     },
     {
       "id": "aishell_test_006",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": "因此，土地储备至关重要。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_006.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_006.wav"
       },
       "duration_sec": 3.5,
       "language": "zh",
@@ -84,11 +84,11 @@
     },
     {
       "id": "aishell_test_007",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": "中原地产首席分析师张大伟说。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_007.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_007.wav"
       },
       "duration_sec": 4.45,
       "language": "zh",
@@ -96,11 +96,11 @@
     },
     {
       "id": "aishell_test_008",
-      "category": "real_aishell",
+      "category": "recorded_aishell",
       "expected_text": "一线城市土地供应量减少。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/aishell/aishell_test_008.wav"
+        "recorded": "audio/recorded/aishell/aishell_test_008.wav"
       },
       "duration_sec": 3.57,
       "language": "zh",
@@ -108,11 +108,11 @@
     },
     {
       "id": "conv_zh_001",
-      "category": "real_conversational",
+      "category": "recorded_minds14",
       "expected_text": "你好，我想要了解一下我的银行账户余额有多少，谢谢。",
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/conversational/conv_zh_001.wav"
+        "recorded": "audio/recorded/minds14/conv_zh_001.wav"
       },
       "duration_sec": 7.77,
       "language": "zh",
@@ -123,11 +123,11 @@
     },
     {
       "id": "conv_zh_004",
-      "category": "real_conversational",
+      "category": "recorded_minds14",
       "expected_text": "我想要查询我的账户余额。",
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/conversational/conv_zh_004.wav"
+        "recorded": "audio/recorded/minds14/conv_zh_004.wav"
       },
       "duration_sec": 5.12,
       "language": "zh",
@@ -138,11 +138,11 @@
     },
     {
       "id": "conv_zh_005",
-      "category": "real_conversational",
+      "category": "recorded_minds14",
       "expected_text": "您好，我可以知道我的账户余额吗？",
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/conversational/conv_zh_005.wav"
+        "recorded": "audio/recorded/minds14/conv_zh_005.wav"
       },
       "duration_sec": 6.23,
       "language": "zh",
@@ -153,11 +153,11 @@
     },
     {
       "id": "ascend_cs_001",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": "No，我专业是那个 ISM，Information Systems Management。",
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_001.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_001.wav"
       },
       "duration_sec": 4.03,
       "language": "mixed",
@@ -170,14 +170,14 @@
     },
     {
       "id": "ascend_cs_002",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": [
         "嗯，所以你现在还是比较 focus 在找工作这件事上。",
         "所以你现在还是比较 focus 在找工作这件事上。"
       ],
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_002.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_002.wav"
       },
       "duration_sec": 3.05,
       "language": "mixed",
@@ -190,14 +190,14 @@
     },
     {
       "id": "ascend_cs_003",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": [
         "深圳啊，或者是上海这种比较大的城市，会有更多 opportunity。",
         "深圳，或者是上海这种比较大的城市，会有更多 opportunity。"
       ],
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_003.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_003.wav"
       },
       "duration_sec": 4.52,
       "language": "mixed",
@@ -209,14 +209,14 @@
     },
     {
       "id": "ascend_cs_004",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": [
         "嗯，I like hot pot。",
         "I like hot pot。"
       ],
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_004.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_004.wav"
       },
       "duration_sec": 3.77,
       "language": "mixed",
@@ -227,11 +227,11 @@
     },
     {
       "id": "ascend_cs_005",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": "所以我的我的 parents，我的妈妈是 chemistry 老师，and 我的爸爸是 history 老师。",
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_005.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_005.wav"
       },
       "duration_sec": 7.92,
       "language": "mixed",
@@ -244,14 +244,14 @@
     },
     {
       "id": "ascend_cs_006",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": [
         "那个玩 basketball 的，然后我有时候有时候会邀我的 friends 啊，一起打在就是 after class 的时候。",
         "那个玩 basketball 的，然后我有时候有时候会邀我的 friends，一起打在就是 after class 的时候。"
       ],
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_006.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_006.wav"
       },
       "duration_sec": 7.9,
       "language": "mixed",
@@ -263,14 +263,14 @@
     },
     {
       "id": "ascend_cs_008",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": [
         "然后呃，我也喜欢 play basketball。",
         "然后我也喜欢 play basketball。"
       ],
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_008.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_008.wav"
       },
       "duration_sec": 3.38,
       "language": "mixed",
@@ -282,11 +282,11 @@
     },
     {
       "id": "ascend_cs_009",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": "然后刚忘了讲，你你是念什么 major 的？",
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_009.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_009.wav"
       },
       "duration_sec": 4.22,
       "language": "mixed",
@@ -299,14 +299,14 @@
     },
     {
       "id": "ascend_cs_010",
-      "category": "real_ascend_codeswitching",
+      "category": "recorded_ascend",
       "expected_text": [
         "哦，我我在 UG 的时候念的是 electrical engineering。",
         "我我在 UG 的时候念的是 electrical engineering。"
       ],
       "match_mode": "contains_all",
       "audio_files": {
-        "real": "audio/real/ascend/ascend_cs_010.wav"
+        "recorded": "audio/recorded/ascend/ascend_cs_010.wav"
       },
       "duration_sec": 5.9,
       "language": "mixed",
@@ -319,11 +319,11 @@
     },
     {
       "id": "wenet_net_001",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "毕业歌会之后，然后我们还去吃个饭，然后就感觉。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_001.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_001.wav"
       },
       "duration_sec": 4.59,
       "language": "zh",
@@ -331,11 +331,11 @@
     },
     {
       "id": "wenet_net_002",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "竖锯癌症病成那样，还打着点滴，就更不可能把女警官吊了起来。说来说去，皮特认为还有其他人在帮助竖锯这么做。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_002.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_002.wav"
       },
       "duration_sec": 7.56,
       "language": "zh",
@@ -343,11 +343,11 @@
     },
     {
       "id": "wenet_net_003",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "当时心里想，我只要能跪我就能站，我在床上练着跪着走。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_003.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_003.wav"
       },
       "duration_sec": 6.36,
       "language": "zh",
@@ -355,14 +355,14 @@
     },
     {
       "id": "wenet_net_004",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": [
         "下车后望着 30 多层的大高楼发呆。",
         "下车后望着三十多层的大高楼发呆。"
       ],
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_004.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_004.wav"
       },
       "duration_sec": 4.01,
       "language": "zh",
@@ -370,11 +370,11 @@
     },
     {
       "id": "wenet_net_005",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "还有剧作模式的双线性叙事、结尾神反转等等，也成为了日后电锯惊魂系列在剧作上的结构模式。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_005.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_005.wav"
       },
       "duration_sec": 7.96,
       "language": "zh",
@@ -382,11 +382,11 @@
     },
     {
       "id": "wenet_net_006",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "这位叫皮特的 FBI 探员一上来就一顿物理分析，认为阿曼达不可能吊起比她还重的女警官。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_006.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_006.wav"
       },
       "duration_sec": 6.64,
       "language": "zh",
@@ -394,11 +394,11 @@
     },
     {
       "id": "wenet_net_007",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "她已经在商场里开起了小店铺，尽管孤身一人，但与好友见面时还是会爽朗一笑。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_007.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_007.wav"
       },
       "duration_sec": 6.2,
       "language": "zh",
@@ -406,11 +406,11 @@
     },
     {
       "id": "wenet_net_008",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": "把这些劳工抓起来，送到月亮岛上去。",
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_008.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_008.wav"
       },
       "duration_sec": 3.4,
       "language": "zh",
@@ -418,14 +418,14 @@
     },
     {
       "id": "wenet_net_009",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": [
         "的的需要。嗯，如果你把他当成产品的话，你就会觉得那么消费者会需要什么样的。",
         "的的需要。如果你把他当成产品的话，你就会觉得那么消费者会需要什么样的。"
       ],
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_009.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_009.wav"
       },
       "duration_sec": 5.81,
       "language": "zh",
@@ -433,152 +433,18 @@
     },
     {
       "id": "wenet_net_010",
-      "category": "real_wenetspeech",
+      "category": "recorded_wenetspeech",
       "expected_text": [
         "媒体也已经报了，然后呃，债主也已经围楼了。",
         "媒体也已经报了，然后债主也已经围楼了。"
       ],
       "match_mode": "character_error_rate",
       "audio_files": {
-        "real": "audio/real/wenetspeech/wenet_net_010.wav"
+        "recorded": "audio/recorded/wenetspeech/wenet_net_010.wav"
       },
       "duration_sec": 4.77,
       "language": "zh",
       "match_threshold": 0.2
-    },
-    {
-      "id": "cs_edge_001",
-      "category": "real_codeswitching",
-      "expected_text": "我们团队最近在用 React 和 TypeScript 重构前端项目。",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_001.wav"
-      },
-      "duration_sec": 5.21,
-      "language": "zh",
-      "match_keywords": [
-        "React",
-        "TypeScript",
-        "重构"
-      ]
-    },
-    {
-      "id": "cs_edge_002",
-      "category": "real_codeswitching",
-      "expected_text": "这个 bug 是因为 race condition 导致的 memory leak。",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_002.wav"
-      },
-      "duration_sec": 4.32,
-      "language": "zh",
-      "match_keywords": [
-        "bug",
-        "race",
-        "memory"
-      ]
-    },
-    {
-      "id": "cs_edge_003",
-      "category": "real_codeswitching",
-      "expected_text": [
-        "用 Docker Compose 部署了 3 个 microservice 到 staging 环境。",
-        "用 Docker Compose 部署了三个 microservice 到 staging 环境。"
-      ],
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_003.wav"
-      },
-      "duration_sec": 4.99,
-      "language": "zh",
-      "match_keywords": [
-        "Docker",
-        "microservice",
-        "staging"
-      ]
-    },
-    {
-      "id": "cs_edge_004",
-      "category": "real_codeswitching",
-      "expected_text": "在 GitHub 上提了一个 issue，关于 performance optimization。",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_004.wav"
-      },
-      "duration_sec": 5.04,
-      "language": "zh",
-      "match_keywords": [
-        "GitHub",
-        "issue",
-        "performance"
-      ]
-    },
-    {
-      "id": "cs_edge_005",
-      "category": "real_codeswitching",
-      "expected_text": "这个 function 的 return type 应该是 Optional，而不是 force unwrap。",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_005.wav"
-      },
-      "duration_sec": 5.5,
-      "language": "zh",
-      "match_keywords": [
-        "function",
-        "return",
-        "Optional"
-      ]
-    },
-    {
-      "id": "cs_edge_006",
-      "category": "real_codeswitching",
-      "expected_text": "用 Xcode 的 Instruments 做了一下 profiling，发现 CPU 占用太高。",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_006.wav"
-      },
-      "duration_sec": 5.98,
-      "language": "zh",
-      "match_keywords": [
-        "Instruments",
-        "profiling",
-        "CPU"
-      ]
-    },
-    {
-      "id": "cs_edge_007",
-      "category": "real_codeswitching",
-      "expected_text": "GraphQL 的 schema 定义比 RESTful API 更灵活一些。",
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_007.wav"
-      },
-      "duration_sec": 4.85,
-      "language": "zh",
-      "match_keywords": [
-        "GraphQL",
-        "schema",
-        "API"
-      ]
-    },
-    {
-      "id": "cs_edge_008",
-      "category": "real_codeswitching",
-      "expected_text": [
-        "CI pipeline 跑了 30 分钟，还没通过 unit test。",
-        "CI pipeline 跑了三十分钟，还没通过 unit test。"
-      ],
-      "match_mode": "contains_all",
-      "audio_files": {
-        "real": "audio/real/codeswitching/cs_edge_008.wav"
-      },
-      "duration_sec": 4.78,
-      "language": "zh",
-      "match_keywords": [
-        "CI",
-        "pipeline",
-        "unit"
-      ]
     }
   ]
 }

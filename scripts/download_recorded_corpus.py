@@ -1,32 +1,26 @@
 #!/usr/bin/env python3
 """
-Download and prepare real-world ASR test data for Qwen3-ASR evaluation.
+Download and prepare recorded ASR test data for Qwen3-ASR evaluation.
 
 Sources:
   1. AISHELL-1 test split (8 samples) — standard Mandarin benchmark
   2. MINDS-14 zh-CN (5 samples) — real conversational recordings
   3. ASCEND test split (10 samples) — real Chinese-English code-switching
   4. WenetSpeech TEST_NET (10 samples) — multi-scene Chinese (gated dataset)
-  5. Edge-TTS code-switching (8 samples) — high-quality zh-en mixed speech
 
 Usage:
     # Full run (requires network + HuggingFace datasets)
-    uv run --with 'datasets[audio]' --with soundfile --with scipy --with edge-tts \
-        python scripts/download_real_test_data.py
+    uv run --with 'datasets[audio]' --with soundfile --with scipy \
+        python scripts/download_recorded_corpus.py
 
     # Skip WenetSpeech (if no HuggingFace authorization)
-    uv run --with 'datasets[audio]' --with soundfile --with scipy --with edge-tts \
-        python scripts/download_real_test_data.py --skip-wenetspeech
-
-    # Code-switching only (no HuggingFace needed)
-    uv run --with edge-tts \
-        python scripts/download_real_test_data.py --only-codeswitching
+    uv run --with 'datasets[audio]' --with soundfile --with scipy \
+        python scripts/download_recorded_corpus.py --skip-wenetspeech
 """
 
 import argparse
 import json
 import struct
-import subprocess
 import sys
 import wave
 from datetime import datetime, timezone
@@ -34,55 +28,8 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES_DIR = PROJECT_ROOT / "tests" / "fixtures"
-REAL_AUDIO_DIR = FIXTURES_DIR / "audio" / "real"
+REAL_AUDIO_DIR = FIXTURES_DIR / "audio" / "recorded"
 SAMPLE_RATE = 16000
-
-# ============================================================
-# Code-Switching Sentences (edge-tts)
-# ============================================================
-
-CODESWITCHING_SENTENCES = [
-    {
-        "id": "cs_edge_001",
-        "text": "我们团队最近在用React和TypeScript重构前端项目",
-        "keywords": ["React", "TypeScript", "重构"],
-    },
-    {
-        "id": "cs_edge_002",
-        "text": "这个bug是因为race condition导致的memory leak",
-        "keywords": ["bug", "race", "memory"],
-    },
-    {
-        "id": "cs_edge_003",
-        "text": "用Docker Compose部署了三个microservice到staging环境",
-        "keywords": ["Docker", "microservice", "staging"],
-    },
-    {
-        "id": "cs_edge_004",
-        "text": "在GitHub上提了一个issue关于performance optimization",
-        "keywords": ["GitHub", "issue", "performance"],
-    },
-    {
-        "id": "cs_edge_005",
-        "text": "这个function的return type应该是Optional而不是force unwrap",
-        "keywords": ["function", "return", "Optional"],
-    },
-    {
-        "id": "cs_edge_006",
-        "text": "用Xcode的Instruments做了一下profiling发现CPU占用太高",
-        "keywords": ["Instruments", "profiling", "CPU"],
-    },
-    {
-        "id": "cs_edge_007",
-        "text": "GraphQL的schema定义比RESTful API更灵活一些",
-        "keywords": ["GraphQL", "schema", "API"],
-    },
-    {
-        "id": "cs_edge_008",
-        "text": "CI pipeline跑了三十分钟还没通过unit test",
-        "keywords": ["CI", "pipeline", "unit"],
-    },
-]
 
 
 # ============================================================
@@ -302,10 +249,10 @@ def download_aishell_samples(n_samples: int = 8) -> list[dict]:
             entries.append(
                 {
                     "id": entry_id,
-                    "category": "real_aishell",
+                    "category": "recorded_aishell",
                     "expected_text": text,
                     "match_mode": "character_error_rate",
-                    "audio_files": {"real": f"audio/real/aishell/{entry_id}.wav"},
+                    "audio_files": {"recorded": f"audio/recorded/aishell/{entry_id}.wav"},
                     "duration_sec": round(duration, 2),
                     "language": "zh",
                     "match_threshold": 0.15,
@@ -337,7 +284,7 @@ def download_conversational_samples(n_samples: int = 5) -> list[dict]:
 
     import numpy as np
 
-    conv_dir = REAL_AUDIO_DIR / "conversational"
+    conv_dir = REAL_AUDIO_DIR / "minds14"
     conv_dir.mkdir(parents=True, exist_ok=True)
 
     # MINDS-14 is publicly available with real Chinese conversational recordings
@@ -406,10 +353,10 @@ def download_conversational_samples(n_samples: int = 5) -> list[dict]:
             entries.append(
                 {
                     "id": entry_id,
-                    "category": "real_conversational",
+                    "category": "recorded_minds14",
                     "expected_text": text,
                     "match_mode": "contains_all",
-                    "audio_files": {"real": f"audio/real/conversational/{entry_id}.wav"},
+                    "audio_files": {"recorded": f"audio/recorded/minds14/{entry_id}.wav"},
                     "duration_sec": round(duration, 2),
                     "language": "zh",
                     "match_keywords": keywords,
@@ -423,93 +370,6 @@ def download_conversational_samples(n_samples: int = 5) -> list[dict]:
         )
 
     print(f"  [Conversational] 共获取 {len(entries)} 条 (from {used_id})")
-    return entries
-
-
-# ============================================================
-# Edge-TTS Code-Switching Generation
-# ============================================================
-
-
-def generate_codeswitching_samples() -> list[dict]:
-    """Generate code-switching audio using edge-tts."""
-    cs_dir = REAL_AUDIO_DIR / "codeswitching"
-    cs_dir.mkdir(parents=True, exist_ok=True)
-
-    voice = "zh-CN-XiaoxiaoNeural"
-    entries = []
-
-    for sentence in CODESWITCHING_SENTENCES:
-        entry_id = sentence["id"]
-        text = sentence["text"]
-        mp3_path = cs_dir / f"{entry_id}.mp3"
-        wav_path = cs_dir / f"{entry_id}.wav"
-
-        try:
-            # Generate MP3 with edge-tts
-            subprocess.run(
-                [
-                    "uv",
-                    "run",
-                    "--with",
-                    "edge-tts",
-                    "edge-tts",
-                    "--voice",
-                    voice,
-                    "--write-media",
-                    str(mp3_path),
-                    "--text",
-                    text,
-                ],
-                check=True,
-                capture_output=True,
-                timeout=60,
-            )
-
-            # Convert to 16kHz mono WAV
-            subprocess.run(
-                [
-                    "afconvert",
-                    "-f",
-                    "WAVE",
-                    "-d",
-                    "LEI16@16000",
-                    "-c",
-                    "1",
-                    str(mp3_path),
-                    str(wav_path),
-                ],
-                check=True,
-                capture_output=True,
-            )
-            mp3_path.unlink(missing_ok=True)
-
-            duration = get_wav_duration(wav_path)
-            print(f"  [edge-tts] {entry_id}: '{text[:30]}...' ({duration:.1f}s)")
-
-            entries.append(
-                {
-                    "id": entry_id,
-                    "category": "real_codeswitching",
-                    "expected_text": text,
-                    "match_mode": "contains_all",
-                    "audio_files": {"real": f"audio/real/codeswitching/{entry_id}.wav"},
-                    "duration_sec": round(duration, 2),
-                    "language": "zh",
-                    "match_keywords": sentence["keywords"],
-                }
-            )
-
-        except (
-            subprocess.CalledProcessError,
-            subprocess.TimeoutExpired,
-            FileNotFoundError,
-        ) as e:
-            print(f"  [edge-tts] {entry_id} 生成失败: {e}", file=sys.stderr)
-            mp3_path.unlink(missing_ok=True)
-            continue
-
-    print(f"  [edge-tts] 共生成 {len(entries)} 条 code-switching 音频")
     return entries
 
 
@@ -589,10 +449,10 @@ def download_ascend_samples(n_samples: int = 10) -> list[dict]:
             entries.append(
                 {
                     "id": entry_id,
-                    "category": "real_ascend_codeswitching",
+                    "category": "recorded_ascend",
                     "expected_text": text,
                     "match_mode": "contains_all",
-                    "audio_files": {"real": f"audio/real/ascend/{entry_id}.wav"},
+                    "audio_files": {"recorded": f"audio/recorded/ascend/{entry_id}.wav"},
                     "duration_sec": round(duration, 2),
                     "language": "mixed",
                     "match_keywords": keywords,
@@ -756,11 +616,11 @@ def download_wenetspeech_samples(n_samples: int = 10) -> list[dict]:
                 entries.append(
                     {
                         "id": entry_id,
-                        "category": "real_wenetspeech",
+                        "category": "recorded_wenetspeech",
                         "expected_text": text,
                         "match_mode": "character_error_rate",
                         "audio_files": {
-                            "real": f"audio/real/wenetspeech/{entry_id}.wav"
+                            "recorded": f"audio/recorded/wenetspeech/{entry_id}.wav"
                         },
                         "duration_sec": round(duration, 2),
                         "language": "zh",
@@ -784,7 +644,7 @@ def download_wenetspeech_samples(n_samples: int = 10) -> list[dict]:
 
 
 def build_manifest(all_entries: list[dict]) -> dict:
-    """Build real_manifest.json structure."""
+    """Build recorded_manifest.json structure."""
     return {
         "version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -800,12 +660,7 @@ def build_manifest(all_entries: list[dict]) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="下载/生成真实世界 ASR 测试数据")
-    parser.add_argument(
-        "--only-codeswitching",
-        action="store_true",
-        help="仅生成 edge-tts code-switching 音频（无需 HuggingFace）",
-    )
+    parser = argparse.ArgumentParser(description="下载真实录音 ASR 测试数据")
     parser.add_argument(
         "--n-aishell",
         type=int,
@@ -816,7 +671,7 @@ def main():
         "--n-conversational",
         type=int,
         default=5,
-        help="Conversational Mandarin 样本数 (default: 5)",
+        help="MINDS-14 样本数 (default: 5)",
     )
     parser.add_argument(
         "--n-ascend",
@@ -838,7 +693,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print("Real-World ASR Test Data Generator")
+    print("Recorded ASR Test Data Downloader")
     print("=" * 60)
 
     REAL_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -846,49 +701,38 @@ def main():
     all_entries: list[dict] = []
 
     # 1. AISHELL-1
-    if not args.only_codeswitching:
-        print("\n[1/5] AISHELL-1 (标准普通话)")
-        aishell_entries = download_aishell_samples(args.n_aishell)
-        all_entries.extend(aishell_entries)
+    print("\n[1/4] AISHELL-1 (标准普通话)")
+    aishell_entries = download_aishell_samples(args.n_aishell)
+    all_entries.extend(aishell_entries)
 
-        # 2. Conversational Mandarin (MINDS-14)
-        print("\n[2/5] Conversational Mandarin (真实对话录音)")
-        cv_entries = download_conversational_samples(args.n_conversational)
-        all_entries.extend(cv_entries)
+    # 2. MINDS-14
+    print("\n[2/4] MINDS-14 (真实对话录音)")
+    cv_entries = download_conversational_samples(args.n_conversational)
+    all_entries.extend(cv_entries)
 
-        # 3. ASCEND Code-Switching
-        print("\n[3/5] ASCEND Code-Switching (真实中英混合对话)")
-        ascend_entries = download_ascend_samples(args.n_ascend)
-        all_entries.extend(ascend_entries)
+    # 3. ASCEND Code-Switching
+    print("\n[3/4] ASCEND Code-Switching (真实中英混合对话)")
+    ascend_entries = download_ascend_samples(args.n_ascend)
+    all_entries.extend(ascend_entries)
 
-        # 4. WenetSpeech
-        if not args.skip_wenetspeech:
-            print("\n[4/5] WenetSpeech TEST_NET (多场景中文)")
-            wenet_entries = download_wenetspeech_samples(args.n_wenetspeech)
-            all_entries.extend(wenet_entries)
-        else:
-            print("\n[4/5] WenetSpeech — 跳过 (--skip-wenetspeech)")
+    # 4. WenetSpeech
+    if not args.skip_wenetspeech:
+        print("\n[4/4] WenetSpeech TEST_NET (多场景中文)")
+        wenet_entries = download_wenetspeech_samples(args.n_wenetspeech)
+        all_entries.extend(wenet_entries)
     else:
-        print("\n[1/5] AISHELL-1 — 跳过 (--only-codeswitching)")
-        print("[2/5] Conversational — 跳过 (--only-codeswitching)")
-        print("[3/5] ASCEND — 跳过 (--only-codeswitching)")
-        print("[4/5] WenetSpeech — 跳过 (--only-codeswitching)")
-
-    # 5. Code-Switching (edge-tts)
-    print("\n[5/5] Code-Switching (edge-tts)")
-    cs_entries = generate_codeswitching_samples()
-    all_entries.extend(cs_entries)
+        print("\n[4/4] WenetSpeech — 跳过 (--skip-wenetspeech)")
 
     # Write manifest
     manifest = build_manifest(all_entries)
-    manifest_path = FIXTURES_DIR / "real_manifest.json"
+    manifest_path = FIXTURES_DIR / "recorded_manifest.json"
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
     # Summary
     print(f"\n{'=' * 60}")
-    print("生成完成!")
-    print(f"  real_manifest.json: {manifest_path}")
+    print("下载完成!")
+    print(f"  recorded_manifest.json: {manifest_path}")
     print(f"  条目总数: {len(all_entries)}")
 
     categories: dict[str, int] = {}
