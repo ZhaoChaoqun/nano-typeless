@@ -236,8 +236,7 @@ uv run --with 'datasets[audio]' --with soundfile --with scipy \
 
 | 测试类 | 语料源 | 条目数 | 用途 |
 |--------|--------|--------|------|
-| `QwenASRE2ETests` | synthetic_manifest.json | ~45 | E2E 识别质量 |
-| `QwenASRRealWorldTests` | recorded_manifest.json | ~30 | 真实录音验证 |
+| `QwenASRE2ETests` | synthetic_manifest.json | ~160 | E2E 识别质量 |
 | `ASRPipelineBenchmarkTests` | 两者合并 | ~190 | CER 基准评估 |
 
 ### 音频加载优先级

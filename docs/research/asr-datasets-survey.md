@@ -10,11 +10,11 @@
 
 | 数据集 | 用途 | 测试类 |
 |--------|------|--------|
-| AISHELL-1 | 标准普通话朗读基准 | `QwenASRRealWorldTests` (8 条) |
-| MINDS-14 zh-CN | 真实银行客服对话 | `QwenASRRealWorldTests` (5 条) |
-| ASCEND | 真实中英代码切换对话 | `QwenASRRealWorldTests` (10 条) |
-| WenetSpeech TEST_NET | 多场景中文 (新闻/访谈等) | `QwenASRRealWorldTests` (10 条) |
-| Edge-TTS 合成音频 | 中英代码切换、E2E 回归 | `QwenASRRealWorldTests` (8 条) + `QwenASRE2ETests` (37 条) |
+| AISHELL-1 | 标准普通话朗读基准 | `ASRPipelineBenchmarkTests` (8 条) |
+| MINDS-14 zh-CN | 真实银行客服对话 | `ASRPipelineBenchmarkTests` (5 条) |
+| ASCEND | 真实中英代码切换对话 | `ASRPipelineBenchmarkTests` (10 条) |
+| WenetSpeech TEST_NET | 多场景中文 (新闻/访谈等) | `ASRPipelineBenchmarkTests` (10 条) |
+| Edge-TTS 合成音频 | 中英代码切换、E2E 回归 | `QwenASRE2ETests` (~160 条) |
 
 ---
 

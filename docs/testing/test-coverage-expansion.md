@@ -1,13 +1,12 @@
 # Qwen3-ASR 测试覆盖文档
 
-> 当前状态: **109 个测试全部通过** (5 个测试类)
+> 当前状态: **69 个测试全部通过** (4 个测试类)
 
 ## 测试套件总览
 
 | 测试类 | 测试数量 | 说明 | 需要模型 |
 |--------|---------|------|---------|
 | `QwenASRE2ETests` | 37 | 端到端识别质量验证 (Edge-TTS 语料) | 是 |
-| `QwenASRRealWorldTests` | 40 | 真实世界数据识别验证 (AISHELL/MINDS-14/ASCEND/WenetSpeech/Edge-TTS) | 是 |
 | `QwenASRBoundaryTests` | 9 | 边界条件 & 内存增长 | 是 |
 | `QwenASRConcurrencyTests` | 4 | 并发安全 & 线程竞态 | 是 |
 | `QwenASRUnitTests` | 13 | Mock 单元测试 | 否 |
@@ -116,108 +115,9 @@ LLM-based ASR 可能对静音/噪声产生 "幻觉" 文本输出，这是关键�
 
 ---
 
-## 二、Real-World 测试 (`QwenASRRealWorldTests`) — 40 个测试
+## 二、其他测试套件摘要
 
-语料来源: `tests/fixtures/real_manifest.json` (39 条)，音频需先运行下载脚本获取。
-
-```bash
-uv run --with 'datasets[audio]' --with soundfile --with scipy --with edge-tts \
-    python scripts/download_real_test_data.py
-
-# 跳过 WenetSpeech（如无 HuggingFace 授权）
-uv run --with 'datasets[audio]' --with soundfile --with scipy --with edge-tts \
-    python scripts/download_real_test_data.py --skip-wenetspeech
-```
-
-### 2.1 AISHELL-1 标准普通话基准 (8 个)
-
-数据源: HuggingFace `carlot/AIShell` test split，标准录音室环境。
-
-| # | 测试方法 | 语料 ID | 期望文本 | 测试目标 | 匹配模式 |
-|---|---------|---------|---------|---------|---------|
-| 1 | `testAishell001` | `aishell_test_001` | 甚至出现交易几乎停滞的情况 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 2 | `testAishell002` | `aishell_test_002` | 一二线城市虽然也处于调整中 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 3 | `testAishell003` | `aishell_test_003` | 但因为聚集了过多公共资源 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 4 | `testAishell004` | `aishell_test_004` | 为了规避三四线城市明显过剩的市场风险 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 5 | `testAishell005` | `aishell_test_005` | 标杆房企必然调整市场战略 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 6 | `testAishell006` | `aishell_test_006` | 因此土地储备至关重要 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 7 | `testAishell007` | `aishell_test_007` | 中原地产首席分析师张大伟说 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-| 8 | `testAishell008` | `aishell_test_008` | 一线城市土地供应量减少 | 标准普通话 CER 基准 | CER ≤ 0.15 |
-
-### 2.2 对话式普通话 — MINDS-14 真实录音 (5 个)
-
-数据源: HuggingFace `PolyAI/minds14` zh-CN test split，银行业务真实对话录音。
-说话人可能带有口音，Qwen3-ASR 可能输出繁体字，因此使用简繁通用的关键词匹配。
-
-| # | 测试方法 | 语料 ID | 期望文本 | 测试目标 | 匹配模式 |
-|---|---------|---------|---------|---------|---------|
-| 9 | `testConversational001` | `conv_zh_001` | 你好我想要了解一下我的银行账户余额有多少谢谢 | 长对话真实录音识别 | 包含 `想要`, `了解` |
-| 10 | `testConversational004` | `conv_zh_004` | 我想要查询我的账户余额 | 日常对话识别 | 包含 `想要`, `查询` |
-| 11 | `testConversational005` | `conv_zh_005` | 我可以知道我的账户余额吗 | 疑问句式对话识别 | 包含 `可以`, `知道` |
-
-### 2.3 中英 Code-Switching — Edge-TTS 高质量 TTS (8 个)
-
-数据源: Microsoft Edge-TTS `zh-CN-XiaoxiaoNeural` 语音生成，16kHz mono WAV。
-测试开发者日常使用场景中的中英句内混合能力。
-
-| # | 测试方法 | 语料 ID | 期望文本 | 测试目标 | 匹配模式 |
-|---|---------|---------|---------|---------|---------|
-| 12 | `testCodeSwitchEdge001` | `cs_edge_001` | 我们团队最近在用React和TypeScript重构前端项目 | 前端框架术语混合 | 包含 `React`, `TypeScript`, `重构` |
-| 13 | `testCodeSwitchEdge002` | `cs_edge_002` | 这个bug是因为race condition导致的memory leak | 并发问题术语混合 | 包含 `bug`, `race`, `memory` |
-| 14 | `testCodeSwitchEdge003` | `cs_edge_003` | 用Docker Compose部署了三个microservice到staging环境 | 容器化部署术语混合 | 包含 `Docker`, `microservice`, `staging` |
-| 15 | `testCodeSwitchEdge004` | `cs_edge_004` | 在GitHub上提了一个issue关于performance optimization | 项目管理术语混合 | 包含 `GitHub`, `issue`, `performance` |
-| 16 | `testCodeSwitchEdge005` | `cs_edge_005` | 这个function的return type应该是Optional而不是force unwrap | Swift 类型系统术语 | 包含 `function`, `return`, `Optional` |
-| 17 | `testCodeSwitchEdge006` | `cs_edge_006` | 用Xcode的Instruments做了一下profiling发现CPU占用太高 | 性能分析工具术语 | 包含 `Instruments`, `profiling`, `CPU` |
-| 18 | `testCodeSwitchEdge007` | `cs_edge_007` | GraphQL的schema定义比RESTful API更灵活一些 | API 架构术语 | 包含 `GraphQL`, `schema`, `API` |
-| 19 | `testCodeSwitchEdge008` | `cs_edge_008` | CI pipeline跑了三十分钟还没通过unit test | CI/CD 流程术语 | 包含 `CI`, `pipeline`, `unit` |
-
-### 2.4 ASCEND 真实中英代码切换 (10 个)
-
-数据源: HuggingFace `CAiRE/ASCEND` test split，香港科技大学收集的中英代码切换自然对话。
-说话人为真实双语者，自然切换中英文，CC BY-SA 4.0 许可。
-使用 `contains_all` 匹配模式，关键词混合中文 bigram 和英文单词。
-
-| # | 测试方法 | 语料 ID | 期望文本（截取） | 测试目标 | 匹配模式 |
-|---|---------|---------|---------|---------|---------|
-| 20 | `testAscendCS001` | `ascend_cs_001` | no我专业是那个i s m information... | 学科领域中英混合 | 包含关键词 |
-| 21 | `testAscendCS002` | `ascend_cs_002` | 嗯所以你现在还是比较focus在找工作... | 日常对话+英文动词 | 包含关键词 |
-| 22 | `testAscendCS003` | `ascend_cs_003` | 深圳啊或者是上海...更多opportunity | 城市+英文名词 | 包含关键词 |
-| 23 | `testAscendCS004` | `ascend_cs_004` | 嗯I like hot pot | 简短中英切换 | 包含关键词 |
-| 24 | `testAscendCS005` | `ascend_cs_005` | 所以我的parents我的妈妈是chemistry老师... | 家庭+学科英文词 | 包含关键词 |
-| 25 | `testAscendCS006` | `ascend_cs_006` | 那个玩basketball...after class的时候 | 运动+时间英文表达 | 包含关键词 |
-| 26 | `testAscendCS008` | `ascend_cs_008` | 然后呃我也喜欢play basketball | 运动术语切换 | 包含关键词 |
-| 27 | `testAscendCS009` | `ascend_cs_009` | 然后刚忘了讲你你是念什么major的 | 学术术语切换 | 包含关键词 |
-| 28 | `testAscendCS010` | `ascend_cs_010` | 哦我我在u g的时候念的是electric engineering | 专业领域切换 | 包含关键词 |
-
-### 2.5 WenetSpeech 多场景中文 (10 个)
-
-数据源: HuggingFace `wenet-e2e/WenetSpeech` TEST_NET split，多场景中文（新闻/访谈/纪录片/综艺等）。
-WenetSpeech 是 HuggingFace gated 数据集，需申请授权。脚本通过 `hf_hub_download` 下载 Lhotse WebDataset 格式的 tar.gz 包并提取 WAV 文件。
-
-| # | 测试方法 | 语料 ID | 测试目标 | 匹配模式 |
-|---|---------|---------|---------|---------|
-| 29 | `testWenetNet001` | `wenet_net_001` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 30 | `testWenetNet002` | `wenet_net_002` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 31 | `testWenetNet003` | `wenet_net_003` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 32 | `testWenetNet004` | `wenet_net_004` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 33 | `testWenetNet005` | `wenet_net_005` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 34 | `testWenetNet006` | `wenet_net_006` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 35 | `testWenetNet007` | `wenet_net_007` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 36 | `testWenetNet008` | `wenet_net_008` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 37 | `testWenetNet009` | `wenet_net_009` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-| 38 | `testWenetNet010` | `wenet_net_010` | 多场景中文 CER 基准 | CER ≤ 0.20 |
-
-### 2.6 聚合 CER 报告 (1 个)
-
-| # | 测试方法 | 说明 |
-|---|---------|------|
-| 39 | `testAggregateCERReport` | 汇总所有 CER 模式条目，输出逐条 CER + 平均 CER，断言平均 CER < 0.20 |
-
----
-
-## 三、其他测试套件摘要
-
-### 3.1 边界测试 (`QwenASRBoundaryTests`) — 9 个
+### 2.1 边界测试 (`QwenASRBoundaryTests`) — 9 个
 
 | 测试方法 | 测试目标 |
 |---------|---------|
@@ -231,7 +131,7 @@ WenetSpeech 是 HuggingFace gated 数据集，需申请授权。脚本通过 `hf
 | `testDeltaDropDoesNotLoseText` | delta nil 不丢失已识别文本 |
 | `testMemoryGrowthOver5Minutes` | 5 分钟模拟录音内存增长 < 100MB |
 
-### 3.2 并发测试 (`QwenASRConcurrencyTests`) — 4 个
+### 2.2 并发测试 (`QwenASRConcurrencyTests`) — 4 个
 
 | 测试方法 | 测试目标 |
 |---------|---------|
@@ -240,7 +140,7 @@ WenetSpeech 是 HuggingFace gated 数据集，需申请授权。脚本通过 `hf
 | `testRecognizerDeinitWhileQueueBusy` | 队列忙碌时释放 recognizer 不崩溃 |
 | `testRapidResetCycles` | 快速连续 reset 100 次不泄漏 |
 
-### 3.3 单元测试 (`QwenASRUnitTests`) — 13 个
+### 2.3 单元测试 (`QwenASRUnitTests`) — 13 个
 
 使用 Mock 识别器，不需要加载真实模型。
 
@@ -262,7 +162,7 @@ WenetSpeech 是 HuggingFace gated 数据集，需申请授权。脚本通过 `hf
 
 ---
 
-## 四、测试基础设施
+## 三、测试基础设施
 
 ### 匹配模式说明
 
@@ -281,15 +181,13 @@ CER 计算前会执行归一化：去除中英文标点 → 转小写 → 去除
 
 | 文件 | 用途 |
 |------|------|
-| `tests/fixtures/corpus.json` | E2E 语料定义 (35 条) |
-| `tests/fixtures/real_manifest.json` | Real-World 语料定义 (39 条) |
-| `tests/fixtures/audio/edge_tts/` | Edge-TTS 高质量语音合成音频 |
-| `tests/fixtures/audio/synthetic/` | 合成音频 (静音、白噪声、呼吸声) |
-| `tests/fixtures/audio/real/aishell/` | AISHELL-1 真实录音 (需下载) |
-| `tests/fixtures/audio/real/conversational/` | MINDS-14 对话录音 (需下载) |
-| `tests/fixtures/audio/real/codeswitching/` | Edge-TTS 中英混合 (需下载) |
-| `tests/fixtures/audio/real/ascend/` | ASCEND 真实代码切换录音 (需下载) |
-| `tests/fixtures/audio/real/wenetspeech/` | WenetSpeech 多场景录音 (需下载，gated) |
+| `tests/fixtures/synthetic_manifest.json` | E2E 语料定义 (~160 条) |
+| `tests/fixtures/recorded_manifest.json` | 录制语料定义 (~30 条) |
+| `tests/fixtures/audio/synthetic/` | 合成音频 (Edge-TTS + 静音/噪声) |
+| `tests/fixtures/audio/recorded/aishell/` | AISHELL-1 真实录音 (需下载) |
+| `tests/fixtures/audio/recorded/minds14/` | MINDS-14 对话录音 (需下载) |
+| `tests/fixtures/audio/recorded/ascend/` | ASCEND 真实代码切换录音 (需下载) |
+| `tests/fixtures/audio/recorded/wenetspeech/` | WenetSpeech 多场景录音 (需下载，gated) |
 
 ### 共用 Helper
 
@@ -304,36 +202,29 @@ CER 计算前会执行归一化：去除中英文标点 → 转小写 → 去除
 
 ---
 
-## 五、运行方式
+## 四、运行方式
 
 ```bash
-# 生成 E2E 语料音频 (Edge-TTS，需联网)
-uv run --with edge-tts python scripts/generate_extended_corpus.py
+# 生成合成语料音频 (Edge-TTS，需联网)
+uv run --with edge-tts --with pyyaml python scripts/generate_synthetic_corpus.py
 
 # 仅生成合成音频（静音/噪声，不需要网络）
-uv run python scripts/generate_extended_corpus.py --only-synthetic
+uv run --with pyyaml python scripts/generate_synthetic_corpus.py --only-synthetic
 
 # macOS say 离线备选（不推荐，发音不自然）
-uv run python scripts/generate_extended_corpus.py --say
+uv run --with pyyaml python scripts/generate_synthetic_corpus.py --say
 
-# 下载 Real-World 测试音频 (需联网)
-uv run --with 'datasets[audio]' --with soundfile --with scipy --with edge-tts \
-    python scripts/download_real_test_data.py
+# 下载录制语料音频 (需联网)
+uv run --with 'datasets[audio]' --with soundfile --with scipy \
+    python scripts/download_recorded_corpus.py
 
 # 跳过 WenetSpeech（如无 HuggingFace 授权）
-uv run --with 'datasets[audio]' --with soundfile --with scipy --with edge-tts \
-    python scripts/download_real_test_data.py --skip-wenetspeech
-
-# 仅生成 code-switching 音频 (无需 HuggingFace)
-uv run --with edge-tts \
-    python scripts/download_real_test_data.py --only-codeswitching
+uv run --with 'datasets[audio]' --with soundfile --with scipy \
+    python scripts/download_recorded_corpus.py --skip-wenetspeech
 
 # 运行全部测试
 xcodebuild test -scheme Typeless -destination 'platform=macOS'
 
 # 仅运行 E2E 测试
 xcodebuild test -scheme Typeless -only-testing "TypelessTests/QwenASRE2ETests"
-
-# 仅运行 Real-World 测试
-xcodebuild test -scheme Typeless -only-testing "TypelessTests/QwenASRRealWorldTests"
 ```
