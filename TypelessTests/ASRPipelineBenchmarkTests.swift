@@ -451,6 +451,9 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         let outputPath = projectRoot + "/docs/benchmark-report-swift.md"
         try? report.write(toFile: outputPath, atomically: true, encoding: .utf8)
         Self.log("\n[Benchmark] 报告已保存到: \(outputPath)")
+
+        // 写出 JSON 结果文件
+        TestResultCollector.shared.writeJSON(suite: "benchmark")
     }
 
     // MARK: - 辅助方法
@@ -482,6 +485,21 @@ class ASRPipelineBenchmarkTests: XCTestCase {
                 expected: entry.expectedTexts.first ?? "", actual: output,
                 cer: cer, elapsed: elapsed
             ))
+
+            // 收集结果到 JSON
+            TestResultCollector.shared.record(
+                pipelineName: name,
+                entry: TestResultEntry(
+                    id: entry.id, category: entry.category, language: entry.language,
+                    expectedText: entry.expectedTexts.first ?? "",
+                    actualText: output, cer: cer, passed: cer <= 0.10,
+                    matchMode: "character_error_rate",
+                    elapsedSec: elapsed,
+                    audioDurationSec: entry.durationSec,
+                    rtf: entry.durationSec > 0 ? elapsed / entry.durationSec : 0,
+                    memoryBeforeMB: nil, memoryAfterMB: nil
+                )
+            )
 
             let tag = cer <= 0.15 ? "OK" : (cer <= 0.30 ? "WARN" : "HIGH")
             Self.log("  [\(String(format: "%3d", i+1))/\(Self.entries.count)] [\(tag)] CER=\(String(format: "%.3f", cer)) | \(entry.id)")

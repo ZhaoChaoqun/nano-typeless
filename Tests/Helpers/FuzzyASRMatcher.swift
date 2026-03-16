@@ -4,9 +4,7 @@ import Foundation
 struct FuzzyASRMatcher {
 
     enum MatchMode {
-        case exact
-        case contains
-        case containsAll([String])
+        case containsAll(keywords: [String], maxCER: Double)
         case emptyOrWhitespace
         case characterErrorRate(max: Double)
     }
@@ -17,17 +15,13 @@ struct FuzzyASRMatcher {
         let normalizedExpected = normalize(expected)
 
         switch mode {
-        case .exact:
-            return normalizedActual == normalizedExpected
-
-        case .contains:
-            return normalizedActual.contains(normalizedExpected)
-
-        case .containsAll(let keywords):
+        case .containsAll(let keywords, let maxCER):
             let lowerActual = actual.lowercased()
-            return keywords.allSatisfy { keyword in
+            let keywordsPass = keywords.allSatisfy { keyword in
                 lowerActual.contains(keyword.lowercased())
             }
+            let cer = computeCER(actual: normalizedActual, expected: normalizedExpected)
+            return keywordsPass && cer <= maxCER
 
         case .emptyOrWhitespace:
             return actual.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -41,18 +35,17 @@ struct FuzzyASRMatcher {
     /// 从 CorpusEntry 构建匹配模式
     static func matchMode(for entry: CorpusEntry) -> MatchMode {
         switch entry.matchMode {
-        case "exact":
-            return .exact
-        case "contains":
-            return .contains
         case "contains_all":
-            return .containsAll(entry.matchKeywords ?? [])
+            return .containsAll(
+                keywords: entry.matchKeywords ?? [],
+                maxCER: entry.matchThreshold ?? 0.1
+            )
         case "empty_or_whitespace":
             return .emptyOrWhitespace
         case "character_error_rate":
-            return .characterErrorRate(max: entry.matchThreshold ?? 0.3)
+            return .characterErrorRate(max: entry.matchThreshold ?? 0.1)
         default:
-            return .characterErrorRate(max: 0.3)
+            return .characterErrorRate(max: 0.1)
         }
     }
 
