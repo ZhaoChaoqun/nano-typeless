@@ -247,7 +247,8 @@
       { "patterns": ["哈ggface", "哈格face"], "canonical": "Hugging Face" },
       { "patterns": ["next jazz"], "canonical": "Next.js" },
       { "patterns": ["node jazz"], "canonical": "Node.js" },
-      { "patterns": ["lunch e", "lunch chain"], "canonical": "LangChain" }
+      { "patterns": ["lunch e", "lunch chain"], "canonical": "LangChain" },
+      { "patterns": ["po request", "p o request"], "canonical": "pull request" }
     ],
     "casing": [
       { "term": "github", "canonical": "GitHub" },

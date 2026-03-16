@@ -382,9 +382,8 @@ SHERPA_ONNX_API void SherpaOnnxOnlineStreamInputFinished(
 
 /// Signal that the current chunk is the final chunk for streaming Paraformer.
 /// This enables:
-///   1. Short chunk acceptance (less than 61 frames)
-///   2. Right-side alpha preservation (no zeroing)
-///   3. Tail token flush via tail_threshold
+///   1. Short chunk acceptance (less than chunk_size frames)
+///   2. CIF tail token flush for residual accumulated alpha
 ///
 /// Call this BEFORE the last InputFinished() + DecodeStream() cycle.
 ///
@@ -1949,6 +1948,45 @@ SherpaOnnxOfflineSpeechDenoiserRun(const SherpaOnnxOfflineSpeechDenoiser *sd,
 
 SHERPA_ONNX_API void SherpaOnnxDestroyDenoisedAudio(
     const SherpaOnnxDenoisedAudio *p);
+
+// ============================================================
+// Inverse Text Normalization (standalone)
+// ============================================================
+
+typedef struct SherpaOnnxInverseTextNormalization
+    SherpaOnnxInverseTextNormalization;
+
+// Create a standalone inverse text normalization processor.
+// The user has to invoke SherpaOnnxDestroyInverseTextNormalization()
+// to free the returned pointer to avoid memory leak.
+//
+// @param rule_fsts Comma-separated FST file paths,
+//                  e.g. "zh_itn_tagger.fst,zh_itn_verbalizer.fst".
+//                  Can be NULL or empty if rule_fars is provided.
+// @param rule_fars Comma-separated FAR archive paths.
+//                  Can be NULL or empty if rule_fsts is provided.
+// @return A pointer to the ITN processor, or NULL on failure.
+SHERPA_ONNX_API const SherpaOnnxInverseTextNormalization *
+SherpaOnnxCreateInverseTextNormalization(const char *rule_fsts,
+                                         const char *rule_fars);
+
+// Free a pointer returned by SherpaOnnxCreateInverseTextNormalization()
+SHERPA_ONNX_API void SherpaOnnxDestroyInverseTextNormalization(
+    const SherpaOnnxInverseTextNormalization *itn);
+
+// Apply inverse text normalization to the input text.
+// The user has to invoke SherpaOnnxInverseTextNormalizationFreeText()
+// to free the returned pointer to avoid memory leak.
+//
+// @param itn  Pointer returned by SherpaOnnxCreateInverseTextNormalization()
+// @param text Input text to normalize.
+// @return Normalized text, or NULL on failure.
+SHERPA_ONNX_API const char *SherpaOnnxInverseTextNormalizationNormalize(
+    const SherpaOnnxInverseTextNormalization *itn, const char *text);
+
+// Free a pointer returned by SherpaOnnxInverseTextNormalizationNormalize()
+SHERPA_ONNX_API void SherpaOnnxInverseTextNormalizationFreeText(
+    const char *text);
 
 #ifdef __OHOS__
 

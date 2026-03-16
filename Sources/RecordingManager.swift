@@ -38,6 +38,7 @@ class RecordingManager {
     private var rewriter: Qwen3TextRewriter?
     private var cloudRewriter: CloudRewriter?
     private var termNormalizer: TermNormalizer?
+    private var itn: SherpaOnnxITN?
 
     /// 所有状态变更必须且只能通过此队列
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
@@ -300,9 +301,18 @@ class RecordingManager {
                 logger.info("TermNormalizer: \(rawText, privacy: .public) → \(normalizedText, privacy: .public)")
             }
 
+            // 对 Qwen3-ASR 等不需要标点处理的引擎，应用独立 ITN（逆文本规范化）
+            var processedText = normalizedText
+            if let engine = self.currentEngine, !engine.needsPunctuation, let itn = self.itn {
+                processedText = itn.normalize(text: processedText)
+                if processedText != normalizedText {
+                    logger.info("ITN: \(normalizedText, privacy: .public) → \(processedText, privacy: .public)")
+                }
+            }
+
             guard let engine = self.currentEngine, engine.needsPunctuation else {
-                logger.info("最终结果: \(normalizedText, privacy: .public)")
-                self.handleEvent(.postProcessComplete(finalText: normalizedText))
+                logger.info("最终结果: \(processedText, privacy: .public)")
+                self.handleEvent(.postProcessComplete(finalText: processedText))
                 return
             }
 
@@ -365,6 +375,7 @@ class RecordingManager {
         rewriter = nil
         cloudRewriter = nil
         termNormalizer = nil
+        itn = nil
         recognitionQueue.sync {}
 
         switch currentModel {
@@ -447,6 +458,16 @@ class RecordingManager {
             recognizer: recognizer, recognitionQueue: recognitionQueue
         )
         logger.info("QwenASR 流式模型加载成功")
+
+        // 加载独立 ITN（逆文本规范化），用于将中文数字读法转换为阿拉伯数字
+        if let itnFstPath = await loadITNFst() {
+            self.itn = SherpaOnnxITN(ruleFsts: itnFstPath)
+            if self.itn != nil {
+                logger.info("ITN 模型加载成功")
+            } else {
+                logger.warning("ITN 模型初始化失败")
+            }
+        }
     }
 
     private func initializePunctuation() async {
