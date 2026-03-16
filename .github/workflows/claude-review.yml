@@ -63,6 +63,7 @@ jobs:
           # If using custom GitHub App:
           # github_token: ${{ steps.app-token.outputs.token }}
           use_sticky_comment: true
+          show_full_output: true
           claude_args: "--model claude-sonnet-4-5-20250514 --max-turns 50"
           prompt: |
             You are reviewing a pull request for the Typeless project - a macOS ASR (Automatic Speech Recognition) app built with Swift.
