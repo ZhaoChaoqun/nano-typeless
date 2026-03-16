@@ -1,0 +1,102 @@
+# Claude Code Review - Automated PR Reviews
+#
+# Triggers on every PR to main.
+# Uses Anthropic API via custom proxy (ANTHROPIC_BASE_URL).
+#
+# Prerequisites:
+# 1. Install GitHub App: https://github.com/apps/claude (or create custom app)
+# 2. Add repo secrets:
+#    - ANTHROPIC_PROXY_URL: your proxy base URL (e.g. https://xxx.ngrok-free.dev/api/anthropic)
+#    - ANTHROPIC_PROXY_KEY: your proxy authentication key
+# 3. (Optional) If using custom GitHub App, add APP_ID and APP_PRIVATE_KEY secrets
+
+name: Claude Code Review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+# Prevent concurrent reviews for the same PR
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch origin main
+        run: git fetch origin main
+
+      # --- Option A: Use official Claude GitHub App (simplest) ---
+      # Just install https://github.com/apps/claude
+      # and the action uses the default GITHUB_TOKEN.
+
+      # --- Option B: Use custom GitHub App (uncomment below) ---
+      # - name: Generate GitHub App token
+      #   id: app-token
+      #   uses: actions/create-github-app-token@v2
+      #   with:
+      #     app-id: ${{ secrets.APP_ID }}
+      #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          # ANTHROPIC_AUTH_TOKEN is used as Authorization header by Claude Code.
+          # Your proxy must accept this header (Authorization or X-Api-Key) for auth.
+          anthropic_api_key: ${{ secrets.ANTHROPIC_PROXY_KEY }}
+          # If using custom GitHub App:
+          # github_token: ${{ steps.app-token.outputs.token }}
+          use_sticky_comment: true
+          claude_args: "--model claude-sonnet-4-5-20250514 --max-turns 50"
+          prompt: |
+            You are reviewing a pull request for the Typeless project - a macOS ASR (Automatic Speech Recognition) app built with Swift.
+            The codebase uses sherpa-onnx and QwenASR for speech recognition.
+
+            ## Your Task
+            Perform a focused code review. Only flag issues you are confident about (85%+ confidence).
+
+            ## Review Focus
+            - **Bugs & Logic Errors**: Incorrect logic, off-by-one errors, race conditions, nil/optional mishandling
+            - **Security Issues**: Hardcoded secrets, unsafe file operations, injection risks
+            - **Performance**: Memory leaks, unnecessary allocations, blocking main thread
+            - **Concurrency**: Data races, incorrect async/await usage, actor isolation issues
+            - **Swift Best Practices**: Force unwraps in production code, missing error handling at system boundaries
+
+            ## Do NOT Flag
+            - Style preferences or formatting (handled by linter)
+            - Missing comments or documentation
+            - Trailing newlines or whitespace
+            - Suggestions to add extra validation or defensive coding unless there's a real risk
+            - Compilation errors (CI catches these)
+            - Pattern consistency claims without verification
+
+            ## Output Rules
+            - Use inline comments on specific lines for actionable issues
+            - Each inline comment must identify a problem, ask a question, or flag a risk
+            - Do NOT post praise-only or observational comments ("Good change", "Looks correct")
+            - Flag each unique issue ONCE; do not repeat across files
+            - Be direct and concise
+            - Do NOT include "Fix This" links or claude.ai URLs
+
+            ## Context
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            The PR branch is pre-checked out. Use 'origin/main' as the base branch for diff comparisons.
+            Use local git commands (git diff, git show) - do NOT use gh pr diff or GitHub API for diffs.
+        env:
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_PROXY_URL }}
