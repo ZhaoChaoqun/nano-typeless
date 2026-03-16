@@ -53,6 +53,11 @@ scripts/qwen3-asr-onnx/
 # Test audio fixtures (generated, large)
 tests/fixtures/audio/
 
+# Test result JSON reports (machine-specific)
+tests/reports/*.json
+tests/reports/latest_*.json
+!tests/reports/baselines/
+
 # Python cache
 __pycache__/
 

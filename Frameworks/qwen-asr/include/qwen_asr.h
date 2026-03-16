@@ -53,6 +53,12 @@ void qwen_asr_set_segment_sec(QwenAsrEngine* engine, float sec);
 /// @return 0 on success, -1 on failure (unknown language)
 int32_t qwen_asr_set_language(QwenAsrEngine* engine, const char* language);
 
+/// Set an optional system prompt to guide transcription behavior.
+/// The prompt text is placed after the system role token in the decoder input.
+/// Pass an empty string to clear the prompt.
+/// @return 0 on success, -1 on failure
+int32_t qwen_asr_set_prompt(QwenAsrEngine* engine, const char* prompt);
+
 /// Free a string returned by qwen_asr_transcribe_* or qwen_asr_stream_*.
 void qwen_asr_free_string(char* s);
 

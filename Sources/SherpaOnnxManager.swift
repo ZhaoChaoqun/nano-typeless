@@ -33,7 +33,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
         case .streamingParaformer:
             return "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
         case .qwenASR:
-            return "Qwen3-ASR-0.6B"
+            return "Qwen3-ASR-1.7B"
         }
     }
 
@@ -52,7 +52,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
         case .streamingParaformer:
             return "~414MB"
         case .qwenASR:
-            return "~834MB"
+            return "~1.7GB"
         }
     }
 }
@@ -69,10 +69,10 @@ enum DownloadSource: CaseIterable {
         case (.github, .streamingParaformer):
             return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2"
         case (.modelScope, .qwenASR):
-            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-1.7B.tar.bz2"
         case (.github, .qwenASR):
             // GitHub 备用源暂无，使用 ModelScope
-            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-1.7B.tar.bz2"
         }
     }
 
@@ -179,19 +179,26 @@ class SherpaOnnxManager: NSObject {
     func getQwenASRModelDir() -> String? {
         let modelDir = modelsDirectory.appendingPathComponent(ASRModelType.qwenASR.folderName)
 
-        // 检查关键文件：safetensors 权重和 vocab.json
+        // 检查关键文件：vocab.json 必须存在
         let vocabPath = modelDir.appendingPathComponent("vocab.json")
         guard FileManager.default.fileExists(atPath: vocabPath.path) else {
             return nil
         }
 
-        // 检查 safetensors 权重文件（可能是单文件或分片）
+        // 检查模型权重文件（三种格式任一即可）
+        // 1. INT8 量化模型
+        let qint8Path = modelDir.appendingPathComponent("model_int8.qint8")
+        if FileManager.default.fileExists(atPath: qint8Path.path) {
+            return modelDir.path
+        }
+
+        // 2. 单文件 safetensors
         let singlePath = modelDir.appendingPathComponent("model.safetensors")
         if FileManager.default.fileExists(atPath: singlePath.path) {
             return modelDir.path
         }
 
-        // 分片模型：检查 model-00001-of-*.safetensors
+        // 3. 分片模型：检查 model-00001-of-*.safetensors
         let indexPath = modelDir.appendingPathComponent("model.safetensors.index.json")
         if FileManager.default.fileExists(atPath: indexPath.path) {
             return modelDir.path
