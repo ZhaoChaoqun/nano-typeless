@@ -72,15 +72,14 @@ scripts/
 | `duration_sec` | number | 是 | 音频时长（秒） |
 | `language` | string | 是 | 语言：`zh` / `en` / `mixed` / `none` |
 | `match_keywords` | [string] | 否 | `contains_all` 模式下的关键词列表 |
-| `match_threshold` | number | 否 | `character_error_rate` 模式下的 CER 阈值（默认 0.15） |
+| `match_threshold` | number | 否 | CER 阈值（默认 0.1），`character_error_rate` 和 `contains_all` 模式均使用 |
 
 ### 匹配模式
 
 | `match_mode` | 用途 | 判定逻辑 |
 |---|---|---|
-| `character_error_rate` | 精确评估 | CER ≤ `match_threshold`（默认 0.15）则通过 |
-| `contains_all` | 关键词覆盖 | 识别结果包含所有 `match_keywords` 则通过 |
-| `contains` | 宽松匹配 | 识别结果包含任一关键词则通过 |
+| `character_error_rate` | 精确评估 | CER ≤ `match_threshold`（默认 0.1）则通过 |
+| `contains_all` | 关键词覆盖 + CER | 识别结果包含所有 `match_keywords` **且** CER ≤ `match_threshold`（默认 0.1）则通过 |
 | `empty_or_whitespace` | 静音检测 | 识别结果为空或纯空白则通过 |
 
 ### expected_text 多备选

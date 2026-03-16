@@ -168,9 +168,8 @@ LLM-based ASR 可能对静音/噪声产生 "幻觉" 文本输出，这是关键�
 
 | 模式 | 说明 |
 |------|------|
-| `character_error_rate` | 计算 CER (字符错误率) = Levenshtein 距离 / 期望文本长度，需 ≤ 阈值 |
-| `contains_all` | 实际输出必须包含所有指定关键词（不区分大小写） |
-| `contains` | 实际输出包含期望文本即可 |
+| `character_error_rate` | 计算 CER (字符错误率) = Levenshtein 距离 / 期望文本长度，需 ≤ 阈值（默认 0.1） |
+| `contains_all` | 实际输出必须包含所有指定关键词（不区分大小写）**且** CER ≤ 阈值（默认 0.1） |
 | `empty_or_whitespace` | 实际输出为空或仅含空白字符 |
 
 ### 文本预处理 (`FuzzyASRMatcher.normalize()`)
