@@ -68,6 +68,9 @@ class DualEngineASR: ASREngine {
             let result = self.qwenRecognizer.getResult()
             self.qwenRecognizer.reset()
 
+            // 同步 reset Paraformer，防止下次录音 HUD 残留上次的累积文本
+            self.paraformerEngine.reset()
+
             logger.info("Flush 完成: \(result.prefix(100), privacy: .public)")
 
             DispatchQueue.main.async {
