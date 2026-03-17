@@ -104,8 +104,8 @@ class TestResultCollector {
         let gitCommit = config["git_commit"] ?? "unknown"
         let gitBranch = config["git_branch"] ?? "unknown"
 
-        let pipelines = snapshot.keys.sorted().map { name -> PipelineResults in
-            let entries = snapshot[name]!
+        let pipelines = snapshot.keys.sorted().compactMap { name -> PipelineResults? in
+            guard let entries = snapshot[name] else { return nil }
             return PipelineResults(
                 pipelineName: name,
                 summary: computeSummary(entries: entries),
