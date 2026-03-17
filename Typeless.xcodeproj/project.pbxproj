@@ -589,7 +589,7 @@
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
-				MARKETING_VERSION = 1.2.21;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -629,7 +629,7 @@
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
-				MARKETING_VERSION = 1.2.21;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
