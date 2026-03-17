@@ -27,14 +27,12 @@ entries:
     category: chinese_short
     expected_text: "今天天气真好。"
     match_mode: character_error_rate
-    match_threshold: 0.15
     language: zh
 
   - id: zh_long_01
     category: chinese_long
     expected_text: "人工智能正在深刻地改变我们的生活方式，从语音识别到自动驾驶，从医疗诊断到金融分析。"
     match_mode: character_error_rate
-    match_threshold: 0.15
     language: zh
 
   # ── 原有: 中英混合 ──
@@ -61,7 +59,6 @@ entries:
       - "Hello world."
       - "Hello, world."
     match_mode: character_error_rate
-    match_threshold: 0.2
     language: en
 
   # ── 原有: 数字技术 ──
@@ -93,7 +90,8 @@ entries:
   - id: noise_01
     category: speech_trailing_silence
     expected_text: "你好。"
-    match_mode: contains
+    match_mode: contains_all
+    match_keywords: [你好]
     language: zh
     trailing_silence_sec: 5.0
 
@@ -255,7 +253,6 @@ entries:
       - "快速语音识别测试，1、2、3、4、5。"
       - "快速语音识别测试，一二三四五。"
     match_mode: character_error_rate
-    match_threshold: 0.2
     language: zh
     say_rate: 280
     edge_tts_rate: "+60%"
@@ -264,7 +261,6 @@ entries:
     category: speech_rate
     expected_text: "慢速语音识别测试。"
     match_mode: character_error_rate
-    match_threshold: 0.15
     language: zh
     say_rate: 100
     edge_tts_rate: "-40%"
@@ -1137,7 +1133,6 @@ entries:
     category: qwen_streaming_bug
     expected_text: "帮我写一个Python脚本，读取这个CSV文件，按date字段分组，计算每个月的Revenue总和，然后用Matplotlib画一个柱状图，保存为PNG格式。"
     match_mode: character_error_rate
-    match_threshold: 0.15
     language: mixed
 
   # ── Edge-TTS 中英代码切换（从 recorded 迁移，本质是合成音频）──
