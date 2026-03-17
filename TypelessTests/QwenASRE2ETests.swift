@@ -10,6 +10,10 @@ class QwenASRE2ETests: XCTestCase {
     static var fixturesPath: String = ""
     static var modelAvailable = false
 
+    // 后处理组件（与产品 pipeline 一致）
+    static var termNormalizer: TermNormalizer?
+    static var itn: SherpaOnnxITN?
+
     override class func setUp() {
         super.setUp()
 
@@ -22,11 +26,35 @@ class QwenASRE2ETests: XCTestCase {
         if let data = try? Data(contentsOf: URL(fileURLWithPath: corpusPath)) {
             corpus = try? JSONDecoder().decode(Corpus.self, from: data)
         }
+
+        // TermNormalizer
+        let bundleURL = Bundle(for: QwenASRE2ETests.self).url(forResource: "term_dictionary", withExtension: "json")
+        let dictURL = bundleURL ?? URL(fileURLWithPath: TestEnvironment.projectRoot() + "/Sources/term_dictionary.json")
+        termNormalizer = TermNormalizer(dictionaryURL: dictURL)
+
+        // ITN
+        if let itnFstPath = TestEnvironment.itnFstPath() {
+            itn = SherpaOnnxITN(ruleFsts: itnFstPath)
+        }
     }
 
     override class func tearDown() {
         recognizer = nil
+        termNormalizer = nil
+        itn = nil
         super.tearDown()
+    }
+
+    /// 后处理：TermNormalizer → ITN（与 Benchmark 的 applyQwenPostProcessing 一致）
+    private static func applyPostProcessing(_ text: String) -> String {
+        var result = text
+        if let normalizer = termNormalizer {
+            result = normalizer.normalize(result)
+        }
+        if let itn = itn {
+            result = itn.normalize(text: result)
+        }
+        return result
     }
 
     override func setUpWithError() throws {
@@ -223,7 +251,7 @@ class QwenASRE2ETests: XCTestCase {
         let silence = [Float](repeating: 0, count: 32000)
         _ = recognizer.pushAudio(samples: silence, finalize: true)
 
-        let result = recognizer.getResult()
+        let result = Self.applyPostProcessing(recognizer.getResult())
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
 
         print("[E2E-Stream] Result: \(result)")
@@ -445,7 +473,8 @@ class QwenASRE2ETests: XCTestCase {
 
         // 一次性推入 + finalize
         _ = recognizer.pushAudio(samples: samples, finalize: true)
-        let result = recognizer.getResult()
+        var result = recognizer.getResult()
+        result = Self.applyPostProcessing(result)
 
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
         let memAfter = MemoryMonitor.currentRSSInMB()
@@ -461,14 +490,25 @@ class QwenASRE2ETests: XCTestCase {
         let mode = FuzzyASRMatcher.matchMode(for: entry)
         let passed = FuzzyASRMatcher.matches(actual: result, expectedTexts: entry.expectedTexts, mode: mode)
 
-        if !passed {
-            // 额外输出 CER 辅助调试
-            let cer = FuzzyASRMatcher.computeMinCER(actual: result, expectedTexts: entry.expectedTexts)
-            print("  CER: \(String(format: "%.3f", cer))")
-        }
+        let cer = FuzzyASRMatcher.computeMinCER(actual: result, expectedTexts: entry.expectedTexts)
+
+        // 收集结果到 JSON
+        TestResultCollector.shared.record(
+            pipelineName: "Qwen3-ASR (offline)",
+            entry: TestResultEntry(
+                id: id, category: entry.category, language: entry.language,
+                expectedText: entry.expectedTexts.first ?? "",
+                actualText: result, cer: cer, passed: passed,
+                matchMode: entry.matchMode,
+                elapsedSec: elapsed,
+                audioDurationSec: entry.durationSec,
+                rtf: entry.durationSec > 0 ? elapsed / entry.durationSec : 0,
+                memoryBeforeMB: memBefore, memoryAfterMB: memAfter
+            )
+        )
 
         XCTAssertTrue(passed,
-            "[\(id)] 识别不匹配。期望: '\(entry.expectedTexts.first ?? "")', 实际: '\(result)'")
+            "[\(id)] 识别不匹配 (CER=\(String(format: "%.3f", cer)))。期望: '\(entry.expectedTexts.first ?? "")', 实际: '\(result)'")
     }
 
     private func findEntry(id: String) throws -> CorpusEntry {
@@ -499,6 +539,12 @@ class QwenASRE2ETests: XCTestCase {
         }
 
         throw XCTSkip("无法加载 '\(entry.id)' 的音频文件")
+    }
+
+    // MARK: - JSON 结果输出
+
+    func testZZ_WriteResultsJSON() {
+        TestResultCollector.shared.writeJSON(suite: "e2e")
     }
 
 }
