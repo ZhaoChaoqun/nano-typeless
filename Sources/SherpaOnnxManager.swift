@@ -111,10 +111,6 @@ class SherpaOnnxManager: NSObject {
         return appSupportPath
     }()
 
-    /// VAD 模型配置
-    static let vadModelName = "silero_vad.onnx"
-    static let vadDownloadURL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx"
-
     /// 标点模型配置（INT8 版本，更小的模型文件）
     static let punctModelFolder = "sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8"
     static let punctModelScopeURL = "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12-int8.tar.bz2"
@@ -222,66 +218,6 @@ class SherpaOnnxManager: NSObject {
         case .qwenASR:
             return isQwenASRModelDownloaded()
         }
-    }
-
-    // MARK: - VAD 模型
-
-    /// 获取 VAD 模型路径
-    func getVADModelPath() -> String? {
-        let vadPath = modelsDirectory.appendingPathComponent(Self.vadModelName)
-        guard FileManager.default.fileExists(atPath: vadPath.path) else {
-            return nil
-        }
-        return vadPath.path
-    }
-
-    /// 检查 VAD 模型是否已下载
-    func isVADModelDownloaded() -> Bool {
-        return getVADModelPath() != nil
-    }
-
-    /// 下载 VAD 模型
-    func downloadVADModel(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
-        guard let url = URL(string: Self.vadDownloadURL) else {
-            completion(false, "无效的下载地址")
-            return
-        }
-
-        let destPath = modelsDirectory.appendingPathComponent(Self.vadModelName)
-
-        // 如果已存在，直接返回成功
-        if FileManager.default.fileExists(atPath: destPath.path) {
-            completion(true, nil)
-            return
-        }
-
-        progress("正在下载 VAD 模型...")
-
-        let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    completion(false, "下载失败: \(error.localizedDescription)")
-                    return
-                }
-
-                guard let tempURL = tempURL else {
-                    completion(false, "下载失败: 无法获取临时文件")
-                    return
-                }
-
-                do {
-                    if FileManager.default.fileExists(atPath: destPath.path) {
-                        try FileManager.default.removeItem(at: destPath)
-                    }
-                    try FileManager.default.moveItem(at: tempURL, to: destPath)
-                    logger.info("VAD 模型下载完成: \(destPath.path, privacy: .public)")
-                    completion(true, nil)
-                } catch {
-                    completion(false, "保存失败: \(error.localizedDescription)")
-                }
-            }
-        }
-        task.resume()
     }
 
     // MARK: - ITN WFST 模型（WeTextProcessing 中文 ITN）

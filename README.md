@@ -146,7 +146,6 @@ typeless/
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR 流式识别
 │   ├── SherpaOnnxManager.swift    # 模型下载和管理
 │   ├── SherpaOnnxPunctuation.swift # CT-Transformer 标点模型
-│   ├── SherpaOnnxVAD.swift        # Silero VAD 语音活动检测
 │   ├── CloudRewriter.swift        # 云端 LLM 文本纠错
 │   ├── Qwen3TextRewriter.swift    # Qwen3-0.6B 本地文本纠错
 │   ├── TermNormalizer.swift       # 词典后处理（术语规范化）
@@ -358,7 +357,6 @@ typeless/
 │   ├── QwenASRRecognizer.swift    # Qwen3-ASR streaming recognition
 │   ├── SherpaOnnxManager.swift    # Model download & management
 │   ├── SherpaOnnxPunctuation.swift # CT-Transformer punctuation
-│   ├── SherpaOnnxVAD.swift        # Silero VAD voice activity detection
 │   ├── CloudRewriter.swift        # Cloud LLM text correction
 │   ├── Qwen3TextRewriter.swift    # Qwen3-0.6B local text correction
 │   ├── TermNormalizer.swift       # Dictionary post-processing (term normalization)

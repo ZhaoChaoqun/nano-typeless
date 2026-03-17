@@ -69,11 +69,6 @@ enum TestEnvironment {
         }
     }
 
-    /// VAD 模型路径
-    static func vadModelPath() -> String? {
-        SherpaOnnxManager.shared.getVADModelPath()
-    }
-
     /// CT-Transformer 标点模型路径
     static func punctuationModelPath() -> String? {
         SherpaOnnxManager.shared.getPunctuationModelPath()
