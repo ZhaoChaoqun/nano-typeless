@@ -26,7 +26,7 @@ class ModelDownloadManager: ObservableObject {
            let model = ASRModelType(rawValue: rawValue) {
             selectedModel = model
         } else {
-            selectedModel = .streamingParaformer
+            selectedModel = .qwenASR
         }
         // 从 UserDefaults 读取后处理模式
         if let rawValue = UserDefaults.standard.string(forKey: "postProcessingMode"),
@@ -53,6 +53,8 @@ class ModelDownloadManager: ObservableObject {
             return streamingParaformerDownloaded
         case .qwenASR:
             return qwenASRDownloaded
+        case .dualEngine:
+            return streamingParaformerDownloaded && qwenASRDownloaded
         }
     }
 
@@ -275,7 +277,7 @@ struct SettingsView: View {
             } header: {
                 Text("模型状态")
             } footer: {
-                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 834MB（INT8，自带标点）。")
+                Text("Streaming Paraformer 约 216MB + 标点模型 62MB，Qwen3-ASR 约 834MB（INT8，自带标点），双引擎约 2.1GB。")
             }
 
             Section("快捷键") {
@@ -303,39 +305,95 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func modelStatusView(for model: ASRModelType) -> some View {
-        let isDownloaded: Bool = {
-            switch model {
-            case .streamingParaformer: return downloadManager.streamingParaformerDownloaded
-            case .qwenASR: return downloadManager.qwenASRDownloaded
-            }
-        }()
+        if model == .dualEngine {
+            dualEngineStatusView()
+        } else {
+            let isDownloaded: Bool = {
+                switch model {
+                case .streamingParaformer: return downloadManager.streamingParaformerDownloaded
+                case .qwenASR: return downloadManager.qwenASRDownloaded
+                case .dualEngine: return false
+                }
+            }()
 
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(model.displayName)
-                    .fontWeight(.medium)
-                if !model.needsPunctuation {
-                    Text("自带标点，无需标点模型")
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.displayName)
+                        .fontWeight(.medium)
+                    if !model.needsPunctuation {
+                        Text("自带标点，无需标点模型")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if isDownloaded {
+                    Label("已下载", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                } else if downloadManager.isDownloading {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                } else {
+                    Button("下载") {
+                        downloadManager.downloadModel(model)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func dualEngineStatusView() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("双引擎模式")
+                .fontWeight(.medium)
+            Text("Paraformer 实时预览 + Qwen3-ASR 精转写，自带标点")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            HStack {
+                Text("Streaming Paraformer")
+                    .font(.caption)
+                Spacer()
+                if downloadManager.streamingParaformerDownloaded {
+                    Label("已下载", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.caption)
+                } else if downloadManager.isDownloading {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                } else {
+                    Button("下载") {
+                        downloadManager.downloadModel(.streamingParaformer)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
                 }
             }
 
-            Spacer()
-
-            if isDownloaded {
-                Label("已下载", systemImage: "checkmark.circle.fill")
-                    .foregroundColor(.green)
+            HStack {
+                Text("Qwen3-ASR")
                     .font(.caption)
-            } else if downloadManager.isDownloading {
-                ProgressView()
-                    .scaleEffect(0.7)
-            } else {
-                Button("下载") {
-                    downloadManager.downloadModel(model)
+                Spacer()
+                if downloadManager.qwenASRDownloaded {
+                    Label("已下载", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.caption)
+                } else if downloadManager.isDownloading {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                } else {
+                    Button("下载") {
+                        downloadManager.downloadModel(.qwenASR)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
             }
         }
     }
