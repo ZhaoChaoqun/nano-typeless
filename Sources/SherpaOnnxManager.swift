@@ -33,7 +33,7 @@ enum ASRModelType: String, CaseIterable, Identifiable {
         case .streamingParaformer:
             return "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
         case .qwenASR:
-            return "Qwen3-ASR-1.7B"
+            return "Qwen3-ASR-0.6B"
         }
     }
 
@@ -50,9 +50,9 @@ enum ASRModelType: String, CaseIterable, Identifiable {
     var modelSize: String {
         switch self {
         case .streamingParaformer:
-            return "~414MB"
+            return "~216MB"
         case .qwenASR:
-            return "~1.7GB"
+            return "~834MB"
         }
     }
 }
@@ -69,10 +69,10 @@ enum DownloadSource: CaseIterable {
         case (.github, .streamingParaformer):
             return "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2"
         case (.modelScope, .qwenASR):
-            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-1.7B.tar.bz2"
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
         case (.github, .qwenASR):
             // GitHub 备用源暂无，使用 ModelScope
-            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-1.7B.tar.bz2"
+            return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
         }
     }
 
