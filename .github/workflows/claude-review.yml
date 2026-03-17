@@ -67,7 +67,7 @@ jobs:
           claude_args: >-
             --model claude-sonnet-4-5-20250514
             --max-turns 50
-            --allowedTools mcp__github_comment__create_or_update_comment,mcp__github_comment__create_comment,mcp__github_inline_comment__create_inline_comment,mcp__github_inline_comment__create_review
+            --allowedTools mcp__github_comment__create_or_update_comment,mcp__github_comment__create_comment,mcp__github_comment__update_claude_comment,mcp__github_inline_comment__create_inline_comment,mcp__github_inline_comment__create_review
           prompt: |
             You are reviewing a pull request for the Typeless project - a macOS ASR (Automatic Speech Recognition) app built with Swift.
             The codebase uses sherpa-onnx and QwenASR for speech recognition.
