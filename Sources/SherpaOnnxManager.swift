@@ -136,10 +136,6 @@ class SherpaOnnxManager: NSObject {
     static let cscModelURL = "https://modelscope.cn/models/Xenova/macbert4csc-base-chinese/resolve/master/onnx/model_int8.onnx"
     static let cscVocabURL = "https://modelscope.cn/models/Xenova/macbert4csc-base-chinese/resolve/master/vocab.txt"
 
-    /// Qwen3 Rewrite 模型配置（一站式后处理：ITN + 标点 + CSC + 术语规范化）
-    static let qwen3RewriteFolder = "Qwen3-0.6B-rewrite-lora"
-    static let qwen3RewriteModelURL = "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-0.6B-rewrite-lora.tar.bz2"
-
     // MARK: - Streaming Paraformer 模型路径
 
     /// FP16 模型目录名（原生 ORT 推理使用）
@@ -525,86 +521,6 @@ class SherpaOnnxManager: NSObject {
     }
 
     // MARK: - Qwen3 Rewrite 模型（一站式后处理）
-
-    /// 获取 Qwen3 Rewrite 模型目录路径
-    func getQwen3RewriteModelDir() -> String? {
-        let modelDir = modelsDirectory.appendingPathComponent(Self.qwen3RewriteFolder)
-        let modelPath = modelDir.appendingPathComponent("model_int8.qint8")
-        let tokenizerPath = modelDir.appendingPathComponent("tokenizer.json")
-
-        guard FileManager.default.fileExists(atPath: modelPath.path),
-              FileManager.default.fileExists(atPath: tokenizerPath.path) else {
-            return nil
-        }
-        return modelDir.path
-    }
-
-    /// 检查 Qwen3 Rewrite 模型是否已下载
-    func isQwen3RewriteModelDownloaded() -> Bool {
-        return getQwen3RewriteModelDir() != nil
-    }
-
-    /// 下载 Qwen3 Rewrite 模型（tar.bz2 格式）
-    func downloadQwen3RewriteModel(progress: @escaping (String) -> Void, completion: @escaping (Bool, String?) -> Void) {
-        if isQwen3RewriteModelDownloaded() {
-            completion(true, nil)
-            return
-        }
-
-        guard let url = URL(string: Self.qwen3RewriteModelURL) else {
-            completion(false, "无效的下载地址")
-            return
-        }
-
-        progress("正在下载 Qwen3 Rewrite 模型 (约570MB)...")
-
-        let progressSource = DispatchSource.makeTimerSource(queue: .main)
-
-        let task = URLSession.shared.downloadTask(with: url) { [weak self] tempURL, response, error in
-            progressSource.cancel()
-
-            guard let self = self else { return }
-
-            if let error = error {
-                DispatchQueue.main.async { completion(false, "Qwen3 Rewrite 模型下载失败: \(error.localizedDescription)") }
-                return
-            }
-
-            guard let tempURL = tempURL else {
-                DispatchQueue.main.async { completion(false, "Qwen3 Rewrite 模型下载失败: 无法获取临时文件") }
-                return
-            }
-
-            DispatchQueue.main.async { progress("正在解压 Qwen3 Rewrite 模型...") }
-
-            let result = self.extractTarBz2(from: tempURL, to: self.modelsDirectory)
-
-            if result {
-                logger.info("Qwen3 Rewrite 模型下载完成")
-                DispatchQueue.main.async { completion(true, nil) }
-            } else {
-                DispatchQueue.main.async { completion(false, "Qwen3 Rewrite 模型解压失败") }
-            }
-        }
-
-        progressSource.schedule(deadline: .now() + 0.3, repeating: 0.3)
-        progressSource.setEventHandler {
-            let written = task.countOfBytesReceived
-            let expected = task.countOfBytesExpectedToReceive
-            if expected > 0 {
-                let pct = Int(Double(written) / Double(expected) * 100)
-                let downloadedMB = String(format: "%.1f", Double(written) / 1024 / 1024)
-                let totalMB = String(format: "%.1f", Double(expected) / 1024 / 1024)
-                progress("正在下载 Qwen3 Rewrite 模型... \(pct)% (\(downloadedMB)MB / \(totalMB)MB)")
-            } else if written > 0 {
-                let downloadedMB = String(format: "%.1f", Double(written) / 1024 / 1024)
-                progress("正在下载 Qwen3 Rewrite 模型... \(downloadedMB)MB")
-            }
-        }
-        progressSource.resume()
-
-        task.resume()
-    }
 
     /// 检测标点模型最快下载源
     private func selectFastestPunctSource() async -> DownloadSource {
