@@ -383,6 +383,8 @@ class RecordingManager {
             await initializeStreamingParaformer()
         case .qwenASR:
             await initializeQwenASR()
+        case .dualEngine:
+            await initializeDualEngine()
         }
 
         // 加载专有名词词典（所有引擎共用）
@@ -466,6 +468,60 @@ class RecordingManager {
                 logger.info("ITN 模型加载成功")
             } else {
                 logger.warning("ITN 模型初始化失败")
+            }
+        }
+    }
+
+    private func initializeDualEngine() async {
+        // 1. 加载 Streaming Paraformer
+        guard SherpaOnnxManager.shared.isStreamingParaformerDownloaded(),
+              let paths = SherpaOnnxManager.shared.getStreamingParaformerPath() else {
+            logger.warning("Dual Engine: Streaming Paraformer 模型未下载")
+            return
+        }
+
+        let itnFstPath = await loadITNFst()
+
+        guard let parafoRecognizer = SherpaOnnxOnlineRecognizer(
+            encoderPath: paths.encoderPath,
+            decoderPath: paths.decoderPath,
+            tokensPath: paths.tokensPath,
+            ruleFstsPath: itnFstPath
+        ) else {
+            logger.error("Dual Engine: Streaming Paraformer 模型加载失败")
+            return
+        }
+
+        let paraformerEngine = StreamingParaformerEngine(
+            recognizer: parafoRecognizer, recognitionQueue: recognitionQueue
+        )
+        logger.info("Dual Engine: Streaming Paraformer 加载成功")
+
+        // 2. 加载 QwenASR（用于离线精转写）
+        guard SherpaOnnxManager.shared.isQwenASRModelDownloaded(),
+              let modelDir = SherpaOnnxManager.shared.getQwenASRModelDir() else {
+            logger.warning("Dual Engine: QwenASR 模型未下载")
+            return
+        }
+
+        guard let qwenRecognizer = QwenASRStreamRecognizer(modelDir: modelDir) else {
+            logger.error("Dual Engine: QwenASR 模型加载失败")
+            return
+        }
+        logger.info("Dual Engine: QwenASR 加载成功")
+
+        // 3. 创建双引擎
+        currentEngine = DualEngineASR(
+            paraformerEngine: paraformerEngine,
+            qwenRecognizer: qwenRecognizer
+        )
+        logger.info("Dual Engine: 初始化完成")
+
+        // 4. 加载独立 ITN（后处理用）
+        if let itnFstPathForPostProcess = await loadITNFst() {
+            self.itn = SherpaOnnxITN(ruleFsts: itnFstPathForPostProcess)
+            if self.itn != nil {
+                logger.info("Dual Engine: ITN 模型加载成功")
             }
         }
     }

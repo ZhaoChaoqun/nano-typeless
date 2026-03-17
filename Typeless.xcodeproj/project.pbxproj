@@ -39,6 +39,7 @@
 		1AR00003 /* libqwen3_rewrite.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1AR00011 /* libqwen3_rewrite.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1ATN0001 /* TermNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ATN0010 /* TermNormalizer.swift */; };
 		1ATN0002 /* term_dictionary.json in Resources */ = {isa = PBXBuildFile; fileRef = 1ATN0011 /* term_dictionary.json */; };
+		1AD00001 /* DualEngineASR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD00010 /* DualEngineASR.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +102,7 @@
 		1AR00011 /* libqwen3_rewrite.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqwen3_rewrite.dylib; path = "Frameworks/qwen3-rewrite/lib/libqwen3_rewrite.dylib"; sourceTree = "<group>"; };
 		1ATN0010 /* TermNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermNormalizer.swift; sourceTree = "<group>"; };
 		1ATN0011 /* term_dictionary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = term_dictionary.json; sourceTree = "<group>"; };
+		1AD00010 /* DualEngineASR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualEngineASR.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -168,6 +170,7 @@
 				1AQ00012 /* CStringUtils.swift */,
 				1AQ00013 /* ASRStreamRecognizing.swift */,
 				1AQ00014 /* ASREngine.swift */,
+				1AD00010 /* DualEngineASR.swift */,
 				1AF00010 /* RecordingState.swift */,
 				1AC00010 /* BertTokenizer.swift */,
 				1AC00011 /* ChineseSpellingCorrector.swift */,
@@ -346,6 +349,7 @@
 				1AQ00004 /* CStringUtils.swift in Sources */,
 				1AQ00005 /* ASRStreamRecognizing.swift in Sources */,
 				1AQ00006 /* ASREngine.swift in Sources */,
+				1AD00001 /* DualEngineASR.swift in Sources */,
 				1AF00001 /* RecordingState.swift in Sources */,
 				1AC00001 /* BertTokenizer.swift in Sources */,
 				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,

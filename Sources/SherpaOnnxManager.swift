@@ -5,8 +5,9 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnx
 
 /// ASR 模型类型
 enum ASRModelType: String, CaseIterable, Identifiable {
-    case streamingParaformer = "streaming-paraformer"
     case qwenASR = "qwen-asr"
+    case streamingParaformer = "streaming-paraformer"
+    case dualEngine = "dual-engine"
 
     var id: String { rawValue }
 
@@ -16,6 +17,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "Streaming Paraformer"
         case .qwenASR:
             return "Qwen3-ASR"
+        case .dualEngine:
+            return "双引擎"
         }
     }
 
@@ -25,6 +28,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "原生流式识别，中英文混合"
         case .qwenASR:
             return "Qwen3 大模型 ASR，中英文混合，自带标点"
+        case .dualEngine:
+            return "Paraformer 实时预览 + Qwen3-ASR 精转写"
         }
     }
 
@@ -34,13 +39,15 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "sherpa-onnx-streaming-paraformer-bilingual-zh-en"
         case .qwenASR:
             return "Qwen3-ASR-0.6B"
+        case .dualEngine:
+            return ""
         }
     }
 
     /// 是否需要外部标点模型（Qwen3-ASR 自带标点）
     var needsPunctuation: Bool {
         switch self {
-        case .qwenASR:
+        case .qwenASR, .dualEngine:
             return false
         case .streamingParaformer:
             return true
@@ -53,6 +60,8 @@ enum ASRModelType: String, CaseIterable, Identifiable {
             return "~216MB"
         case .qwenASR:
             return "~834MB"
+        case .dualEngine:
+            return "~2.1GB"
         }
     }
 }
@@ -73,6 +82,8 @@ enum DownloadSource: CaseIterable {
         case (.github, .qwenASR):
             // GitHub 备用源暂无，使用 ModelScope
             return "https://modelscope.cn/models/zhaochaoqun/sherpa-onnx-asr-models/resolve/master/Qwen3-ASR-0.6B.tar.bz2"
+        case (_, .dualEngine):
+            fatalError("dualEngine should not be downloaded directly")
         }
     }
 
@@ -217,6 +228,8 @@ class SherpaOnnxManager: NSObject {
             return isStreamingParaformerDownloaded()
         case .qwenASR:
             return isQwenASRModelDownloaded()
+        case .dualEngine:
+            return isStreamingParaformerDownloaded() && isQwenASRModelDownloaded()
         }
     }
 
