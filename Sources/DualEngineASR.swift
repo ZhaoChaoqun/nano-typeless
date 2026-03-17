@@ -12,6 +12,11 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "DualEngine
 /// 松开 Fn 后：
 /// - 仅需处理最后一小段残余音频（之前的段已在后台完成）
 /// - 拼接所有段结果作为最终输出
+///
+/// 并发模型：
+/// - `bufferQueue`（serial）：保护所有可变状态（currentSegmentBuffer, completedSegments）
+/// - `qwenQueue`（serial）：保证 QwenASR 推理不并发，segment 结果通过 `bufferQueue.sync` 同步回写
+/// - flush() 排入 qwenQueue，确保所有先前 segment 推理及其回写都已完成后再拼接最终结果
 class DualEngineASR: ASREngine {
 
     // MARK: - 配置
@@ -28,7 +33,6 @@ class DualEngineASR: ASREngine {
     private let bufferQueue = DispatchQueue(label: "com.typeless.dualengine.buffer")
     private var currentSegmentBuffer: [Float] = []
     private var completedSegments: [String] = []
-    private var pendingSegmentCount: Int = 0
 
     // MARK: - QwenASR 离线推理队列（serial，防止并发访问引擎）
 
@@ -70,17 +74,16 @@ class DualEngineASR: ASREngine {
             if self.currentSegmentBuffer.count >= self.segmentThreshold {
                 let segmentSamples = self.currentSegmentBuffer
                 self.currentSegmentBuffer = []
-                self.pendingSegmentCount += 1
-                let segmentIndex = self.completedSegments.count + self.pendingSegmentCount - 1
+                let segmentIndex = self.completedSegments.count
 
                 logger.info("分段 \(segmentIndex): 开始 QwenASR 离线推理 (\(segmentSamples.count) samples)")
 
                 self.qwenQueue.async { [weak self] in
                     guard let self = self else { return }
                     let result = self.qwenRecognizer.transcribeOffline(samples: segmentSamples)
-                    self.bufferQueue.async {
+                    // 同步回写到 bufferQueue，确保 qwenQueue block 返回前结果已写入
+                    self.bufferQueue.sync {
                         self.completedSegments.append(result)
-                        self.pendingSegmentCount -= 1
                         logger.info("分段 \(segmentIndex): 完成, 结果: \(result.prefix(60), privacy: .public)")
                     }
                 }
@@ -89,6 +92,7 @@ class DualEngineASR: ASREngine {
     }
 
     func flush(completion: @escaping (String) -> Void) {
+        // 1. 在 bufferQueue 上取出残余音频
         bufferQueue.async { [weak self] in
             guard let self = self else {
                 DispatchQueue.main.async { completion("") }
@@ -98,23 +102,24 @@ class DualEngineASR: ASREngine {
             let remainingSamples = self.currentSegmentBuffer
             self.currentSegmentBuffer = []
 
-            logger.info("Flush: 残余音频 \(remainingSamples.count) samples, 已完成分段 \(self.completedSegments.count), 待处理 \(self.pendingSegmentCount)")
+            logger.info("Flush: 残余音频 \(remainingSamples.count) samples, 已完成分段 \(self.completedSegments.count)")
 
-            // 在 qwenQueue 上排队，等待所有 pending segment 完成后再处理最后一段
+            // 2. 排入 qwenQueue，等待所有先前 segment 推理及回写完成（因为 qwenQueue 是 serial
+            //    且每个 segment 的回写使用 bufferQueue.sync，所以到这里所有结果已在 completedSegments 中）
             self.qwenQueue.async { [weak self] in
                 guard let self = self else {
                     DispatchQueue.main.async { completion("") }
                     return
                 }
 
-                // 处理最后的残余音频
+                // 3. 处理最后的残余音频
                 var finalSegmentResult = ""
                 if !remainingSamples.isEmpty {
                     finalSegmentResult = self.qwenRecognizer.transcribeOffline(samples: remainingSamples)
                     logger.info("最后一段推理完成: \(finalSegmentResult.prefix(60), privacy: .public)")
                 }
 
-                // 拼接所有段结果
+                // 4. 在 bufferQueue 上拼接所有段结果
                 self.bufferQueue.sync {
                     var allResults = self.completedSegments
                     if !finalSegmentResult.isEmpty {
@@ -136,7 +141,6 @@ class DualEngineASR: ASREngine {
         bufferQueue.sync {
             currentSegmentBuffer = []
             completedSegments = []
-            pendingSegmentCount = 0
         }
     }
 }
