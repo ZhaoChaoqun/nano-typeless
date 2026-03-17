@@ -67,7 +67,7 @@ def compare_entries(
         elif prev and not cur:
             removed.append(eid)
         elif cur and prev:
-            delta = cur["cer"] - prev["cer"]
+            delta = cur.get("cer", 0) - prev.get("cer", 0)
             if delta < -CER_THRESHOLD:
                 improved.append((eid, prev["cer"], cur["cer"], delta))
             elif delta > CER_THRESHOLD:

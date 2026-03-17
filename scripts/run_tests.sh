@@ -36,7 +36,7 @@ fi
 
 # 通过临时文件将配置传递给 Swift 测试进程
 # （xcodebuild 不会将 shell 环境变量传递给测试进程）
-JSON_OUTPUT="$TMPDIR/typeless_${SUITE}_results.json"
+JSON_OUTPUT="${TMPDIR:-/tmp}/typeless_${SUITE}_results.json"
 CONFIG_FILE="/tmp/typeless_test_config.txt"
 cat > "$CONFIG_FILE" <<EOF
 json_path=$JSON_OUTPUT
@@ -74,15 +74,14 @@ echo "[run_tests] 结果已保存: $RESULT_FILE"
 ln -sf "$(basename "$RESULT_FILE")" "$REPORTS_DIR/latest_${SUITE}.json"
 
 # 查找上次的 JSON 文件用于对比
-PREVIOUS=""
 # shellcheck disable=SC2012
 PREV_FILE=$(ls -1t "$REPORTS_DIR"/${SUITE}_*.json 2>/dev/null \
     | grep -v "$(basename "$RESULT_FILE")" \
     | head -1 || true)
 
-PREV_ARG=""
+PREV_ARG=()
 if [ -n "$PREV_FILE" ]; then
-    PREV_ARG="--previous $PREV_FILE"
+    PREV_ARG=(--previous "$PREV_FILE")
     echo "[run_tests] 对比基准: $(basename "$PREV_FILE")"
 fi
 
@@ -91,7 +90,7 @@ REPORT_PATH="$PROJECT_ROOT/docs/testing/${SUITE}-report-latest.md"
 
 uv run python "$PROJECT_ROOT/scripts/generate_test_report.py" \
     --current "$RESULT_FILE" \
-    $PREV_ARG \
+    "${PREV_ARG[@]}" \
     --output "$REPORT_PATH"
 
 echo "[run_tests] 报告已生成: $REPORT_PATH"
