@@ -533,26 +533,6 @@ class RecordingManager {
         }
     }
 
-    private func loadVAD() async -> SherpaOnnxVAD? {
-        if let vadPath = SherpaOnnxManager.shared.getVADModelPath() {
-            return SherpaOnnxVAD(modelPath: vadPath)
-        }
-
-        logger.info("VAD 模型未下载，正在下载...")
-        return await withCheckedContinuation { continuation in
-            SherpaOnnxManager.shared.downloadVADModel(progress: { progress in
-                logger.debug("VAD 下载: \(progress, privacy: .public)")
-            }, completion: { success, error in
-                if success, let vadPath = SherpaOnnxManager.shared.getVADModelPath() {
-                    continuation.resume(returning: SherpaOnnxVAD(modelPath: vadPath))
-                } else {
-                    logger.error("VAD 下载失败: \(error ?? "未知错误", privacy: .public)")
-                    continuation.resume(returning: nil)
-                }
-            })
-        }
-    }
-
     private func loadITNFst() async -> String? {
         if let fstPath = SherpaOnnxManager.shared.getITNFstPath() {
             return fstPath

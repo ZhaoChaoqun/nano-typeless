@@ -21,7 +21,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     // Pipeline 组件
     static var qwenRecognizer: QwenASRStreamRecognizer?
     static var paraformerRecognizer: SherpaOnnxOnlineRecognizer?
-    static var vad: SherpaOnnxVAD?
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
     static var cloudRewriter: CloudRewriter?
@@ -157,7 +156,6 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         logHandle = nil
         qwenRecognizer = nil
         paraformerRecognizer = nil
-        vad = nil
         punctuator = nil
         corrector = nil
         cloudRewriter = nil

@@ -16,7 +16,6 @@
 		1A000020 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A00001F /* WhisperKit */; };
 		1A000030 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1A000031 /* AppIcon.icns */; };
 		1A000042 /* SherpaOnnxManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000043 /* SherpaOnnxManager.swift */; };
-		1A000044 /* SherpaOnnxVAD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000045 /* SherpaOnnxVAD.swift */; };
 		1A000046 /* SherpaOnnxOnlineRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000047 /* SherpaOnnxOnlineRecognizer.swift */; };
 		1A000048 /* SherpaOnnxPunctuation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000049 /* SherpaOnnxPunctuation.swift */; };
 		1A000081 /* SherpaOnnxITN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000080 /* SherpaOnnxITN.swift */; };
@@ -82,7 +81,6 @@
 		1A000018 /* Typeless.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Typeless.entitlements; sourceTree = "<group>"; };
 		1A000031 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		1A000043 /* SherpaOnnxManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxManager.swift; sourceTree = "<group>"; };
-		1A000045 /* SherpaOnnxVAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxVAD.swift; sourceTree = "<group>"; };
 		1A000047 /* SherpaOnnxOnlineRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxOnlineRecognizer.swift; sourceTree = "<group>"; };
 		1A000049 /* SherpaOnnxPunctuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxPunctuation.swift; sourceTree = "<group>"; };
 		1A000080 /* SherpaOnnxITN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxITN.swift; sourceTree = "<group>"; };
@@ -166,7 +164,6 @@
 				1A000049 /* SherpaOnnxPunctuation.swift */,
 				1A000080 /* SherpaOnnxITN.swift */,
 				1A000043 /* SherpaOnnxManager.swift */,
-				1A000045 /* SherpaOnnxVAD.swift */,
 				1AQ00010 /* QwenASRRecognizer.swift */,
 				1AQ00012 /* CStringUtils.swift */,
 				1AQ00013 /* ASRStreamRecognizing.swift */,
@@ -345,7 +342,6 @@
 				1A000048 /* SherpaOnnxPunctuation.swift in Sources */,
 				1A000081 /* SherpaOnnxITN.swift in Sources */,
 				1A000042 /* SherpaOnnxManager.swift in Sources */,
-				1A000044 /* SherpaOnnxVAD.swift in Sources */,
 				1AQ00001 /* QwenASRRecognizer.swift in Sources */,
 				1AQ00004 /* CStringUtils.swift in Sources */,
 				1AQ00005 /* ASRStreamRecognizing.swift in Sources */,
