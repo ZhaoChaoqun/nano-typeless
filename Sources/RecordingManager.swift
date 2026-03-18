@@ -277,10 +277,10 @@ class RecordingManager {
                 return
             }
 
-            let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
+            let correctedText = self.corrector?.correctSpelling(processedText) ?? processedText
             let finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
-            logger.info("原始文本: \(normalizedText, privacy: .public)")
-            if correctedText != normalizedText {
+            logger.info("原始文本: \(processedText, privacy: .public)")
+            if correctedText != processedText {
                 logger.info("CSC 纠正: \(correctedText, privacy: .public)")
             } else {
                 logger.info("CSC 未修改文本")
