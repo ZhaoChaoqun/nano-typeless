@@ -27,6 +27,7 @@ class DualEngineASR: ASREngine {
     private let qwenQueue = DispatchQueue(label: "com.typeless.dualengine.qwen", qos: .userInitiated)
 
     let needsPunctuation = false
+    let needsITN = true
 
     // MARK: - 初始化
 

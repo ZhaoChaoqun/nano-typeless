@@ -19,6 +19,9 @@ protocol ASREngine: AnyObject {
 
     /// 引擎是否需要外部标点处理
     var needsPunctuation: Bool { get }
+
+    /// 引擎是否需要外部 ITN（逆文本规范化，如"一百二十三"→"123"）
+    var needsITN: Bool { get }
 }
 
 // MARK: - Streaming Paraformer Engine
@@ -29,6 +32,7 @@ class StreamingParaformerEngine: ASREngine {
     private let recognitionQueue: DispatchQueue
 
     let needsPunctuation = true
+    let needsITN = false
 
     init(recognizer: SherpaOnnxOnlineRecognizer, recognitionQueue: DispatchQueue) {
         self.recognizer = recognizer
@@ -88,6 +92,7 @@ class QwenASREngine: ASREngine {
     private let recognitionQueue: DispatchQueue
 
     let needsPunctuation = false
+    let needsITN = true
 
     init(recognizer: ASRStreamRecognizing, recognitionQueue: DispatchQueue) {
         self.recognizer = recognizer

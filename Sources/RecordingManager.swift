@@ -301,9 +301,9 @@ class RecordingManager {
                 logger.info("TermNormalizer: \(rawText, privacy: .public) → \(normalizedText, privacy: .public)")
             }
 
-            // 对 Qwen3-ASR 等不需要标点处理的引擎，应用独立 ITN（逆文本规范化）
+            // 对需要 ITN 的引擎，应用逆文本规范化（如"一百二十三"→"123"）
             var processedText = normalizedText
-            if let engine = self.currentEngine, !engine.needsPunctuation, let itn = self.itn {
+            if let engine = self.currentEngine, engine.needsITN, let itn = self.itn {
                 processedText = itn.normalize(text: processedText)
                 if processedText != normalizedText {
                     logger.info("ITN: \(normalizedText, privacy: .public) → \(processedText, privacy: .public)")
