@@ -22,13 +22,34 @@ xcodebuild -scheme Typeless -configuration Release -derivedDataPath build
 
 # 2. 重新签名 dylib 文件
 cd "build/Build/Products/Release/Nano Typeless.app/Contents/Frameworks"
-codesign --force --sign - libsherpa-onnx-c-api.dylib libonnxruntime.1.17.1.dylib
+codesign --force --sign - libsherpa-onnx-c-api.dylib libonnxruntime.1.23.2.dylib
 
 # 3. 重新签名整个 app
 codesign --force --sign - "build/Build/Products/Release/Nano Typeless.app"
 ```
 
 原因：sherpa-onnx 的 dylib 文件 Team ID 与主程序不匹配，需要使用 ad-hoc 签名（`--sign -`）重新签名。
+
+### ⚠️ dylib 版本一致性检查（重要）
+
+升级 sherpa-onnx 后，**必须**确保以下三处的 libonnxruntime 版本号完全一致，否则 app 在其他机器上会 dyld crash：
+
+1. **实际 dylib 文件**：`Frameworks/sherpa-onnx/lib/libonnxruntime.X.Y.Z.dylib` 必须存在
+2. **project.pbxproj 引用**：所有 `libonnxruntime.*.dylib` 引用必须指向正确版本
+3. **libsherpa-onnx-c-api.dylib 链接**：用 `otool -L Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib` 检查 `@rpath/libonnxruntime.X.Y.Z.dylib` 版本
+
+验证命令：
+```bash
+# 检查 sherpa 链接的 onnxruntime 版本
+otool -L Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib | grep libonnxruntime
+
+# 检查仓库中实际存在的 dylib 文件
+ls Frameworks/sherpa-onnx/lib/libonnxruntime*.dylib
+
+# 两者版本号必须匹配！
+```
+
+**历史教训**：v1.4.1 曾因 `libsherpa-onnx-c-api.dylib` 链接 `@rpath/libonnxruntime.1.23.2.dylib`，但仓库只打包了 `libonnxruntime.1.17.1.dylib`，导致其他机器 dyld crash。
 
 ## Python 环境管理
 

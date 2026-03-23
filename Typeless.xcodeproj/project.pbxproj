@@ -633,7 +633,7 @@
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -671,7 +671,7 @@
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
 				PRODUCT_NAME = "Nano Typeless";
 				SWIFT_EMIT_LOC_STRINGS = YES;
