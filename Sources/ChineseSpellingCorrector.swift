@@ -8,6 +8,26 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "CSC")
 /// 使用 ONNX Runtime C API 加载 macbert4csc-base-chinese INT8 模型，
 /// 对 ASR 输出的中文文本进行同音字/近音字纠错。
 class ChineseSpellingCorrector {
+
+    // MARK: - Constants
+
+    /// ONNX Runtime intra-op 线程数
+    private static let ortIntraOpThreads: Int32 = 2
+
+    /// BERT 最大序列长度
+    private static let maxSequenceLength = 512
+
+    /// logit 差值阈值：预测 token 与原始 token 的 logit 差必须大于此值才执行替换
+    private static let logitDiffThreshold: Float = 5.0
+
+    /// softmax top-1 概率阈值：预测 token 的 softmax 概率必须大于此值才执行替换
+    private static let softmaxProbThreshold: Float = 0.9
+
+    /// 纠正比例上限：纠正的中文字符占比超过此值时丢弃所有纠正（防止上下文异常导致误纠）
+    private static let maxCorrectionRatio: Float = 0.2
+
+    // MARK: - Properties
+
     private let api: UnsafePointer<OrtApi>
     private var env: OpaquePointer?           // OrtEnv*
     private var session: OpaquePointer?       // OrtSession*
@@ -79,7 +99,7 @@ class ChineseSpellingCorrector {
         }
 
         // 设置线程数
-        _ = api.pointee.SetIntraOpNumThreads(sessionOptionsPtr, 2)
+        _ = api.pointee.SetIntraOpNumThreads(sessionOptionsPtr, Self.ortIntraOpThreads)
 
         // 创建 Session
         var sessionPtr: OpaquePointer? = nil
@@ -131,7 +151,7 @@ class ChineseSpellingCorrector {
         let seqLen = inputIds.count
 
         guard seqLen > 2 else { return text }  // 只有 [CLS] 和 [SEP]
-        guard seqLen <= 512 else {
+        guard seqLen <= Self.maxSequenceLength else {
             logger.warning("文本过长 (\(seqLen) tokens)，跳过 CSC")
             return text
         }
@@ -265,7 +285,7 @@ class ChineseSpellingCorrector {
         // Sanity check：如果纠正比例超过 20%，说明输入可能有上下文问题，丢弃纠正
         if correctionCount > 0 && chineseCharCount > 0 {
             let correctionRatio = Float(correctionCount) / Float(chineseCharCount)
-            if correctionRatio > 0.2 {
+            if correctionRatio > Self.maxCorrectionRatio {
                 logger.warning("CSC 纠正比例过高 (\(correctionCount)/\(chineseCharCount) = \(String(format: "%.0f%%", correctionRatio * 100)))，丢弃纠正结果")
                 return originalText
             }
@@ -305,17 +325,17 @@ class ChineseSpellingCorrector {
         let originalLogit = logitsPtr[logitsOffset + Int(originalId)]
         let logitDiff = maxVal - originalLogit
 
-        // 条件 1：logit 差值必须足够大（提高到 5.0，防止低置信度替换）
-        guard logitDiff > 5.0 else { return nil }
+        // 条件 1：logit 差值必须足够大，防止低置信度替换
+        guard logitDiff > Self.logitDiffThreshold else { return nil }
 
-        // 条件 2：计算 softmax 概率，top-1 概率必须 > 0.9
+        // 条件 2：计算 softmax 概率，top-1 概率必须足够高
         // 为数值稳定性，对 logits 减去 maxVal 后再 softmax
         var expSum: Float = 0
         for j in 0..<vocabSize {
             expSum += exp(logitsPtr[logitsOffset + j] - maxVal)
         }
         let topProb = 1.0 / expSum  // exp(0) / expSum since maxVal - maxVal = 0
-        guard topProb > 0.9 else { return nil }
+        guard topProb > Self.softmaxProbThreshold else { return nil }
 
         let correctedChar = tokenizer.decode([maxIdx])
         if !correctedChar.isEmpty && correctedChar.count == 1 {

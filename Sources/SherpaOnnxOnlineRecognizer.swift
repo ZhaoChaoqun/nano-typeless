@@ -8,6 +8,32 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "SherpaOnnx
 
 /// Sherpa-ONNX 流式语音识别器（Streaming Paraformer）
 class SherpaOnnxOnlineRecognizer {
+
+    // MARK: - Constants
+
+    /// 音频采样率（Hz）
+    private static let sampleRate: Int32 = 16000
+
+    /// 特征维度（Fbank 特征）
+    private static let featureDim: Int32 = 80
+
+    /// 推理线程数
+    private static let numThreads: Int32 = 1
+
+    /// greedy_search 最大活跃路径数
+    private static let maxActivePaths: Int32 = 4
+
+    /// 无语音时的静音阈值（秒）——端点检测规则 1
+    private static let rule1MinTrailingSilence: Float = 2.4
+
+    /// 有语音后的静音阈值（秒）——端点检测规则 2
+    private static let rule2MinTrailingSilence: Float = 1.2
+
+    /// 最大语句长度（秒）——端点检测规则 3
+    private static let rule3MinUtteranceLength: Float = 20
+
+    // MARK: - Properties
+
     private var recognizer: OpaquePointer?
     private var stream: OpaquePointer?
     private let cStrings = CStringLifetime()
@@ -32,27 +58,27 @@ class SherpaOnnxOnlineRecognizer {
         var config = SherpaOnnxOnlineRecognizerConfig()
 
         // 特征配置
-        config.feat_config.sample_rate = 16000
-        config.feat_config.feature_dim = 80
+        config.feat_config.sample_rate = Self.sampleRate
+        config.feat_config.feature_dim = Self.featureDim
 
         // Paraformer 模型配置
         config.model_config.paraformer.encoder = cStrings.makeCString(encoderPath)
         config.model_config.paraformer.decoder = cStrings.makeCString(decoderPath)
         config.model_config.tokens = cStrings.makeCString(tokensPath)
-        config.model_config.num_threads = 1
+        config.model_config.num_threads = Self.numThreads
         config.model_config.debug = 0
         config.model_config.provider = cStrings.makeCString("cpu")
         config.model_config.model_type = cStrings.makeCString("paraformer")
 
         // 解码配置
         config.decoding_method = cStrings.makeCString("greedy_search")
-        config.max_active_paths = 4
+        config.max_active_paths = Self.maxActivePaths
 
         // 端点检测配置
         config.enable_endpoint = 1
-        config.rule1_min_trailing_silence = 2.4  // 无语音时的静音阈值（秒）
-        config.rule2_min_trailing_silence = 1.2  // 有语音后的静音阈值（秒）
-        config.rule3_min_utterance_length = 20   // 最大语句长度（秒）
+        config.rule1_min_trailing_silence = Self.rule1MinTrailingSilence
+        config.rule2_min_trailing_silence = Self.rule2MinTrailingSilence
+        config.rule3_min_utterance_length = Self.rule3MinUtteranceLength
 
         // ITN 规则（WeTextProcessing WFST: tagger + verbalizer）
         if let ruleFstsPath = ruleFstsPath, !ruleFstsPath.isEmpty {

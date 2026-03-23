@@ -6,6 +6,26 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "QwenASR")
 /// QwenASR 流式识别器
 /// 每次推送新音频 chunk，增量返回识别结果
 class QwenASRStreamRecognizer {
+
+    // MARK: - Constants
+
+    /// 流式推理的 chunk 长度（秒）
+    private static let streamChunkSeconds: Float = 2.0
+
+    /// rollback token 数量：每次推理后回退的 token 数，用于保证上下文一致性
+    private static let streamRollbackTokens: Int32 = 5
+
+    /// unfixed chunks 数量：保持未确认的 chunk 数
+    private static let streamUnfixedChunks: Int32 = 0
+
+    /// 每个 chunk 最大生成 token 数
+    private static let streamMaxNewTokens: Int32 = 32
+
+    /// 离线转写默认分段长度（秒）
+    private static let defaultOfflineSegmentSeconds: Float = 20.0
+
+    // MARK: - Properties
+
     private var engine: OpaquePointer?       // QwenAsrEngine*
     private var streamState: OpaquePointer?  // QwenAsrStreamState*
 
@@ -32,10 +52,10 @@ class QwenASRStreamRecognizer {
         logger.info("QwenASRStreamRecognizer: 已启用 Metal GPU 加速")
 
         // 流式参数：使用 C API 默认值
-        qwen_asr_stream_set_chunk_sec(engine, 2.0)
-        qwen_asr_stream_set_rollback(engine, 5)
-        qwen_asr_stream_set_unfixed_chunks(engine, 0)
-        qwen_asr_stream_set_max_new_tokens(engine, 32)
+        qwen_asr_stream_set_chunk_sec(engine, Self.streamChunkSeconds)
+        qwen_asr_stream_set_rollback(engine, Self.streamRollbackTokens)
+        qwen_asr_stream_set_unfixed_chunks(engine, Self.streamUnfixedChunks)
+        qwen_asr_stream_set_max_new_tokens(engine, Self.streamMaxNewTokens)
 
         streamState = qwen_asr_stream_new()
         guard streamState != nil else {
@@ -111,7 +131,7 @@ class QwenASRStreamRecognizer {
     ///   - samples: PCM 样本（16kHz mono f32）
     ///   - segmentSec: 分段长度（秒），默认 20s
     /// - Returns: 完整转写文本
-    func transcribeOffline(samples: [Float], segmentSec: Float = 20.0) -> String {
+    func transcribeOffline(samples: [Float], segmentSec: Float = defaultOfflineSegmentSeconds) -> String {
         guard let engine = engine else { return "" }
 
         qwen_asr_set_segment_sec(engine, segmentSec)

@@ -45,6 +45,9 @@
 		1ASV0001 /* SettingsASRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ASV0010 /* SettingsASRView.swift */; };
 		1ASV0002 /* SettingsDualEngineStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ASV0020 /* SettingsDualEngineStatusView.swift */; };
 		1ASV0003 /* SettingsGeneralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ASV0030 /* SettingsGeneralView.swift */; };
+		1A0MP001 /* ModelPathResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0MP010 /* ModelPathResolver.swift */; };
+		1A0MD001 /* ModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0MD010 /* ModelDownloader.swift */; };
+		1A0ME001 /* ModelExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0ME010 /* ModelExtractionService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +116,9 @@
 		1ASV0010 /* SettingsASRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsASRView.swift; sourceTree = "<group>"; };
 		1ASV0020 /* SettingsDualEngineStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDualEngineStatusView.swift; sourceTree = "<group>"; };
 		1ASV0030 /* SettingsGeneralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsGeneralView.swift; sourceTree = "<group>"; };
+		1A0MP010 /* ModelPathResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelPathResolver.swift; sourceTree = "<group>"; };
+		1A0MD010 /* ModelDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloader.swift; sourceTree = "<group>"; };
+		1A0ME010 /* ModelExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelExtractionService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -178,6 +184,9 @@
 				1A000049 /* SherpaOnnxPunctuation.swift */,
 				1A000080 /* SherpaOnnxITN.swift */,
 				1A000043 /* SherpaOnnxManager.swift */,
+				1A0MP010 /* ModelPathResolver.swift */,
+				1A0MD010 /* ModelDownloader.swift */,
+				1A0ME010 /* ModelExtractionService.swift */,
 				1AQ00010 /* QwenASRRecognizer.swift */,
 				1AQ00012 /* CStringUtils.swift */,
 				1AQ00013 /* ASRStreamRecognizing.swift */,
@@ -380,6 +389,9 @@
 				1A000048 /* SherpaOnnxPunctuation.swift in Sources */,
 				1A000081 /* SherpaOnnxITN.swift in Sources */,
 				1A000042 /* SherpaOnnxManager.swift in Sources */,
+				1A0MP001 /* ModelPathResolver.swift in Sources */,
+				1A0MD001 /* ModelDownloader.swift in Sources */,
+				1A0ME001 /* ModelExtractionService.swift in Sources */,
 				1AQ00001 /* QwenASRRecognizer.swift in Sources */,
 				1AQ00004 /* CStringUtils.swift in Sources */,
 				1AQ00005 /* ASRStreamRecognizing.swift in Sources */,
