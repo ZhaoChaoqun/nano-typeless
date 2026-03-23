@@ -14,6 +14,7 @@ class RecordingManager {
     private var corrector: ChineseSpellingCorrector?
     private var termNormalizer: TermNormalizer?
     private var itn: SherpaOnnxITN?
+    private let cloudRewriteService = CloudRewriteService()
 
     /// 所有状态变更必须且只能通过此队列
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
@@ -272,8 +273,14 @@ class RecordingManager {
             }
 
             guard let engine = self.currentEngine, engine.needsPunctuation else {
-                logger.info("最终结果: \(processedText, privacy: .public)")
-                self.handleEvent(.postProcessComplete(finalText: processedText))
+                Task { [weak self] in
+                    guard let self else { return }
+                    let rewrittenText = await self.cloudRewriteService.rewriteOrPassthrough(processedText)
+                    self.recognitionQueue.async {
+                        logger.info("最终结果: \(rewrittenText, privacy: .public)")
+                        self.handleEvent(.postProcessComplete(finalText: rewrittenText))
+                    }
+                }
                 return
             }
 
@@ -286,7 +293,13 @@ class RecordingManager {
                 logger.info("CSC 未修改文本")
             }
             logger.info("标点处理后: \(finalText, privacy: .public)")
-            self.handleEvent(.postProcessComplete(finalText: finalText))
+            Task { [weak self] in
+                guard let self else { return }
+                let rewrittenText = await self.cloudRewriteService.rewriteOrPassthrough(finalText)
+                self.recognitionQueue.async {
+                    self.handleEvent(.postProcessComplete(finalText: rewrittenText))
+                }
+            }
         }
     }
 

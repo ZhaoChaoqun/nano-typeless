@@ -36,6 +36,8 @@
 		1ATN0001 /* TermNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ATN0010 /* TermNormalizer.swift */; };
 		1ATN0002 /* term_dictionary.json in Resources */ = {isa = PBXBuildFile; fileRef = 1ATN0011 /* term_dictionary.json */; };
 		1AD00001 /* DualEngineASR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD00010 /* DualEngineASR.swift */; };
+		1A0CR001 /* CloudRewriteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CR010 /* CloudRewriteService.swift */; };
+		1A0CRT01 /* CloudRewriteServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CRT10 /* CloudRewriteServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +97,8 @@
 		1ATN0010 /* TermNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermNormalizer.swift; sourceTree = "<group>"; };
 		1ATN0011 /* term_dictionary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = term_dictionary.json; sourceTree = "<group>"; };
 		1AD00010 /* DualEngineASR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualEngineASR.swift; sourceTree = "<group>"; };
+		1A0CR010 /* CloudRewriteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteService.swift; sourceTree = "<group>"; };
+		1A0CRT10 /* CloudRewriteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -162,6 +166,7 @@
 				1AQ00013 /* ASRStreamRecognizing.swift */,
 				1AQ00014 /* ASREngine.swift */,
 				1AD00010 /* DualEngineASR.swift */,
+				1A0CR010 /* CloudRewriteService.swift */,
 				1AF00010 /* RecordingState.swift */,
 				1AC00010 /* BertTokenizer.swift */,
 				1AC00011 /* ChineseSpellingCorrector.swift */,
@@ -338,6 +343,7 @@
 				1AQ00005 /* ASRStreamRecognizing.swift in Sources */,
 				1AQ00006 /* ASREngine.swift in Sources */,
 				1AD00001 /* DualEngineASR.swift in Sources */,
+				1A0CR001 /* CloudRewriteService.swift in Sources */,
 				1AF00001 /* RecordingState.swift in Sources */,
 				1AC00001 /* BertTokenizer.swift in Sources */,
 				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,
