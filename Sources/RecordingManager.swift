@@ -4,29 +4,6 @@ import os
 
 private let logger = Logger(subsystem: "com.typeless.app", category: "RecordingManager")
 
-/// Streaming Paraformer 后处理模式
-enum PostProcessingMode: String, CaseIterable {
-    case cscPunctuation = "csc_punctuation"
-    case qwen3Rewrite = "qwen3_rewrite"
-    case cloudRewrite = "cloud_rewrite"
-
-    var displayName: String {
-        switch self {
-        case .cscPunctuation: return "CSC + 标点"
-        case .qwen3Rewrite: return "Qwen3 Rewrite"
-        case .cloudRewrite: return "Cloud Rewrite"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .cscPunctuation: return "CSC 纠错 + CT-Transformer 标点（二阶段）"
-        case .qwen3Rewrite: return "Qwen3-0.6B 一站式后处理（ITN + 标点 + CSC）"
-        case .cloudRewrite: return "Cerebras Qwen3-32B 云端后处理（标点 + 纠错）"
-        }
-    }
-}
-
 /// 管理音频录制和语音识别（FSM 驱动）
 class RecordingManager {
     static let shared = RecordingManager()
@@ -35,8 +12,6 @@ class RecordingManager {
     private var currentEngine: (any ASREngine)?
     private var punctuator: SherpaOnnxPunctuation?
     private var corrector: ChineseSpellingCorrector?
-    private var rewriter: Qwen3TextRewriter?
-    private var cloudRewriter: CloudRewriter?
     private var termNormalizer: TermNormalizer?
     private var itn: SherpaOnnxITN?
 
@@ -55,20 +30,6 @@ class RecordingManager {
         }
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: "selectedASRModel")
-        }
-    }
-
-    /// Streaming Paraformer 后处理模式
-    var postProcessingMode: PostProcessingMode {
-        get {
-            if let rawValue = UserDefaults.standard.string(forKey: "postProcessingMode"),
-               let mode = PostProcessingMode(rawValue: rawValue) {
-                return mode
-            }
-            return .cscPunctuation
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "postProcessingMode")
         }
     }
 
@@ -316,49 +277,15 @@ class RecordingManager {
                 return
             }
 
-            let finalText: String
-            switch self.postProcessingMode {
-            case .qwen3Rewrite:
-                if let rewriter = self.rewriter {
-                    logger.info("使用 Qwen3 Rewrite 后处理")
-                    let rewritten = rewriter.rewrite(text: normalizedText)
-                    logger.info("原始文本: \(normalizedText, privacy: .public)")
-                    logger.info("Rewrite 后: \(rewritten, privacy: .public)")
-                    finalText = rewritten
-                } else {
-                    logger.warning("Qwen3 Rewriter 未加载，回退到 CSC + 标点模式")
-                    let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
-                    finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
-                }
-            case .cloudRewrite:
-                if let cloudRewriter = self.cloudRewriter {
-                    logger.info("使用 Cloud Rewrite 后处理")
-                    logger.info("原始文本: \(normalizedText, privacy: .public)")
-                    let semaphore = DispatchSemaphore(value: 0)
-                    var rewritten = normalizedText
-                    Task {
-                        rewritten = await cloudRewriter.rewrite(text: normalizedText)
-                        semaphore.signal()
-                    }
-                    semaphore.wait()
-                    logger.info("Cloud Rewrite 后: \(rewritten, privacy: .public)")
-                    finalText = rewritten
-                } else {
-                    logger.warning("CloudRewriter 未初始化，回退到 CSC + 标点模式")
-                    let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
-                    finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
-                }
-            case .cscPunctuation:
-                let correctedText = self.corrector?.correctSpelling(normalizedText) ?? normalizedText
-                finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
-                logger.info("原始文本: \(normalizedText, privacy: .public)")
-                if correctedText != normalizedText {
-                    logger.info("CSC 纠正: \(correctedText, privacy: .public)")
-                } else {
-                    logger.info("CSC 未修改文本")
-                }
-                logger.info("标点处理后: \(finalText, privacy: .public)")
+            let correctedText = self.corrector?.correctSpelling(processedText) ?? processedText
+            let finalText = self.punctuator?.addPunctuation(text: correctedText) ?? correctedText
+            logger.info("原始文本: \(processedText, privacy: .public)")
+            if correctedText != processedText {
+                logger.info("CSC 纠正: \(correctedText, privacy: .public)")
+            } else {
+                logger.info("CSC 未修改文本")
             }
+            logger.info("标点处理后: \(finalText, privacy: .public)")
             self.handleEvent(.postProcessComplete(finalText: finalText))
         }
     }
@@ -372,8 +299,6 @@ class RecordingManager {
         currentEngine = nil
         punctuator = nil
         corrector = nil
-        rewriter = nil
-        cloudRewriter = nil
         termNormalizer = nil
         itn = nil
         recognitionQueue.sync {}
@@ -426,22 +351,9 @@ class RecordingManager {
         )
         logger.info("Streaming Paraformer 模型加载成功")
 
-        // 根据后处理模式加载对应模块
-        switch postProcessingMode {
-        case .qwen3Rewrite:
-            await initializeQwen3Rewriter()
-            // 也加载 CSC + 标点作为回退
-            await initializePunctuation()
-            initializeCSC()
-        case .cloudRewrite:
-            cloudRewriter = CloudRewriter()
-            // 也加载 CSC + 标点作为回退
-            await initializePunctuation()
-            initializeCSC()
-        case .cscPunctuation:
-            await initializePunctuation()
-            initializeCSC()
-        }
+        // 加载 CSC + 标点后处理模块
+        await initializePunctuation()
+        initializeCSC()
     }
 
     private func initializeQwenASR() async {
@@ -560,32 +472,6 @@ class RecordingManager {
             }
         } else {
             logger.info("CSC 纠错模型未下载，跳过")
-        }
-    }
-
-    private func initializeQwen3Rewriter() async {
-        if let modelDir = SherpaOnnxManager.shared.getQwen3RewriteModelDir() {
-            rewriter = Qwen3TextRewriter(modelDir: modelDir)
-            if rewriter != nil {
-                logger.info("Qwen3 Rewriter 模型加载成功")
-            } else {
-                logger.warning("Qwen3 Rewriter 模型加载失败")
-            }
-        } else {
-            logger.info("Qwen3 Rewrite 模型未下载，正在下载...")
-            await withCheckedContinuation { continuation in
-                SherpaOnnxManager.shared.downloadQwen3RewriteModel(progress: { progress in
-                    logger.debug("Qwen3 Rewrite 模型下载: \(progress, privacy: .public)")
-                }, completion: { [weak self] success, error in
-                    if success, let modelDir = SherpaOnnxManager.shared.getQwen3RewriteModelDir() {
-                        self?.rewriter = Qwen3TextRewriter(modelDir: modelDir)
-                        logger.info("Qwen3 Rewrite 模型下载并加载成功")
-                    } else {
-                        logger.error("Qwen3 Rewrite 模型下载失败: \(error ?? "未知错误", privacy: .public)")
-                    }
-                    continuation.resume()
-                })
-            }
         }
     }
 

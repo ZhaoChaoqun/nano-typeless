@@ -26,7 +26,6 @@
 		1A000071 /* OnboardingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000070 /* OnboardingOverlay.swift */; };
 		1AC00001 /* BertTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC00010 /* BertTokenizer.swift */; };
 		1AC00002 /* ChineseSpellingCorrector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC00011 /* ChineseSpellingCorrector.swift */; };
-		1ACR0001 /* CloudRewriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACR0010 /* CloudRewriter.swift */; };
 		1AF00001 /* RecordingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AF00010 /* RecordingState.swift */; };
 		1AQ00001 /* QwenASRRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00010 /* QwenASRRecognizer.swift */; };
 		1AQ00002 /* libqwen_asr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AQ00011 /* libqwen_asr.dylib */; };
@@ -34,9 +33,6 @@
 		1AQ00004 /* CStringUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00012 /* CStringUtils.swift */; };
 		1AQ00005 /* ASRStreamRecognizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00013 /* ASRStreamRecognizing.swift */; };
 		1AQ00006 /* ASREngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AQ00014 /* ASREngine.swift */; };
-		1AR00001 /* Qwen3TextRewriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AR00010 /* Qwen3TextRewriter.swift */; };
-		1AR00002 /* libqwen3_rewrite.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AR00011 /* libqwen3_rewrite.dylib */; };
-		1AR00003 /* libqwen3_rewrite.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1AR00011 /* libqwen3_rewrite.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1ATN0001 /* TermNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ATN0010 /* TermNormalizer.swift */; };
 		1ATN0002 /* term_dictionary.json in Resources */ = {isa = PBXBuildFile; fileRef = 1ATN0011 /* term_dictionary.json */; };
 		1AD00001 /* DualEngineASR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD00010 /* DualEngineASR.swift */; };
@@ -62,7 +58,6 @@
 				1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */,
 				1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */,
 				1AQ00003 /* libqwen_asr.dylib in CopyFiles */,
-				1AR00003 /* libqwen3_rewrite.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,15 +86,12 @@
 		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
 		1AC00010 /* BertTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BertTokenizer.swift; sourceTree = "<group>"; };
 		1AC00011 /* ChineseSpellingCorrector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChineseSpellingCorrector.swift; sourceTree = "<group>"; };
-		1ACR0010 /* CloudRewriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriter.swift; sourceTree = "<group>"; };
 		1AF00010 /* RecordingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingState.swift; sourceTree = "<group>"; };
 		1AQ00010 /* QwenASRRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenASRRecognizer.swift; sourceTree = "<group>"; };
 		1AQ00011 /* libqwen_asr.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqwen_asr.dylib; path = "Frameworks/qwen-asr/lib/libqwen_asr.dylib"; sourceTree = "<group>"; };
 		1AQ00012 /* CStringUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CStringUtils.swift; sourceTree = "<group>"; };
 		1AQ00013 /* ASRStreamRecognizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASRStreamRecognizing.swift; sourceTree = "<group>"; };
 		1AQ00014 /* ASREngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASREngine.swift; sourceTree = "<group>"; };
-		1AR00010 /* Qwen3TextRewriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3TextRewriter.swift; sourceTree = "<group>"; };
-		1AR00011 /* libqwen3_rewrite.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqwen3_rewrite.dylib; path = "Frameworks/qwen3-rewrite/lib/libqwen3_rewrite.dylib"; sourceTree = "<group>"; };
 		1ATN0010 /* TermNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermNormalizer.swift; sourceTree = "<group>"; };
 		1ATN0011 /* term_dictionary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = term_dictionary.json; sourceTree = "<group>"; };
 		1AD00010 /* DualEngineASR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualEngineASR.swift; sourceTree = "<group>"; };
@@ -125,7 +117,6 @@
 				1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */,
 				1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */,
 				1AQ00002 /* libqwen_asr.dylib in Frameworks */,
-				1AR00002 /* libqwen3_rewrite.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,8 +165,6 @@
 				1AF00010 /* RecordingState.swift */,
 				1AC00010 /* BertTokenizer.swift */,
 				1AC00011 /* ChineseSpellingCorrector.swift */,
-				1AR00010 /* Qwen3TextRewriter.swift */,
-				1ACR0010 /* CloudRewriter.swift */,
 				1ATN0010 /* TermNormalizer.swift */,
 				1ATN0011 /* term_dictionary.json */,
 				1A000060 /* CSherpaOnnx-Bridging-Header.h */,
@@ -192,7 +181,6 @@
 				1A000051 /* libsherpa-onnx-c-api.dylib */,
 				1A000053 /* libonnxruntime.1.17.1.dylib */,
 				1AQ00011 /* libqwen_asr.dylib */,
-				1AR00011 /* libqwen3_rewrite.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -353,8 +341,6 @@
 				1AF00001 /* RecordingState.swift in Sources */,
 				1AC00001 /* BertTokenizer.swift in Sources */,
 				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,
-				1AR00001 /* Qwen3TextRewriter.swift in Sources */,
-				1ACR0001 /* CloudRewriter.swift in Sources */,
 				1ATN0001 /* TermNormalizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -383,13 +369,11 @@
 					"$(SRCROOT)/Sources/CSherpaOnnx",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
 					"$(SRCROOT)/Frameworks/qwen-asr/include",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
@@ -418,13 +402,11 @@
 					"$(SRCROOT)/Sources/CSherpaOnnx",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
 					"$(SRCROOT)/Frameworks/qwen-asr/include",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
@@ -573,7 +555,6 @@
 					"$(SRCROOT)/Sources/CSherpaOnnx",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
 					"$(SRCROOT)/Frameworks/qwen-asr/include",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/include",
 				);
 				INFOPLIST_FILE = Sources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -587,7 +568,6 @@
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
 				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
@@ -613,7 +593,6 @@
 					"$(SRCROOT)/Sources/CSherpaOnnx",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/include",
 					"$(SRCROOT)/Frameworks/qwen-asr/include",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/include",
 				);
 				INFOPLIST_FILE = Sources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -627,7 +606,6 @@
 					"$(inherited)",
 					"$(SRCROOT)/Frameworks/sherpa-onnx/lib",
 					"$(SRCROOT)/Frameworks/qwen-asr/lib",
-					"$(SRCROOT)/Frameworks/qwen3-rewrite/lib",
 				);
 				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.typeless.app;
