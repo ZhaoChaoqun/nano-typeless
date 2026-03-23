@@ -7,8 +7,8 @@ private let analyticsLogger = Logger(subsystem: "com.typeless.app", category: "A
 /// Lightweight wrapper around TelemetryDeck for privacy-first analytics.
 ///
 /// Design principles:
-/// - All numeric values are bucketed (e.g. "500-1000ms" not "743ms") to prevent re-identification
-/// - Text content is NEVER sent
+/// - Latency values use precise milliseconds for maximum diagnostic value
+/// - Text content is NEVER sent; text lengths are bucketed (e.g. "11-50" not "37")
 /// - Users can opt out via Settings toggle (UserDefaults "analyticsEnabled", default true)
 /// - DEBUG builds are automatically tagged as test signals by TelemetryDeck
 enum AnalyticsService {
@@ -16,15 +16,19 @@ enum AnalyticsService {
     private static let appID = "6EB06114-0222-4BE1-9DDC-BB283B640436"
 
     /// Initialize TelemetryDeck. Call once from AppDelegate.applicationDidFinishLaunching.
+    ///
+    /// Always initializes the SDK regardless of enabled state, so that toggling
+    /// analytics on later doesn't require re-initialization. The `track()` method
+    /// checks `isEnabled` before sending any signals.
     static func initialize() {
-        guard isEnabled else {
-            analyticsLogger.info("Analytics disabled by user preference")
-            return
-        }
-
         let config = TelemetryDeck.Config(appID: appID)
         TelemetryDeck.initialize(config: config)
-        analyticsLogger.info("Analytics initialized (TelemetryDeck)")
+
+        if isEnabled {
+            analyticsLogger.info("Analytics initialized (TelemetryDeck)")
+        } else {
+            analyticsLogger.info("Analytics initialized but disabled by user preference")
+        }
     }
 
     /// Whether analytics is enabled (opt-out model: default true).
@@ -37,15 +41,11 @@ enum AnalyticsService {
         return true
     }
 
-    /// Update enabled state and reinitialize if needed.
+    /// Update enabled state. TelemetryDeck is already initialized;
+    /// this only controls whether `track()` sends signals.
     static func setEnabled(_ enabled: Bool) {
         UserDefaults.standard.set(enabled, forKey: "analyticsEnabled")
-        if enabled {
-            let config = TelemetryDeck.Config(appID: appID)
-            TelemetryDeck.initialize(config: config)
-            analyticsLogger.info("Analytics re-enabled")
-        }
-        // TelemetryDeck doesn't have a teardown; disabled state is checked in track()
+        analyticsLogger.info("Analytics \(enabled ? "enabled" : "disabled")")
     }
 
     /// Track an analytics event with optional parameters.
@@ -56,7 +56,7 @@ enum AnalyticsService {
         var params = parameters
         params["appVersion"] = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         params["selectedEngine"] = UserDefaults.standard.string(forKey: "selectedASRModel") ?? "streamingParaformer"
-        params["cloudRewriteEnabled"] = "\(!((UserDefaults.standard.string(forKey: "cloudRewriteAPIKey") ?? "").isEmpty) || GeneratedSecrets.cloudRewriteAPIKey != nil)"
+        params["cloudRewriteEnabled"] = "\(hasCloudRewriteAPIKey)"
 
         TelemetryDeck.signal(event, parameters: params)
     }
@@ -89,19 +89,6 @@ enum AnalyticsService {
         }
     }
 
-    /// Fine-grained latency bucket for fast pipeline stages (TermNorm, ITN, etc.).
-    static func fineLatencyBucket(ms: Int) -> String {
-        switch ms {
-        case ..<10: return "0-10ms"
-        case 10..<50: return "10-50ms"
-        case 50..<100: return "50-100ms"
-        case 100..<200: return "100-200ms"
-        case 200..<500: return "200-500ms"
-        case 500..<1000: return "500-1000ms"
-        default: return "1000ms+"
-        }
-    }
-
     /// Map recording duration (seconds) to a privacy-safe bucket.
     static func durationBucket(seconds: Double) -> String {
         switch seconds {
@@ -122,5 +109,13 @@ enum AnalyticsService {
         case 51...200: return "51-200"
         default: return "200+"
         }
+    }
+
+    // MARK: - Private Helpers
+
+    /// Whether a Cloud Rewrite API key is configured (user-provided or built-in).
+    private static var hasCloudRewriteAPIKey: Bool {
+        let userKey = UserDefaults.standard.string(forKey: "cloudRewriteAPIKey") ?? ""
+        return !userKey.isEmpty || GeneratedSecrets.cloudRewriteAPIKey != nil
     }
 }

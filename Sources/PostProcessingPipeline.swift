@@ -93,19 +93,14 @@ final class PostProcessingPipeline {
                     let rewrittenText = await self.cloudRewriteService.rewriteOrPassthrough(processedText)
                     let cloudRewriteMs = AnalyticsService.elapsedMs(since: cloudRewriteStart)
                     self.processingQueue.async {
-                        let totalMs = AnalyticsService.elapsedMs(since: pipelineStart)
-                        AnalyticsService.track("PostProcessing.Completed", parameters: [
-                            "itnApplied": "\(itnApplied)",
-                            "cscApplied": "false",
-                            "punctuationApplied": "false",
-                            "totalLatencyMs": "\(totalMs)",
-                            "termNormLatencyMs": "\(termNormMs)",
-                            "itnLatencyMs": "\(itnMs)",
-                            "cscLatencyMs": "0",
-                            "punctLatencyMs": "0",
-                            "cloudRewriteLatencyMs": "\(cloudRewriteMs)",
-                            "termNormChanged": "\(termNormChanged)",
-                        ])
+                        Self.trackPostProcessingCompleted(
+                            pipelineStart: pipelineStart,
+                            termNormMs: termNormMs, termNormChanged: termNormChanged,
+                            itnMs: itnMs, itnApplied: itnApplied,
+                            cscMs: 0, cscApplied: false,
+                            punctMs: 0, punctuationApplied: false,
+                            cloudRewriteMs: cloudRewriteMs
+                        )
                         logger.info("最终结果: \(rewrittenText, privacy: .public)")
                         completion(rewrittenText)
                     }
@@ -139,22 +134,44 @@ final class PostProcessingPipeline {
                 let rewrittenText = await self.cloudRewriteService.rewriteOrPassthrough(punctuatedText)
                 let cloudRewriteMs = AnalyticsService.elapsedMs(since: cloudRewriteStart)
                 self.processingQueue.async {
-                    let totalMs = AnalyticsService.elapsedMs(since: pipelineStart)
-                    AnalyticsService.track("PostProcessing.Completed", parameters: [
-                        "itnApplied": "\(itnApplied)",
-                        "cscApplied": "\(cscApplied)",
-                        "punctuationApplied": "\(punctuationApplied)",
-                        "totalLatencyMs": "\(totalMs)",
-                        "termNormLatencyMs": "\(termNormMs)",
-                        "itnLatencyMs": "\(itnMs)",
-                        "cscLatencyMs": "\(cscMs)",
-                        "punctLatencyMs": "\(punctMs)",
-                        "cloudRewriteLatencyMs": "\(cloudRewriteMs)",
-                        "termNormChanged": "\(termNormChanged)",
-                    ])
+                    Self.trackPostProcessingCompleted(
+                        pipelineStart: pipelineStart,
+                        termNormMs: termNormMs, termNormChanged: termNormChanged,
+                        itnMs: itnMs, itnApplied: itnApplied,
+                        cscMs: cscMs, cscApplied: cscApplied,
+                        punctMs: punctMs, punctuationApplied: punctuationApplied,
+                        cloudRewriteMs: cloudRewriteMs
+                    )
                     completion(rewrittenText)
                 }
             }
         }
+    }
+
+    // MARK: - Analytics Helper
+
+    /// Build and send the PostProcessing.Completed event with per-stage latency.
+    /// Single source of truth — called from both pipeline branches.
+    private static func trackPostProcessingCompleted(
+        pipelineStart: ContinuousClock.Instant,
+        termNormMs: Int, termNormChanged: Bool,
+        itnMs: Int, itnApplied: Bool,
+        cscMs: Int, cscApplied: Bool,
+        punctMs: Int, punctuationApplied: Bool,
+        cloudRewriteMs: Int
+    ) {
+        let totalMs = AnalyticsService.elapsedMs(since: pipelineStart)
+        AnalyticsService.track("PostProcessing.Completed", parameters: [
+            "itnApplied": "\(itnApplied)",
+            "cscApplied": "\(cscApplied)",
+            "punctuationApplied": "\(punctuationApplied)",
+            "totalLatencyMs": "\(totalMs)",
+            "termNormLatencyMs": "\(termNormMs)",
+            "itnLatencyMs": "\(itnMs)",
+            "cscLatencyMs": "\(cscMs)",
+            "punctLatencyMs": "\(punctMs)",
+            "cloudRewriteLatencyMs": "\(cloudRewriteMs)",
+            "termNormChanged": "\(termNormChanged)",
+        ])
     }
 }
