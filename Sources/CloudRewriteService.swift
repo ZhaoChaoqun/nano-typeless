@@ -8,6 +8,10 @@ final class CloudRewriteService {
     private let apiKeyProvider: () -> String?
     private let endpoint: URL
 
+    /// Wall-clock timeout for the entire rewrite operation.
+    /// If the API doesn't respond within this duration, the original text is used.
+    private static let rewriteTimeout: Duration = .seconds(2)
+
     /// Models to try in priority order. First available model wins.
     private static let preferredModels = [
         "qwen-3-235b-a22b-instruct-2507",
@@ -114,7 +118,31 @@ final class CloudRewriteService {
         }
 
         do {
-            return try await rewrite(text: text, apiKey: apiKey)
+            return try await withThrowingTaskGroup(of: String.self) { group in
+                // Race 1: the actual API call
+                group.addTask { [self] in
+                    try await self.rewrite(text: text, apiKey: apiKey)
+                }
+
+                // Race 2: timeout deadline
+                group.addTask {
+                    try await Task.sleep(for: Self.rewriteTimeout)
+                    throw RewriteTimeoutError()
+                }
+
+                // First completed result wins; cancel the loser
+                guard let result = try await group.next() else {
+                    return text
+                }
+                group.cancelAll()
+                return result
+            }
+        } catch is RewriteTimeoutError {
+            cloudRewriteLogger.warning("Cloud rewrite timed out (\(Self.rewriteTimeout, privacy: .public)), using original text (\(text.count, privacy: .public) chars)")
+            return text
+        } catch is CancellationError {
+            cloudRewriteLogger.debug("Cloud rewrite cancelled")
+            return text
         } catch let error as URLError {
             cloudRewriteLogger.warning("Cloud rewrite network error: \(error.code.rawValue, privacy: .public). Fallback to original text")
             return text
@@ -132,7 +160,7 @@ final class CloudRewriteService {
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
-        request.timeoutInterval = 15
+        request.timeoutInterval = 3  // Safety net; task group timeout (2s) is the primary enforcer
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
@@ -265,3 +293,6 @@ private struct ModelListResponse: Decodable {
         let id: String
     }
 }
+
+/// Thrown by the timeout racer to signal that the rewrite deadline has been exceeded.
+private struct RewriteTimeoutError: Error {}
