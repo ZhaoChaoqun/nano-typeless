@@ -38,6 +38,7 @@
 		1AD00001 /* DualEngineASR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD00010 /* DualEngineASR.swift */; };
 		1A0CR001 /* CloudRewriteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CR010 /* CloudRewriteService.swift */; };
 		1A0GS001 /* GeneratedSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0GS010 /* GeneratedSecrets.swift */; };
+		1AAN0001 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAN0010 /* AnalyticsService.swift */; };
 		1A0CRT01 /* CloudRewriteServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CRT10 /* CloudRewriteServiceTests.swift */; };
 		1AAE0001 /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAE0010 /* AudioEngineManager.swift */; };
 		1APP0001 /* PostProcessingPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1APP0010 /* PostProcessingPipeline.swift */; };
@@ -109,6 +110,7 @@
 		1AD00010 /* DualEngineASR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualEngineASR.swift; sourceTree = "<group>"; };
 		1A0CR010 /* CloudRewriteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteService.swift; sourceTree = "<group>"; };
 		1A0GS010 /* GeneratedSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedSecrets.swift; sourceTree = "<group>"; };
+		1AAN0010 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		1A0CRT10 /* CloudRewriteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteServiceTests.swift; sourceTree = "<group>"; };
 		1AAE0010 /* AudioEngineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineManager.swift; sourceTree = "<group>"; };
 		1APP0010 /* PostProcessingPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPipeline.swift; sourceTree = "<group>"; };
@@ -197,6 +199,7 @@
 				1APP0010 /* PostProcessingPipeline.swift */,
 				1AEF0010 /* ASREngineFactory.swift */,
 				1A0GS010 /* GeneratedSecrets.swift */,
+				1AAN0010 /* AnalyticsService.swift */,
 				1AF00010 /* RecordingState.swift */,
 				1AC00010 /* BertTokenizer.swift */,
 				1AC00011 /* ChineseSpellingCorrector.swift */,
@@ -264,6 +267,7 @@
 			name = Typeless;
 			packageProductDependencies = (
 				1A00001F /* WhisperKit */,
+				1ATD001F /* TelemetryDeck */,
 			);
 			productName = Typeless;
 			productReference = 1A000010 /* Typeless.app */;
@@ -299,6 +303,7 @@
 			mainGroup = 1A000007;
 			packageReferences = (
 				1A00001E /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				1ATD001E /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 			);
 			productRefGroup = 1A00000F /* Products */;
 			projectDirPath = "";
@@ -402,6 +407,7 @@
 				1APP0001 /* PostProcessingPipeline.swift in Sources */,
 				1AEF0001 /* ASREngineFactory.swift in Sources */,
 				1A0GS001 /* GeneratedSecrets.swift in Sources */,
+				1AAN0001 /* AnalyticsService.swift in Sources */,
 				1AF00001 /* RecordingState.swift in Sources */,
 				1AC00001 /* BertTokenizer.swift in Sources */,
 				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,
@@ -721,6 +727,14 @@
 				minimumVersion = 0.9.0;
 			};
 		};
+		1ATD001E /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -728,6 +742,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1A00001E /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
+		};
+		1ATD001F /* TelemetryDeck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1ATD001E /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryDeck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

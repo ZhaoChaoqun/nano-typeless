@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// 通用设置视图（快捷键、关于、权限）
+/// 通用设置视图（快捷键、关于、权限、数据分析）
 struct SettingsGeneralView: View {
+    @AppStorage("analyticsEnabled") private var analyticsEnabled = true
+
     var body: some View {
         Section("快捷键") {
             Text("长按 Fn 键开始录音")
@@ -20,6 +22,17 @@ struct SettingsGeneralView: View {
             Text("权限")
         } footer: {
             Text("Nano Typeless 需要辅助功能权限来监听全局按键，需要麦克风权限来录制语音。")
+        }
+
+        Section {
+            Toggle("发送匿名使用统计", isOn: $analyticsEnabled)
+        } header: {
+            Text("数据分析")
+        } footer: {
+            Text("帮助改进 Nano Typeless。不会收集任何文本内容或个人信息。")
+        }
+        .onChange(of: analyticsEnabled) { _, newValue in
+            AnalyticsService.setEnabled(newValue)
         }
     }
 }
