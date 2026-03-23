@@ -297,6 +297,7 @@ jobs:
             - Pattern consistency claims without verification
 
             ## Output Rules
+            - **所有 review comments 必须使用中文**（代码片段、变量名、技术术语可保留英文）
             - Post your review using the MCP tools provided (create_review, create_inline_comment, create_or_update_comment)
             - Use inline comments on specific lines for actionable issues
             - Each inline comment must identify a problem, ask a question, or flag a risk
