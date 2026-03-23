@@ -10,7 +10,7 @@ final class CloudRewriteService {
 
     /// Wall-clock timeout for the entire rewrite operation.
     /// If the API doesn't respond within this duration, the original text is used.
-    private static let rewriteTimeout: Duration = .seconds(2)
+    private static let rewriteTimeout: Duration = .seconds(5)
 
     /// Models to try in priority order. First available model wins.
     private static let preferredModels = [
@@ -114,11 +114,17 @@ final class CloudRewriteService {
 
         guard let apiKey = apiKeyProvider(), !apiKey.isEmpty else {
             cloudRewriteLogger.debug("Cloud rewrite skipped: no API key")
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "noApiKey",
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
             return text
         }
 
+        let startTime = ContinuousClock.now
+
         do {
-            return try await withThrowingTaskGroup(of: String.self) { group in
+            let result = try await withThrowingTaskGroup(of: String.self) { group in
                 // Race 1: the actual API call
                 group.addTask { [self] in
                     try await self.rewrite(text: text, apiKey: apiKey)
@@ -137,20 +143,58 @@ final class CloudRewriteService {
                 group.cancelAll()
                 return result
             }
+
+            let elapsed = startTime.duration(to: .now)
+            let elapsedMs = Int(elapsed.components.seconds * 1000) + Int(elapsed.components.attoseconds / 1_000_000_000_000_000)
+            let resolvedModel = await modelProbeTask.value
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "rewritten",
+                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
+                "model": resolvedModel,
+                "changed": "\(result != text)",
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
+            return result
         } catch is RewriteTimeoutError {
             cloudRewriteLogger.warning("Cloud rewrite timed out (\(Self.rewriteTimeout, privacy: .public)), using original text (\(text.count, privacy: .public) chars)")
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "timeout",
+                "latencyBucket": "timeout",
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
             return text
         } catch is CancellationError {
             cloudRewriteLogger.debug("Cloud rewrite cancelled")
             return text
         } catch let error as URLError {
             cloudRewriteLogger.warning("Cloud rewrite network error: \(error.code.rawValue, privacy: .public). Fallback to original text")
+            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "error",
+                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
+                "errorType": "network_\(error.code.rawValue)",
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
             return text
         } catch let error as CloudRewriteError {
             cloudRewriteLogger.warning("Cloud rewrite service error: \(error.logDescription, privacy: .public). Fallback to original text")
+            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "error",
+                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
+                "errorType": error.logDescription,
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
             return text
         } catch {
             cloudRewriteLogger.warning("Cloud rewrite unknown error: \(error.localizedDescription, privacy: .public). Fallback to original text")
+            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "error",
+                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
+                "errorType": "unknown",
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
             return text
         }
     }
@@ -160,7 +204,7 @@ final class CloudRewriteService {
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
-        request.timeoutInterval = 3  // Safety net; task group timeout (2s) is the primary enforcer
+        request.timeoutInterval = 8  // Safety net; task group timeout (5s) is the primary enforcer
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
