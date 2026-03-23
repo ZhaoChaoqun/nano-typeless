@@ -88,6 +88,15 @@ class StreamingParaformerEngine: ASREngine {
 
 /// QwenASR 流式引擎：模拟流式（chunk + rollback）
 class QwenASREngine: ASREngine {
+
+    // MARK: - Constants
+
+    /// 结束时推送的最小静音样本数（0.1s × 16kHz = 1600 samples）
+    /// 用于刷新尾部不足一个 chunk 的音频，不会导致 decoder hallucinate
+    private static let flushSilenceSampleCount = 1600
+
+    // MARK: - Properties
+
     private let recognizer: ASRStreamRecognizing
     private let recognitionQueue: DispatchQueue
 
@@ -127,7 +136,7 @@ class QwenASREngine: ASREngine {
             // 推送极少量 silence（0.1s）+ finalize，让 Rust 处理尾部不足一个 chunk 的音频
             // 并 commit rollback 窗口内的 token。0.1s silence 不会导致 decoder hallucinate，
             // 而之前的 1s silence 在长音频上导致 decoder 重复之前的内容。
-            let minimalSilence = [Float](repeating: 0.0, count: 1600)
+            let minimalSilence = [Float](repeating: 0.0, count: Self.flushSilenceSampleCount)
             _ = self.recognizer.pushAudio(samples: minimalSilence, finalize: true)
 
             let result = self.recognizer.getResult()
