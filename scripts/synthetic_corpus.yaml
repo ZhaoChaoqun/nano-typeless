@@ -133,7 +133,7 @@ entries:
 
   - id: dev_db_01
     category: developer_corpus
-    expected_text: "执行SQL查询SELECT FROM users WHERE id = 1。"
+    expected_text: "执行SQL查询：SELECT FROM users WHERE id = 1。"
     match_mode: contains_all
     match_keywords: [SQL, SELECT, users]
     language: zh

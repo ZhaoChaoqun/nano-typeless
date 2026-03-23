@@ -23,7 +23,9 @@ final class CloudRewriteService {
         endpoint: URL = URL(string: "https://api.cerebras.ai/v1/chat/completions")!,
         model: String? = nil,
         apiKeyProvider: @escaping () -> String? = {
+            // Priority: 1) environment variable (dev/debug override)  2) build-time bundled key
             ProcessInfo.processInfo.environment["CLOUD_REWRITE_API_KEY"]
+                ?? GeneratedSecrets.cloudRewriteAPIKey
         }
     ) {
         self.session = session
@@ -169,6 +171,9 @@ final class CloudRewriteService {
             throw CloudRewriteError.emptyContent
         }
         let result = Self.removeThinkBlocks(content)
+        if result.isEmpty {
+            throw CloudRewriteError.emptyContent
+        }
         cloudRewriteLogger.info("Cloud rewrite: \(text.prefix(80), privacy: .public) → \(result.prefix(80), privacy: .public)")
         return result
     }

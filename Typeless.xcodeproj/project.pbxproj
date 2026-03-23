@@ -37,6 +37,7 @@
 		1ATN0002 /* term_dictionary.json in Resources */ = {isa = PBXBuildFile; fileRef = 1ATN0011 /* term_dictionary.json */; };
 		1AD00001 /* DualEngineASR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD00010 /* DualEngineASR.swift */; };
 		1A0CR001 /* CloudRewriteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CR010 /* CloudRewriteService.swift */; };
+		1A0GS001 /* GeneratedSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0GS010 /* GeneratedSecrets.swift */; };
 		1A0CRT01 /* CloudRewriteServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CRT10 /* CloudRewriteServiceTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -98,6 +99,7 @@
 		1ATN0011 /* term_dictionary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = term_dictionary.json; sourceTree = "<group>"; };
 		1AD00010 /* DualEngineASR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualEngineASR.swift; sourceTree = "<group>"; };
 		1A0CR010 /* CloudRewriteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteService.swift; sourceTree = "<group>"; };
+		1A0GS010 /* GeneratedSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedSecrets.swift; sourceTree = "<group>"; };
 		1A0CRT10 /* CloudRewriteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -167,6 +169,7 @@
 				1AQ00014 /* ASREngine.swift */,
 				1AD00010 /* DualEngineASR.swift */,
 				1A0CR010 /* CloudRewriteService.swift */,
+				1A0GS010 /* GeneratedSecrets.swift */,
 				1AF00010 /* RecordingState.swift */,
 				1AC00010 /* BertTokenizer.swift */,
 				1AC00011 /* ChineseSpellingCorrector.swift */,
@@ -220,6 +223,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1A00001C /* Build configuration list for PBXNativeTarget "Typeless" */;
 			buildPhases = (
+				1A0000AA /* Generate Secrets */,
 				1A00000B /* Sources */,
 				1A00000D /* Frameworks */,
 				1A000032 /* Resources */,
@@ -299,6 +303,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		1A0000AA /* Generate Secrets */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.env",
+				"$(SRCROOT)/scripts/generate-secrets.sh",
+			);
+			name = "Generate Secrets";
+			outputPaths = (
+				"$(SRCROOT)/Sources/GeneratedSecrets.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "bash \"${SRCROOT}/scripts/generate-secrets.sh\"\n";
+		};
 		1A000099 /* Remove profraw */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -344,6 +365,7 @@
 				1AQ00006 /* ASREngine.swift in Sources */,
 				1AD00001 /* DualEngineASR.swift in Sources */,
 				1A0CR001 /* CloudRewriteService.swift in Sources */,
+				1A0GS001 /* GeneratedSecrets.swift in Sources */,
 				1AF00001 /* RecordingState.swift in Sources */,
 				1AC00001 /* BertTokenizer.swift in Sources */,
 				1AC00002 /* ChineseSpellingCorrector.swift in Sources */,
