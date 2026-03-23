@@ -136,6 +136,24 @@ class ChineseSpellingCorrector {
             return text
         }
 
+        // 运行推理，获取 logits 指针
+        guard let (logitsPtr, outputValue) = runInference(inputIds: inputIds, seqLen: seqLen) else {
+            return text
+        }
+        defer { api.pointee.ReleaseValue(outputValue) }
+
+        // 应用纠正
+        return applyCorrections(
+            chars: chars,
+            inputIds: inputIds,
+            seqLen: seqLen,
+            logitsPtr: logitsPtr,
+            originalText: text
+        )
+    }
+
+    /// 运行 ONNX 推理，返回 logits 指针和输出 OrtValue（调用方负责释放）
+    private func runInference(inputIds: [Int32], seqLen: Int) -> (UnsafeMutablePointer<Float>, OpaquePointer)? {
         // 准备输入张量
         var inputIdsCopy = inputIds.map { Int64($0) }
         var attentionMask = [Int64](repeating: 1, count: seqLen)
@@ -147,7 +165,7 @@ class ChineseSpellingCorrector {
               let attMaskValue = createTensor(&attentionMask, shape: &shape),
               let tokenTypeValue = createTensor(&tokenTypeIds, shape: &shape) else {
             logger.error("创建输入张量失败")
-            return text
+            return nil
         }
         defer {
             api.pointee.ReleaseValue(inputIdsValue)
@@ -155,7 +173,6 @@ class ChineseSpellingCorrector {
             api.pointee.ReleaseValue(tokenTypeValue)
         }
 
-        // 运行推理
         let inputNames: [UnsafePointer<CChar>?] = [
             "input_ids",
             "attention_mask",
@@ -184,14 +201,13 @@ class ChineseSpellingCorrector {
             let msg = Self.errorMessage(from: api, status: runStatus)
             logger.error("Run 失败: \(msg, privacy: .public)")
             api.pointee.ReleaseStatus(runStatus)
-            return text
+            return nil
         }
 
         guard let outputValue = outputValues[0] else {
             logger.error("输出值为 nil")
-            return text
+            return nil
         }
-        defer { api.pointee.ReleaseValue(outputValue) }
 
         // 获取 logits 数据指针
         var outputData: UnsafeMutableRawPointer? = nil
@@ -200,15 +216,27 @@ class ChineseSpellingCorrector {
             let msg = Self.errorMessage(from: api, status: dataStatus)
             logger.error("GetTensorMutableData 失败: \(msg, privacy: .public)")
             api.pointee.ReleaseStatus(dataStatus)
-            return text
+            api.pointee.ReleaseValue(outputValue)
+            return nil
         }
 
         guard let logitsPtr = outputData?.assumingMemoryBound(to: Float.self) else {
             logger.error("logits 指针为 nil")
-            return text
+            api.pointee.ReleaseValue(outputValue)
+            return nil
         }
 
-        // 对每个位置取 argmax，构建输出
+        return (logitsPtr, outputValue)
+    }
+
+    /// 根据 logits 对每个位置进行纠正判定，返回纠正后的文本
+    private func applyCorrections(
+        chars: [Character],
+        inputIds: [Int32],
+        seqLen: Int,
+        logitsPtr: UnsafeMutablePointer<Float>,
+        originalText: String
+    ) -> String {
         let vocabSize = tokenizer.vocabSize
         var corrected = chars
         var correctionCount = 0
@@ -223,44 +251,14 @@ class ChineseSpellingCorrector {
             guard BertTokenizer.isChinese(chars[charIndex]) else { continue }
             chineseCharCount += 1
 
-            // 取 argmax
-            let logitsOffset = i * vocabSize
-            var maxVal: Float = -Float.infinity
-            var maxIdx: Int32 = 0
-
-            for j in 0..<vocabSize {
-                let val = logitsPtr[logitsOffset + j]
-                if val > maxVal {
-                    maxVal = val
-                    maxIdx = Int32(j)
-                }
-            }
-
-            // 如果预测不同于输入且不是特殊 token
-            let originalId = inputIds[i]
-            if maxIdx != originalId && maxIdx != tokenizer.unkId {
-                let originalLogit = logitsPtr[logitsOffset + Int(originalId)]
-                let logitDiff = maxVal - originalLogit
-
-                // 条件 1：logit 差值必须足够大（提高到 5.0，防止低置信度替换）
-                guard logitDiff > 5.0 else { continue }
-
-                // 条件 2：计算 softmax 概率，top-1 概率必须 > 0.9
-                // 为数值稳定性，对 logits 减去 maxVal 后再 softmax
-                var expSum: Float = 0
-                for j in 0..<vocabSize {
-                    expSum += exp(logitsPtr[logitsOffset + j] - maxVal)
-                }
-                let topProb = 1.0 / expSum  // exp(0) / expSum since maxVal - maxVal = 0
-                guard topProb > 0.9 else { continue }
-
-                let correctedChar = tokenizer.decode([maxIdx])
-                if !correctedChar.isEmpty && correctedChar.count == 1 {
-                    if let firstChar = correctedChar.first, BertTokenizer.isChinese(firstChar) {
-                        corrected[charIndex] = firstChar
-                        correctionCount += 1
-                    }
-                }
+            if let correctedChar = evaluateCorrection(
+                tokenIndex: i,
+                originalId: inputIds[i],
+                logitsPtr: logitsPtr,
+                vocabSize: vocabSize
+            ) {
+                corrected[charIndex] = correctedChar
+                correctionCount += 1
             }
         }
 
@@ -269,15 +267,63 @@ class ChineseSpellingCorrector {
             let correctionRatio = Float(correctionCount) / Float(chineseCharCount)
             if correctionRatio > 0.2 {
                 logger.warning("CSC 纠正比例过高 (\(correctionCount)/\(chineseCharCount) = \(String(format: "%.0f%%", correctionRatio * 100)))，丢弃纠正结果")
-                return text
+                return originalText
             }
 
             let result = String(corrected)
-            logger.info("CSC 纠正了 \(correctionCount) 处: \(text, privacy: .public) → \(result, privacy: .public)")
+            logger.info("CSC 纠正了 \(correctionCount) 处: \(originalText, privacy: .public) → \(result, privacy: .public)")
             return result
         }
 
-        return text
+        return originalText
+    }
+
+    /// 评估单个位置是否需要纠正，返回纠正后的字符（若不需要纠正则返回 nil）
+    private func evaluateCorrection(
+        tokenIndex: Int,
+        originalId: Int32,
+        logitsPtr: UnsafeMutablePointer<Float>,
+        vocabSize: Int
+    ) -> Character? {
+        let logitsOffset = tokenIndex * vocabSize
+
+        // 取 argmax
+        var maxVal: Float = -Float.infinity
+        var maxIdx: Int32 = 0
+
+        for j in 0..<vocabSize {
+            let val = logitsPtr[logitsOffset + j]
+            if val > maxVal {
+                maxVal = val
+                maxIdx = Int32(j)
+            }
+        }
+
+        // 如果预测不同于输入且不是特殊 token
+        guard maxIdx != originalId && maxIdx != tokenizer.unkId else { return nil }
+
+        let originalLogit = logitsPtr[logitsOffset + Int(originalId)]
+        let logitDiff = maxVal - originalLogit
+
+        // 条件 1：logit 差值必须足够大（提高到 5.0，防止低置信度替换）
+        guard logitDiff > 5.0 else { return nil }
+
+        // 条件 2：计算 softmax 概率，top-1 概率必须 > 0.9
+        // 为数值稳定性，对 logits 减去 maxVal 后再 softmax
+        var expSum: Float = 0
+        for j in 0..<vocabSize {
+            expSum += exp(logitsPtr[logitsOffset + j] - maxVal)
+        }
+        let topProb = 1.0 / expSum  // exp(0) / expSum since maxVal - maxVal = 0
+        guard topProb > 0.9 else { return nil }
+
+        let correctedChar = tokenizer.decode([maxIdx])
+        if !correctedChar.isEmpty && correctedChar.count == 1 {
+            if let firstChar = correctedChar.first, BertTokenizer.isChinese(firstChar) {
+                return firstChar
+            }
+        }
+        return nil
     }
 
     /// 创建 Int64 类型的 OrtValue 张量
