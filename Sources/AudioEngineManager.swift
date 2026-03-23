@@ -14,10 +14,16 @@ final class AudioEngineManager {
 
     /// Callback invoked with 16kHz Float32 mono samples from the microphone.
     /// Called on a Core Audio thread — callers must dispatch to appropriate queues.
+    ///
+    /// Must be set before `start()` is called. Do not mutate while the engine is running.
+    /// Read from the Core Audio tap thread; writes must happen before the engine starts.
     var onSamples: (([Float]) -> Void)?
 
     /// Callback invoked with normalized audio level (0.0–1.0).
     /// Called on the main queue.
+    ///
+    /// Must be set before `start()` is called. Do not mutate while the engine is running.
+    /// Read from the Core Audio tap thread; writes must happen before the engine starts.
     var onAudioLevel: ((Float) -> Void)?
 
     private var audioEngine: AVAudioEngine?
