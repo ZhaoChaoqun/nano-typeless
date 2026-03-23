@@ -20,9 +20,9 @@
 		1A000048 /* SherpaOnnxPunctuation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000049 /* SherpaOnnxPunctuation.swift */; };
 		1A000081 /* SherpaOnnxITN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000080 /* SherpaOnnxITN.swift */; };
 		1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; };
-		1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; };
+		1A000052 /* libonnxruntime.1.23.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.23.2.dylib */; };
 		1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000051 /* libsherpa-onnx-c-api.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.17.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		1A000055 /* libonnxruntime.1.23.2.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1A000053 /* libonnxruntime.1.23.2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		1A000071 /* OnboardingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A000070 /* OnboardingOverlay.swift */; };
 		1AC00001 /* BertTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC00010 /* BertTokenizer.swift */; };
 		1AC00002 /* ChineseSpellingCorrector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC00011 /* ChineseSpellingCorrector.swift */; };
@@ -68,7 +68,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				1A000054 /* libsherpa-onnx-c-api.dylib in CopyFiles */,
-				1A000055 /* libonnxruntime.1.17.1.dylib in CopyFiles */,
+				1A000055 /* libonnxruntime.1.23.2.dylib in CopyFiles */,
 				1AQ00003 /* libqwen_asr.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -93,7 +93,7 @@
 		1A000049 /* SherpaOnnxPunctuation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxPunctuation.swift; sourceTree = "<group>"; };
 		1A000080 /* SherpaOnnxITN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SherpaOnnxITN.swift; sourceTree = "<group>"; };
 		1A000051 /* libsherpa-onnx-c-api.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libsherpa-onnx-c-api.dylib"; path = "Frameworks/sherpa-onnx/lib/libsherpa-onnx-c-api.dylib"; sourceTree = "<group>"; };
-		1A000053 /* libonnxruntime.1.17.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libonnxruntime.1.17.1.dylib; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.17.1.dylib"; sourceTree = "<group>"; };
+		1A000053 /* libonnxruntime.1.23.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libonnxruntime.1.23.2.dylib; path = "Frameworks/sherpa-onnx/lib/libonnxruntime.1.23.2.dylib"; sourceTree = "<group>"; };
 		1A000060 /* CSherpaOnnx-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CSherpaOnnx-Bridging-Header.h"; sourceTree = "<group>"; };
 		1A000070 /* OnboardingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOverlay.swift; sourceTree = "<group>"; };
 		1AC00010 /* BertTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BertTokenizer.swift; sourceTree = "<group>"; };
@@ -139,7 +139,7 @@
 			files = (
 				1A000020 /* WhisperKit in Frameworks */,
 				1A000050 /* libsherpa-onnx-c-api.dylib in Frameworks */,
-				1A000052 /* libonnxruntime.1.17.1.dylib in Frameworks */,
+				1A000052 /* libonnxruntime.1.23.2.dylib in Frameworks */,
 				1AQ00002 /* libqwen_asr.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -214,7 +214,7 @@
 			isa = PBXGroup;
 			children = (
 				1A000051 /* libsherpa-onnx-c-api.dylib */,
-				1A000053 /* libonnxruntime.1.17.1.dylib */,
+				1A000053 /* libonnxruntime.1.23.2.dylib */,
 				1AQ00011 /* libqwen_asr.dylib */,
 			);
 			name = Frameworks;
