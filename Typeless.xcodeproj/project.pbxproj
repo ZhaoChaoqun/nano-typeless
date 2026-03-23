@@ -39,6 +39,9 @@
 		1A0CR001 /* CloudRewriteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CR010 /* CloudRewriteService.swift */; };
 		1A0GS001 /* GeneratedSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0GS010 /* GeneratedSecrets.swift */; };
 		1A0CRT01 /* CloudRewriteServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0CRT10 /* CloudRewriteServiceTests.swift */; };
+		1AAE0001 /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAE0010 /* AudioEngineManager.swift */; };
+		1APP0001 /* PostProcessingPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1APP0010 /* PostProcessingPipeline.swift */; };
+		1AEF0001 /* ASREngineFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AEF0010 /* ASREngineFactory.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +104,9 @@
 		1A0CR010 /* CloudRewriteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteService.swift; sourceTree = "<group>"; };
 		1A0GS010 /* GeneratedSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedSecrets.swift; sourceTree = "<group>"; };
 		1A0CRT10 /* CloudRewriteServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudRewriteServiceTests.swift; sourceTree = "<group>"; };
+		1AAE0010 /* AudioEngineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineManager.swift; sourceTree = "<group>"; };
+		1APP0010 /* PostProcessingPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPipeline.swift; sourceTree = "<group>"; };
+		1AEF0010 /* ASREngineFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASREngineFactory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -169,6 +175,9 @@
 				1AQ00014 /* ASREngine.swift */,
 				1AD00010 /* DualEngineASR.swift */,
 				1A0CR010 /* CloudRewriteService.swift */,
+				1AAE0010 /* AudioEngineManager.swift */,
+				1APP0010 /* PostProcessingPipeline.swift */,
+				1AEF0010 /* ASREngineFactory.swift */,
 				1A0GS010 /* GeneratedSecrets.swift */,
 				1AF00010 /* RecordingState.swift */,
 				1AC00010 /* BertTokenizer.swift */,
@@ -365,6 +374,9 @@
 				1AQ00006 /* ASREngine.swift in Sources */,
 				1AD00001 /* DualEngineASR.swift in Sources */,
 				1A0CR001 /* CloudRewriteService.swift in Sources */,
+				1AAE0001 /* AudioEngineManager.swift in Sources */,
+				1APP0001 /* PostProcessingPipeline.swift in Sources */,
+				1AEF0001 /* ASREngineFactory.swift in Sources */,
 				1A0GS001 /* GeneratedSecrets.swift in Sources */,
 				1AF00001 /* RecordingState.swift in Sources */,
 				1AC00001 /* BertTokenizer.swift in Sources */,
