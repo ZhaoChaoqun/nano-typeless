@@ -87,14 +87,10 @@ class KeyMonitor {
 
         if type == .flagsChanged {
             let flags = event.flags
-            // let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-            // logger.debug("FlagsChanged 事件 - keyCode: \(keyCode, privacy: .public), flags: \(flags.rawValue, privacy: .public)")
 
             // 检测 Fn 键状态
             // Fn 键通过 secondaryFn 标志检测
             let fnPressed = flags.contains(.maskSecondaryFn)
-
-            // logger.debug("Fn 键状态: \(fnPressed ? \"按下\" : \"未按下\", privacy: .public), 之前状态: \(self.isFnPressed ? \"按下\" : \"未按下\", privacy: .public)")
 
             if fnPressed && !isFnPressed {
                 // Fn 键按下

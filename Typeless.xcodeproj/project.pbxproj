@@ -42,6 +42,9 @@
 		1AAE0001 /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAE0010 /* AudioEngineManager.swift */; };
 		1APP0001 /* PostProcessingPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1APP0010 /* PostProcessingPipeline.swift */; };
 		1AEF0001 /* ASREngineFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AEF0010 /* ASREngineFactory.swift */; };
+		1ASV0001 /* SettingsASRView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ASV0010 /* SettingsASRView.swift */; };
+		1ASV0002 /* SettingsDualEngineStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ASV0020 /* SettingsDualEngineStatusView.swift */; };
+		1ASV0003 /* SettingsGeneralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ASV0030 /* SettingsGeneralView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +110,9 @@
 		1AAE0010 /* AudioEngineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineManager.swift; sourceTree = "<group>"; };
 		1APP0010 /* PostProcessingPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPipeline.swift; sourceTree = "<group>"; };
 		1AEF0010 /* ASREngineFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASREngineFactory.swift; sourceTree = "<group>"; };
+		1ASV0010 /* SettingsASRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsASRView.swift; sourceTree = "<group>"; };
+		1ASV0020 /* SettingsDualEngineStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDualEngineStatusView.swift; sourceTree = "<group>"; };
+		1ASV0030 /* SettingsGeneralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsGeneralView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -165,6 +171,9 @@
 				1A000070 /* OnboardingOverlay.swift */,
 				1A000015 /* TextInserter.swift */,
 				1A000016 /* SettingsView.swift */,
+				1ASV0010 /* SettingsASRView.swift */,
+				1ASV0020 /* SettingsDualEngineStatusView.swift */,
+				1ASV0030 /* SettingsGeneralView.swift */,
 				1A000047 /* SherpaOnnxOnlineRecognizer.swift */,
 				1A000049 /* SherpaOnnxPunctuation.swift */,
 				1A000080 /* SherpaOnnxITN.swift */,
@@ -364,6 +373,9 @@
 				1A000071 /* OnboardingOverlay.swift in Sources */,
 				1A000005 /* TextInserter.swift in Sources */,
 				1A000006 /* SettingsView.swift in Sources */,
+				1ASV0001 /* SettingsASRView.swift in Sources */,
+				1ASV0002 /* SettingsDualEngineStatusView.swift in Sources */,
+				1ASV0003 /* SettingsGeneralView.swift in Sources */,
 				1A000046 /* SherpaOnnxOnlineRecognizer.swift in Sources */,
 				1A000048 /* SherpaOnnxPunctuation.swift in Sources */,
 				1A000081 /* SherpaOnnxITN.swift in Sources */,
