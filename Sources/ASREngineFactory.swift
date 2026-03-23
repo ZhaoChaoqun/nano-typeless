@@ -14,10 +14,9 @@ private let logger = Logger(subsystem: "com.typeless.app", category: "ASREngineF
 ///   no other code touches them during initialization (FSM is in `.initializing` state).
 enum ASREngineFactory {
 
-    /// Result of engine creation, containing the engine and a TermNormalizer.
+    /// Result of engine creation.
     struct Result {
         let engine: (any ASREngine)?
-        let termNormalizer: TermNormalizer?
     }
 
     /// Creates an ASR engine for the given model type, also loading supporting models
@@ -27,7 +26,7 @@ enum ASREngineFactory {
     ///   - modelType: Which ASR model to load.
     ///   - pipeline: The post-processing pipeline to configure with supporting models.
     ///   - recognitionQueue: The serial queue used by the ASR engine for decoding.
-    /// - Returns: The created ASR engine (nil on failure) and TermNormalizer.
+    /// - Returns: The created ASR engine (nil on failure).
     static func createEngine(
         for modelType: ASRModelType,
         pipeline: PostProcessingPipeline,
@@ -58,7 +57,7 @@ enum ASREngineFactory {
         }
         pipeline.termNormalizer = termNormalizer
 
-        return Result(engine: engine, termNormalizer: termNormalizer)
+        return Result(engine: engine)
     }
 
     // MARK: - Streaming Paraformer

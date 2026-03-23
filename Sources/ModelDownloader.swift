@@ -465,11 +465,10 @@ extension ModelDownloader: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         progressCallback?("正在解压模型...")
 
-        let destDir = (extractionHandler != nil) ? location : location  // location is temp file
         // Use the extraction handler injected by SherpaOnnxManager
         if let handler = extractionHandler {
-            // We need the modelsDirectory — get it via the manager's pathResolver
-            // The handler closure captures the destination directory
+            // The second parameter is unused — the handler closure captures its
+            // destination directory, so we pass an empty URL for API compatibility.
             let result = handler(location, URL(fileURLWithPath: ""))
             if result {
                 completionCallback?(true, nil)
