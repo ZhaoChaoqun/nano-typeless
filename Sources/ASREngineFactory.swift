@@ -33,6 +33,7 @@ enum ASREngineFactory {
         recognitionQueue: DispatchQueue
     ) async -> Result {
         logger.info("开始加载语音识别模型 (\(modelType.displayName, privacy: .public))")
+        let loadStart = ContinuousClock.now
 
         // Clear previous pipeline state
         pipeline.reset()
@@ -56,6 +57,19 @@ enum ASREngineFactory {
             logger.warning("TermNormalizer 词典加载失败，跳过专有名词标准化")
         }
         pipeline.termNormalizer = termNormalizer
+
+        // Analytics: track model load result
+        let loadMs = AnalyticsService.elapsedMs(since: loadStart)
+        let success = engine != nil
+        var params: [String: String] = [
+            "engine": modelType.rawValue,
+            "latencyMs": "\(loadMs)",
+            "success": "\(success)",
+        ]
+        if !success {
+            params["errorType"] = "load_failed"
+        }
+        AnalyticsService.track("Model.LoadCompleted", parameters: params)
 
         return Result(engine: engine)
     }

@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        AnalyticsService.initialize()
         setupStatusBar()
 
         _ = RecordingManager.shared
@@ -45,6 +46,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         checkPermissions()
         autoDownloadDefaultModelIfNeeded()
         showOnboardingIfNeeded()
+
+        AnalyticsService.track("App.Launched")
     }
 
     private func showOnboardingIfNeeded() {

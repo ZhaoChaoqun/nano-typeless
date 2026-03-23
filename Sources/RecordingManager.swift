@@ -25,6 +25,9 @@ class RecordingManager {
     private let stateQueue = DispatchQueue(label: "com.typeless.state")
     private var state: RecordingState = .idle
 
+    /// Recording session start time for analytics duration tracking
+    private var sessionStartTime: ContinuousClock.Instant?
+
     /// 计算密集型操作的队列（ASR decoding + post-processing 共用）
     private let recognitionQueue = DispatchQueue(label: "com.typeless.recognition", qos: .userInitiated)
 
@@ -121,6 +124,7 @@ class RecordingManager {
 
         // 开始录音
         case (.ready, .recording):
+            self.sessionStartTime = .now
             DispatchQueue.main.async { self.onRecordingStarted?() }
             self.startRecording()
 
@@ -145,6 +149,18 @@ class RecordingManager {
         // 后处理完成
         case (.postProcessing, .ready):
             if case .postProcessComplete(let finalText) = event {
+                // Analytics: track completed session
+                if let startTime = self.sessionStartTime {
+                    let elapsed = startTime.duration(to: .now)
+                    let durationSeconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+                    AnalyticsService.track("Session.Completed", parameters: [
+                        "engine": self.currentModel.rawValue,
+                        "durationBucket": AnalyticsService.durationBucket(seconds: durationSeconds),
+                        "hasResult": "\(finalText != nil && !(finalText?.isEmpty ?? true))",
+                        "resultLengthBucket": AnalyticsService.lengthBucket(count: finalText?.count ?? 0),
+                    ])
+                    self.sessionStartTime = nil
+                }
                 DispatchQueue.main.async { self.onFinalResult?(finalText) }
             }
 
@@ -185,9 +201,17 @@ class RecordingManager {
             return
         }
 
+        let flushStart = ContinuousClock.now
         engine.flush { [weak self] rawText in
             guard let self = self else { return }
+            let flushMs = AnalyticsService.elapsedMs(since: flushStart)
             let text = rawText.isEmpty ? fallbackText : rawText
+            AnalyticsService.track("ASR.FlushCompleted", parameters: [
+                "engine": self.currentModel.rawValue,
+                "latencyMs": "\(flushMs)",
+                "success": "\(!rawText.isEmpty)",
+                "rawTextLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
             self.handleEvent(.flushComplete(rawText: text))
         }
     }
