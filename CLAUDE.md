@@ -51,17 +51,6 @@ ls Frameworks/sherpa-onnx/lib/libonnxruntime*.dylib
 
 **历史教训**：v1.4.1 曾因 `libsherpa-onnx-c-api.dylib` 链接 `@rpath/libonnxruntime.1.23.2.dylib`，但仓库只打包了 `libonnxruntime.1.17.1.dylib`，导致其他机器 dyld crash。
 
-## Python 环境管理
-
-统一使用 `uv` 管理 Python 环境和包：
-
-```bash
-# 安装包
-uv pip install <package>
-
-# 运行 Python 脚本
-uv run python script.py
-```
 
 ## ModelScope 模型管理
 
