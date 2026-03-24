@@ -164,6 +164,9 @@ class KeyMonitor {
     /// ⚠️ 必须通过 DispatchQueue.main.async 异步调用，禁止在 CGEvent tap 回调中同步调用，
     /// 因为 stopMonitoring() 会销毁当前正在执行回调的 event tap，导致未定义行为。
     func restartWithNewTriggerKey() {
+        if isTriggerPressed {
+            onKeyUp?()
+        }
         stopMonitoring()
         isTriggerPressed = false
         triggerConfig = .current
