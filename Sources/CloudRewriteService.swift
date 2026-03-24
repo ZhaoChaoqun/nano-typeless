@@ -149,17 +149,15 @@ final class CloudRewriteService {
             let resolvedModel = await modelProbeTask.value
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "rewritten",
-                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
                 "model": resolvedModel,
                 "changed": "\(result != text)",
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
-            ])
+            ], floatValue: Double(elapsedMs))
             return result
         } catch is RewriteTimeoutError {
             cloudRewriteLogger.warning("Cloud rewrite timed out (\(Self.rewriteTimeout, privacy: .public)), using original text (\(text.count, privacy: .public) chars)")
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "timeout",
-                "latencyBucket": "timeout",
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
             ])
             return text
@@ -168,33 +166,30 @@ final class CloudRewriteService {
             return text
         } catch let error as URLError {
             cloudRewriteLogger.warning("Cloud rewrite network error: \(error.code.rawValue, privacy: .public). Fallback to original text")
-            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            let elapsedMs = AnalyticsService.elapsedMs(since: startTime)
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "error",
-                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
                 "errorType": "network_\(error.code.rawValue)",
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
-            ])
+            ], floatValue: Double(elapsedMs))
             return text
         } catch let error as CloudRewriteError {
             cloudRewriteLogger.warning("Cloud rewrite service error: \(error.logDescription, privacy: .public). Fallback to original text")
-            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            let elapsedMs = AnalyticsService.elapsedMs(since: startTime)
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "error",
-                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
                 "errorType": error.logDescription,
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
-            ])
+            ], floatValue: Double(elapsedMs))
             return text
         } catch {
             cloudRewriteLogger.warning("Cloud rewrite unknown error: \(error.localizedDescription, privacy: .public). Fallback to original text")
-            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            let elapsedMs = AnalyticsService.elapsedMs(since: startTime)
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "error",
-                "latencyBucket": AnalyticsService.latencyBucket(ms: elapsedMs),
                 "errorType": "unknown",
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
-            ])
+            ], floatValue: Double(elapsedMs))
             return text
         }
     }

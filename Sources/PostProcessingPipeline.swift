@@ -165,13 +165,12 @@ final class PostProcessingPipeline {
             "itnApplied": "\(itnApplied)",
             "cscApplied": "\(cscApplied)",
             "punctuationApplied": "\(punctuationApplied)",
-            "totalLatencyMs": "\(totalMs)",
             "termNormLatencyMs": "\(termNormMs)",
             "itnLatencyMs": "\(itnMs)",
             "cscLatencyMs": "\(cscMs)",
             "punctLatencyMs": "\(punctMs)",
             "cloudRewriteLatencyMs": "\(cloudRewriteMs)",
             "termNormChanged": "\(termNormChanged)",
-        ])
+        ], floatValue: Double(totalMs))
     }
 }

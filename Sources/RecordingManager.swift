@@ -158,7 +158,7 @@ class RecordingManager {
                         "durationBucket": AnalyticsService.durationBucket(seconds: durationSeconds),
                         "hasResult": "\(finalText != nil && !(finalText?.isEmpty ?? true))",
                         "resultLengthBucket": AnalyticsService.lengthBucket(count: finalText?.count ?? 0),
-                    ])
+                    ], floatValue: durationSeconds)
                     self.sessionStartTime = nil
                 }
                 DispatchQueue.main.async { self.onFinalResult?(finalText) }
@@ -208,10 +208,9 @@ class RecordingManager {
             let text = rawText.isEmpty ? fallbackText : rawText
             AnalyticsService.track("ASR.FlushCompleted", parameters: [
                 "engine": self.currentModel.rawValue,
-                "latencyMs": "\(flushMs)",
                 "success": "\(!rawText.isEmpty)",
                 "rawTextLengthBucket": AnalyticsService.lengthBucket(count: text.count),
-            ])
+            ], floatValue: Double(flushMs))
             self.handleEvent(.flushComplete(rawText: text))
         }
     }
