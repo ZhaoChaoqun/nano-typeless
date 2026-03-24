@@ -49,7 +49,11 @@ enum AnalyticsService {
     }
 
     /// Track an analytics event with optional parameters.
-    static func track(_ event: String, parameters: [String: String] = [:]) {
+    /// - Parameters:
+    ///   - event: Event name (e.g. "ASR.FlushCompleted").
+    ///   - parameters: String key-value metadata (for filtering and breakdown).
+    ///   - floatValue: Optional numeric value for aggregation (avg/min/max) in TelemetryDeck.
+    static func track(_ event: String, parameters: [String: String] = [:], floatValue: Double? = nil) {
         guard isEnabled else { return }
 
         // Attach default parameters
@@ -58,7 +62,7 @@ enum AnalyticsService {
         params["selectedEngine"] = UserDefaults.standard.string(forKey: "selectedASRModel") ?? "streamingParaformer"
         params["cloudRewriteEnabled"] = "\(hasCloudRewriteAPIKey)"
 
-        TelemetryDeck.signal(event, parameters: params)
+        TelemetryDeck.signal(event, parameters: params, floatValue: floatValue)
     }
 
     // MARK: - Timing Helpers
@@ -77,17 +81,6 @@ enum AnalyticsService {
     }
 
     // MARK: - Bucketing Helpers
-
-    /// Map millisecond latency to a privacy-safe bucket string.
-    static func latencyBucket(ms: Int) -> String {
-        switch ms {
-        case ..<500: return "0-500ms"
-        case 500..<1000: return "500-1000ms"
-        case 1000..<1500: return "1000-1500ms"
-        case 1500..<2000: return "1500-2000ms"
-        default: return "2000ms+"
-        }
-    }
 
     /// Map recording duration (seconds) to a privacy-safe bucket.
     static func durationBucket(seconds: Double) -> String {

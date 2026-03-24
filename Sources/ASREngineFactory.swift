@@ -63,13 +63,12 @@ enum ASREngineFactory {
         let success = engine != nil
         var params: [String: String] = [
             "engine": modelType.rawValue,
-            "latencyMs": "\(loadMs)",
             "success": "\(success)",
         ]
         if !success {
             params["errorType"] = "load_failed"
         }
-        AnalyticsService.track("Model.LoadCompleted", parameters: params)
+        AnalyticsService.track("Model.LoadCompleted", parameters: params, floatValue: Double(loadMs))
 
         return Result(engine: engine)
     }
