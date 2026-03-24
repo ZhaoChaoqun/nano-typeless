@@ -4,10 +4,56 @@ import SwiftUI
 struct SettingsGeneralView: View {
     @AppStorage("analyticsEnabled") private var analyticsEnabled = true
 
+    /// 当前触发键的显示名称（从 TriggerKeyConfig 读取）
+    @State private var triggerKeyName: String = TriggerKeyConfig.current.displayName
+    /// 是否处于按键录制状态
+    @State private var isRecording = false
+
     var body: some View {
-        Section("快捷键") {
-            Text("长按 Fn 键开始录音")
-                .foregroundColor(.secondary)
+        Section {
+            HStack {
+                Text("触发键")
+                Spacer()
+                if isRecording {
+                    Text("请按下任意键...")
+                        .foregroundStyle(.secondary)
+                        .italic()
+                } else {
+                    Text(triggerKeyName)
+                        .foregroundStyle(.secondary)
+                }
+                Button(isRecording ? "取消" : "录制按键") {
+                    if isRecording {
+                        // 取消录制
+                        isRecording = false
+                        NotificationCenter.default.post(
+                            name: .triggerKeyRecordingCancelled, object: nil)
+                    } else {
+                        // 开始录制
+                        isRecording = true
+                        NotificationCenter.default.post(
+                            name: .triggerKeyRecordingRequested, object: nil)
+                    }
+                }
+                .buttonStyle(.bordered)
+            }
+            if triggerKeyName != TriggerKeyConfig.defaultFn.displayName {
+                Button("恢复默认 (Fn)") {
+                    TriggerKeyConfig.defaultFn.save()
+                    triggerKeyName = TriggerKeyConfig.defaultFn.displayName
+                    NotificationCenter.default.post(name: .triggerKeyChanged, object: nil)
+                }
+            }
+        } header: {
+            Text("快捷键")
+        } footer: {
+            Text("长按所选按键开始录音，松开结束。外接机械键盘的 Fn 键通常无法被系统检测，建议录制其他按键。")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .triggerKeyRecorded)) { notification in
+            if let config = notification.object as? TriggerKeyConfig {
+                triggerKeyName = config.displayName
+                isRecording = false
+            }
         }
 
         Section("关于") {

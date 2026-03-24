@@ -22,6 +22,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var onboardingWindow: OnboardingWindowController?
     var keyMonitor: KeyMonitor?
     var settingsWindow: NSWindow?
+    /// 菜单栏中显示触发键提示的菜单项
+    private var triggerKeyMenuItem: NSMenuItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -41,13 +43,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         keyMonitor?.onKeyUp = {
             RecordingManager.shared.handleEvent(.fnKeyUp)
         }
+        // 按键录制完成后：保存配置、通知 UI、重启监听
+        keyMonitor?.onKeyRecorded = { [weak self] config in
+            config.save()
+            NotificationCenter.default.post(name: .triggerKeyRecorded, object: config)
+            NotificationCenter.default.post(name: .triggerKeyChanged, object: nil)
+        }
         keyMonitor?.startMonitoring()
+
+        // 监听触发键变更通知
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleTriggerKeyChanged),
+            name: .triggerKeyChanged, object: nil)
+        // 监听按键录制请求
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleRecordingRequested),
+            name: .triggerKeyRecordingRequested, object: nil)
+        // 监听按键录制取消
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleRecordingCancelled),
+            name: .triggerKeyRecordingCancelled, object: nil)
 
         checkPermissions()
         autoDownloadDefaultModelIfNeeded()
         showOnboardingIfNeeded()
 
         AnalyticsService.track("App.Launched")
+    }
+
+    /// 触发键变更后重启监听。
+    /// ⚠️ 必须在主线程异步调用（DispatchQueue.main.async），不可在 CGEvent tap 回调中同步调用，
+    /// 否则 stopMonitoring() 会在回调内部销毁 event tap，导致未定义行为。
+    @objc private func handleTriggerKeyChanged() {
+        keyMonitor?.restartWithNewTriggerKey()
+        updateTriggerKeyMenuText()
+    }
+
+    @objc private func handleRecordingRequested() {
+        keyMonitor?.isRecordingKey = true
+    }
+
+    @objc private func handleRecordingCancelled() {
+        keyMonitor?.isRecordingKey = false
+    }
+
+    private func updateTriggerKeyMenuText() {
+        let keyName = TriggerKeyConfig.current.displayName
+        triggerKeyMenuItem?.title = "长按 \(keyName) 键开始录音"
     }
 
     private func showOnboardingIfNeeded() {
@@ -82,10 +124,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Nano Typeless")
         }
 
+        let keyName = TriggerKeyConfig.current.displayName
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Nano Typeless - 语音输入", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "长按 Fn 键开始录音", action: nil, keyEquivalent: ""))
+        let keyItem = NSMenuItem(title: "长按 \(keyName) 键开始录音", action: nil, keyEquivalent: "")
+        triggerKeyMenuItem = keyItem
+        menu.addItem(keyItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "设置...", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
