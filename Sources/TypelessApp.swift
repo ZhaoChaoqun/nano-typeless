@@ -71,6 +71,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AnalyticsService.track("App.Launched")
     }
 
+    /// 触发键变更后重启监听。
+    /// ⚠️ 必须在主线程异步调用（DispatchQueue.main.async），不可在 CGEvent tap 回调中同步调用，
+    /// 否则 stopMonitoring() 会在回调内部销毁 event tap，导致未定义行为。
     @objc private func handleTriggerKeyChanged() {
         keyMonitor?.restartWithNewTriggerKey()
         updateTriggerKeyMenuText()

@@ -88,8 +88,12 @@ class KeyMonitor {
     /// 当前配置的触发键
     private var triggerConfig: TriggerKeyConfig = .current
 
-    /// 是否处于按键录制模式
-    var isRecordingKey = false
+    /// 是否处于按键录制模式（通过锁保护，因为该值在 CGEvent tap 回调线程读取、主线程写入）
+    private let _isRecordingKey = OSAllocatedUnfairLock(initialState: false)
+    var isRecordingKey: Bool {
+        get { _isRecordingKey.withLock { $0 } }
+        set { _isRecordingKey.withLock { $0 = newValue } }
+    }
 
     func startMonitoring() {
         // 单元测试环境下跳过监听（避免弹出辅助功能权限窗口）
@@ -156,7 +160,9 @@ class KeyMonitor {
         logger.info("触发键监听已启动（\(self.triggerConfig.displayName, privacy: .public)）")
     }
 
-    /// 切换触发键后重新启动监听
+    /// 切换触发键后重新启动监听。
+    /// ⚠️ 必须通过 DispatchQueue.main.async 异步调用，禁止在 CGEvent tap 回调中同步调用，
+    /// 因为 stopMonitoring() 会销毁当前正在执行回调的 event tap，导致未定义行为。
     func restartWithNewTriggerKey() {
         stopMonitoring()
         isTriggerPressed = false
@@ -290,8 +296,8 @@ class KeyMonitor {
 
     /// 将 keyCode 转为字符（用于字母/数字键）
     private func keyCodeToCharacter(_ keyCode: Int64) -> Character? {
-        let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue()
-        guard let layoutData = TISGetInputSourceProperty(source!, kTISPropertyUnicodeKeyLayoutData) else { return nil }
+        guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue() else { return nil }
+        guard let layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return nil }
         let layout = unsafeBitCast(layoutData, to: CFData.self)
         let keyboardLayout = unsafeBitCast(CFDataGetBytePtr(layout), to: UnsafePointer<UCKeyboardLayout>.self)
 
@@ -313,7 +319,8 @@ class KeyMonitor {
         )
 
         guard status == noErr, length > 0 else { return nil }
-        return Character(UnicodeScalar(chars[0])!)
+        guard let scalar = UnicodeScalar(chars[0]) else { return nil }
+        return Character(scalar)
     }
 
     /// 统一处理触发键状态变化
