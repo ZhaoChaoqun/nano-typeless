@@ -166,7 +166,7 @@ final class CloudRewriteService {
             return text
         } catch let error as URLError {
             cloudRewriteLogger.warning("Cloud rewrite network error: \(error.code.rawValue, privacy: .public). Fallback to original text")
-            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            let elapsedMs = AnalyticsService.elapsedMs(since: startTime)
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "error",
                 "errorType": "network_\(error.code.rawValue)",
@@ -175,7 +175,7 @@ final class CloudRewriteService {
             return text
         } catch let error as CloudRewriteError {
             cloudRewriteLogger.warning("Cloud rewrite service error: \(error.logDescription, privacy: .public). Fallback to original text")
-            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            let elapsedMs = AnalyticsService.elapsedMs(since: startTime)
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "error",
                 "errorType": error.logDescription,
@@ -184,7 +184,7 @@ final class CloudRewriteService {
             return text
         } catch {
             cloudRewriteLogger.warning("Cloud rewrite unknown error: \(error.localizedDescription, privacy: .public). Fallback to original text")
-            let elapsedMs = Int(startTime.duration(to: .now).components.seconds * 1000)
+            let elapsedMs = AnalyticsService.elapsedMs(since: startTime)
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "error",
                 "errorType": "unknown",
