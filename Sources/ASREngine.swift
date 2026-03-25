@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// 统一的 ASR 引擎接口
 ///
@@ -100,6 +101,26 @@ class QwenASREngine: ASREngine {
     private let recognizer: ASRStreamRecognizing
     private let recognitionQueue: DispatchQueue
 
+    /// flush 进行中标志。设为 true 后，recognitionQueue 中排队的 processAudio 块会立即跳过，
+    /// 避免 flush 块被大量耗时的 Metal GPU 推理阻塞。
+    private var _isFlushing = false
+    private var lock = os_unfair_lock_s()
+
+    /// 线程安全读写 isFlushing
+    private var isFlushing: Bool {
+        get {
+            os_unfair_lock_lock(&lock)
+            let value = _isFlushing
+            os_unfair_lock_unlock(&lock)
+            return value
+        }
+        set {
+            os_unfair_lock_lock(&lock)
+            _isFlushing = newValue
+            os_unfair_lock_unlock(&lock)
+        }
+    }
+
     let needsPunctuation = false
     let needsITN = true
 
@@ -110,7 +131,7 @@ class QwenASREngine: ASREngine {
 
     func processAudio(samples: [Float], onPartialResult: @escaping (String, String?) -> Void) {
         recognitionQueue.async { [weak self] in
-            guard let self = self else { return }
+            guard let self = self, !self.isFlushing else { return }
             _ = self.recognizer.pushAudio(samples: samples, finalize: false)
 
             // stable 确认文本
@@ -127,6 +148,10 @@ class QwenASREngine: ASREngine {
     }
 
     func flush(completion: @escaping (String) -> Void) {
+        // 先设置 flushing 标志，让 recognitionQueue 中排队的 processAudio 块立即跳过，
+        // 避免 flush 块被大量耗时的 Metal GPU 推理阻塞
+        isFlushing = true
+
         recognitionQueue.async { [weak self] in
             guard let self = self else {
                 DispatchQueue.main.async { completion("") }
@@ -142,6 +167,9 @@ class QwenASREngine: ASREngine {
             let result = self.recognizer.getResult()
             self.recognizer.reset()
 
+            // 重置标志，为下一次录音做准备
+            self.isFlushing = false
+
             DispatchQueue.main.async {
                 completion(result)
             }
@@ -149,6 +177,7 @@ class QwenASREngine: ASREngine {
     }
 
     func reset() {
+        _isFlushing = false
         recognizer.reset()
     }
 }
