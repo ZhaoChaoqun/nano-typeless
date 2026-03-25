@@ -42,7 +42,11 @@ class DualEngineASR: ASREngine {
     /// 被 Paraformer 的 recognitionQueue 和 qwenQueue 两个队列读写，
     /// 使用 os_unfair_lock 保护以确保线程安全。
     private var _qwenHasOutput = false
-    private var _qwenLock = os_unfair_lock_s()
+    private var lock = os_unfair_lock_s()
+
+    /// flush 进行中标志。设为 true 后，qwenQueue 中排队的 processAudio 块会立即跳过，
+    /// 避免 flush 块被大量耗时的 Metal GPU 推理阻塞。
+    private var _isFlushing = false
 
     let needsPunctuation = false
     let needsITN = true
@@ -50,15 +54,30 @@ class DualEngineASR: ASREngine {
     /// 线程安全读取 qwenHasOutput
     private var qwenHasOutput: Bool {
         get {
-            os_unfair_lock_lock(&_qwenLock)
+            os_unfair_lock_lock(&lock)
             let value = _qwenHasOutput
-            os_unfair_lock_unlock(&_qwenLock)
+            os_unfair_lock_unlock(&lock)
             return value
         }
         set {
-            os_unfair_lock_lock(&_qwenLock)
+            os_unfair_lock_lock(&lock)
             _qwenHasOutput = newValue
-            os_unfair_lock_unlock(&_qwenLock)
+            os_unfair_lock_unlock(&lock)
+        }
+    }
+
+    /// 线程安全读写 isFlushing
+    private var isFlushing: Bool {
+        get {
+            os_unfair_lock_lock(&lock)
+            let value = _isFlushing
+            os_unfair_lock_unlock(&lock)
+            return value
+        }
+        set {
+            os_unfair_lock_lock(&lock)
+            _isFlushing = newValue
+            os_unfair_lock_unlock(&lock)
         }
     }
 
@@ -85,13 +104,13 @@ class DualEngineASR: ASREngine {
 
         // 2. 同步推送给 QwenASR 流式引擎，产出文本后接管 HUD
         qwenQueue.async { [weak self] in
-            guard let self = self else { return }
+            guard let self = self, !self.isFlushing else { return }
             _ = self.qwenRecognizer.pushAudio(samples: samples, finalize: false)
 
             let stableText = self.qwenRecognizer.getResult()
             let unfixedText = self.qwenRecognizer.getUnfixed()
 
-            let hasContent = !stableText.isEmpty || (unfixedText != nil && !unfixedText!.isEmpty)
+            let hasContent = !stableText.isEmpty || !(unfixedText?.isEmpty ?? true)
             if hasContent {
                 if !self.qwenHasOutput {
                     self.qwenHasOutput = true
@@ -103,6 +122,10 @@ class DualEngineASR: ASREngine {
     }
 
     func flush(completion: @escaping (String) -> Void) {
+        // 先设置 flushing 标志，让 qwenQueue 中排队的 processAudio 块立即跳过，
+        // 避免 flush 块被大量耗时的 Metal GPU 推理阻塞
+        isFlushing = true
+
         qwenQueue.async { [weak self] in
             guard let self = self else {
                 DispatchQueue.main.async { completion("") }
@@ -132,10 +155,11 @@ class DualEngineASR: ASREngine {
     }
 
     func reset() {
-        qwenHasOutput = false
-        paraformerEngine.reset()
         qwenQueue.sync {
+            _qwenHasOutput = false
+            _isFlushing = false
             qwenRecognizer.reset()
         }
+        paraformerEngine.reset()
     }
 }
