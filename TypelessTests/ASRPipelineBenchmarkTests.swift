@@ -23,7 +23,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
     static var paraformerRecognizer: SherpaOnnxOnlineRecognizer?
     static var punctuator: SherpaOnnxPunctuation?
     static var corrector: ChineseSpellingCorrector?
-    static var cloudRewriter: CloudRewriter?
+    static var cloudRewriteService: CloudRewriteService?
     static var termNormalizer: TermNormalizer?
     static var itn: SherpaOnnxITN?
 
@@ -130,10 +130,11 @@ class ASRPipelineBenchmarkTests: XCTestCase {
             log("[Benchmark] 标点: \(punctuator != nil ? "✓" : "✗")")
         }
 
-        // Cloud Rewriter (Cerebras GPT-OSS-120B)
-        cloudRewriter = CloudRewriter()
-        cloudRewriteAvailable = cloudRewriter != nil
-        log("[Benchmark] Cloud Rewrite: \(cloudRewriteAvailable ? "✓" : "✗") (CLOUD_REWRITE_API_KEY)")
+        // Cloud Rewrite (Azure OpenAI gpt-5.4-mini)
+        cloudRewriteService = CloudRewriteService()
+        cloudRewriteAvailable = (ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"]
+            ?? GeneratedSecrets.azureOpenAIAPIKey) != nil
+        log("[Benchmark] Cloud Rewrite: \(cloudRewriteAvailable ? "✓" : "✗") (Azure OpenAI)")
 
         // TermNormalizer
         let bundleURL = Bundle(for: ASRPipelineBenchmarkTests.self).url(forResource: "term_dictionary", withExtension: "json")
@@ -158,7 +159,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
         paraformerRecognizer = nil
         punctuator = nil
         corrector = nil
-        cloudRewriter = nil
+        cloudRewriteService = nil
         termNormalizer = nil
         itn = nil
         super.tearDown()
@@ -245,9 +246,9 @@ class ASRPipelineBenchmarkTests: XCTestCase {
 
     func testParaformerCloudRewritePipeline() throws {
         try XCTSkipUnless(Self.paraformerAvailable, "Paraformer 模型不可用")
-        try XCTSkipUnless(Self.cloudRewriteAvailable, "Cloud Rewrite 不可用 (需要 CLOUD_REWRITE_API_KEY)")
+        try XCTSkipUnless(Self.cloudRewriteAvailable, "Cloud Rewrite 不可用 (需要 AZURE_OPENAI_API_KEY)")
         let recognizer = Self.paraformerRecognizer!
-        let rewriter = Self.cloudRewriter!
+        let rewriteService = Self.cloudRewriteService!
 
         let results = runPipeline(name: "Paraformer + Cloud Rewrite") { entry in
             let samples = try WAVLoader.load(path: entry.audioPath).samples
@@ -271,7 +272,7 @@ class ASRPipelineBenchmarkTests: XCTestCase {
             let semaphore = DispatchSemaphore(value: 0)
             var rewritten = asrText
             Task {
-                rewritten = await rewriter.rewrite(text: asrText)
+                rewritten = await rewriteService.rewriteOrPassthrough(asrText)
                 semaphore.signal()
             }
             semaphore.wait()

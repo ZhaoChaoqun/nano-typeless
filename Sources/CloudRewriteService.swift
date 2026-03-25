@@ -6,106 +6,40 @@ private let cloudRewriteLogger = Logger(subsystem: "com.typeless.app", category:
 final class CloudRewriteService {
     private let session: URLSession
     private let apiKeyProvider: () -> String?
-    private let endpoint: URL
+    private let baseEndpoint: String
+    private let deploymentName: String
+    private let apiVersion: String
 
     /// Wall-clock timeout for the entire rewrite operation.
     /// If the API doesn't respond within this duration, the original text is used.
     private static let rewriteTimeout: Duration = .seconds(5)
 
-    /// Models to try in priority order. First available model wins.
-    private static let preferredModels = [
-        "qwen-3-235b-a22b-instruct-2507",
-        "gpt-oss-120b",
-    ]
-
-    /// Resolved model name after startup probe completes.
-    /// Access via `await resolvedModel` which returns the probed result or the default fallback.
-    private let modelProbeTask: Task<String, Never>
-
     init(
         session: URLSession = .shared,
-        endpoint: URL = URL(string: "https://api.cerebras.ai/v1/chat/completions")!,
-        model: String? = nil,
+        baseEndpoint: String = {
+            ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"]
+                ?? GeneratedSecrets.azureOpenAIEndpoint
+                ?? ""
+        }(),
+        deploymentName: String = "gpt-5.4-mini",
+        apiVersion: String = "2024-10-21",
         apiKeyProvider: @escaping () -> String? = {
             // Priority: 1) environment variable (dev/debug override)  2) build-time bundled key
-            ProcessInfo.processInfo.environment["CLOUD_REWRITE_API_KEY"]
-                ?? GeneratedSecrets.cloudRewriteAPIKey
+            ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"]
+                ?? GeneratedSecrets.azureOpenAIAPIKey
         }
     ) {
         self.session = session
-        self.endpoint = endpoint
+        self.baseEndpoint = baseEndpoint.hasSuffix("/") ? String(baseEndpoint.dropLast()) : baseEndpoint
+        self.deploymentName = deploymentName
+        self.apiVersion = apiVersion
         self.apiKeyProvider = apiKeyProvider
-
-        if let model {
-            // Explicit model provided (e.g. tests) — skip probe
-            self.modelProbeTask = Task { model }
-        } else {
-            // Launch async probe at init time
-            let probeSession = session
-            let probeEndpoint = endpoint
-            let probeApiKeyProvider = apiKeyProvider
-            self.modelProbeTask = Task {
-                await CloudRewriteService.probeAvailableModel(
-                    session: probeSession,
-                    endpoint: probeEndpoint,
-                    apiKeyProvider: probeApiKeyProvider
-                )
-            }
-        }
     }
 
-    /// Probe the `/v1/models` endpoint and return the first available preferred model.
-    private static func probeAvailableModel(
-        session: URLSession,
-        endpoint: URL,
-        apiKeyProvider: () -> String?
-    ) async -> String {
-        let fallback = preferredModels[0]
-
-        guard let apiKey = apiKeyProvider(), !apiKey.isEmpty else {
-            cloudRewriteLogger.debug("Model probe skipped: no API key, using default \(fallback, privacy: .public)")
-            return fallback
-        }
-
-        do {
-            // Derive models URL from the chat completions endpoint
-            // e.g. https://api.cerebras.ai/v1/chat/completions → https://api.cerebras.ai/v1/models
-            let modelsURL: URL = {
-                var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)!
-                if let v1Range = components.path.range(of: "/v1/") {
-                    components.path = String(components.path[...v1Range.lowerBound]) + "v1/models"
-                } else {
-                    components.path = "/v1/models"
-                }
-                return components.url!
-            }()
-            var request = URLRequest(url: modelsURL)
-            request.timeoutInterval = 10
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-
-            let (data, response) = try await session.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                cloudRewriteLogger.warning("Model probe failed: HTTP \((response as? HTTPURLResponse)?.statusCode ?? -1, privacy: .public), using default \(fallback, privacy: .public)")
-                return fallback
-            }
-
-            let listResponse = try JSONDecoder().decode(ModelListResponse.self, from: data)
-            let availableIds = Set(listResponse.data.map(\.id))
-            cloudRewriteLogger.info("Available models: \(availableIds.sorted().joined(separator: ", "), privacy: .public)")
-
-            for candidate in preferredModels {
-                if availableIds.contains(candidate) {
-                    cloudRewriteLogger.info("Model probe resolved: \(candidate, privacy: .public)")
-                    return candidate
-                }
-            }
-
-            cloudRewriteLogger.warning("No preferred model available, using default \(fallback, privacy: .public)")
-            return fallback
-        } catch {
-            cloudRewriteLogger.warning("Model probe error: \(error.localizedDescription, privacy: .public), using default \(fallback, privacy: .public)")
-            return fallback
-        }
+    /// Construct the full Azure OpenAI chat completions URL.
+    private var completionsURL: URL? {
+        let urlString = "\(baseEndpoint)/openai/deployments/\(deploymentName)/chat/completions?api-version=\(apiVersion)"
+        return URL(string: urlString)
     }
 
     func rewriteOrPassthrough(_ text: String) async -> String {
@@ -116,6 +50,15 @@ final class CloudRewriteService {
             cloudRewriteLogger.debug("Cloud rewrite skipped: no API key")
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "noApiKey",
+                "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
+            ])
+            return text
+        }
+
+        guard !baseEndpoint.isEmpty else {
+            cloudRewriteLogger.debug("Cloud rewrite skipped: no Azure endpoint configured")
+            AnalyticsService.track("CloudRewrite.Completed", parameters: [
+                "outcome": "noEndpoint",
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
             ])
             return text
@@ -146,10 +89,9 @@ final class CloudRewriteService {
 
             let elapsed = startTime.duration(to: .now)
             let elapsedMs = Int(elapsed.components.seconds * 1000) + Int(elapsed.components.attoseconds / 1_000_000_000_000_000)
-            let resolvedModel = await modelProbeTask.value
             AnalyticsService.track("CloudRewrite.Completed", parameters: [
                 "outcome": "rewritten",
-                "model": resolvedModel,
+                "model": deploymentName,
                 "changed": "\(result != text)",
                 "inputLengthBucket": AnalyticsService.lengthBucket(count: text.count),
             ], floatValue: Double(elapsedMs))
@@ -195,18 +137,19 @@ final class CloudRewriteService {
     }
 
     private func rewrite(text: String, apiKey: String) async throws -> String {
-        let resolvedModel = await modelProbeTask.value
+        guard let url = completionsURL else {
+            throw CloudRewriteError.invalidConfiguration
+        }
 
-        var request = URLRequest(url: endpoint)
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.timeoutInterval = 8  // Safety net; task group timeout (5s) is the primary enforcer
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(apiKey, forHTTPHeaderField: "api-key")
 
         let body = ChatCompletionRequest(
-            model: resolvedModel,
             temperature: 0,
-            maxTokens: 2048,
+            maxCompletionTokens: 2048,
             messages: [
                 ChatMessage(role: "system", content: Self.systemPrompt),
                 ChatMessage(role: "user", content: "<transcript>\(text)</transcript>")
@@ -273,6 +216,7 @@ final class CloudRewriteService {
 }
 
 private enum CloudRewriteError: Error {
+    case invalidConfiguration
     case invalidResponse
     case unauthorized
     case rateLimited
@@ -282,6 +226,8 @@ private enum CloudRewriteError: Error {
 
     var logDescription: String {
         switch self {
+        case .invalidConfiguration:
+            return "invalid_configuration"
         case .invalidResponse:
             return "invalid_response"
         case .unauthorized:
@@ -299,15 +245,13 @@ private enum CloudRewriteError: Error {
 }
 
 private struct ChatCompletionRequest: Encodable {
-    let model: String
     let temperature: Double
-    let maxTokens: Int
+    let maxCompletionTokens: Int
     let messages: [ChatMessage]
 
     enum CodingKeys: String, CodingKey {
-        case model
         case temperature
-        case maxTokens = "max_tokens"
+        case maxCompletionTokens = "max_completion_tokens"
         case messages
     }
 }
@@ -322,14 +266,6 @@ private struct ChatCompletionResponse: Decodable {
 
     struct Choice: Decodable {
         let message: ChatMessage
-    }
-}
-
-private struct ModelListResponse: Decodable {
-    let data: [ModelEntry]
-
-    struct ModelEntry: Decodable {
-        let id: String
     }
 }
 
