@@ -6,7 +6,8 @@ final class CloudRewriteServiceTests: XCTestCase {
     func testRewriteOrPassthroughFallsBackOn401() async {
         let service = CloudRewriteService(
             session: makeSession(statusCode: 401, body: "{}"),
-            model: "test-model",
+            baseEndpoint: "https://test.openai.azure.com",
+            deploymentName: "test-model",
             apiKeyProvider: { "test-key" }
         )
 
@@ -18,7 +19,8 @@ final class CloudRewriteServiceTests: XCTestCase {
     func testRewriteOrPassthroughFallsBackOn429() async {
         let service = CloudRewriteService(
             session: makeSession(statusCode: 429, body: "{}"),
-            model: "test-model",
+            baseEndpoint: "https://test.openai.azure.com",
+            deploymentName: "test-model",
             apiKeyProvider: { "test-key" }
         )
 
@@ -30,7 +32,8 @@ final class CloudRewriteServiceTests: XCTestCase {
     func testRewriteOrPassthroughFallsBackOn5xx() async {
         let service = CloudRewriteService(
             session: makeSession(statusCode: 503, body: "{}"),
-            model: "test-model",
+            baseEndpoint: "https://test.openai.azure.com",
+            deploymentName: "test-model",
             apiKeyProvider: { "test-key" }
         )
 
@@ -46,7 +49,8 @@ final class CloudRewriteServiceTests: XCTestCase {
 
         let service = CloudRewriteService(
             session: makeSessionWithMockProtocol(),
-            model: "test-model",
+            baseEndpoint: "https://test.openai.azure.com",
+            deploymentName: "test-model",
             apiKeyProvider: { "test-key" }
         )
 
@@ -62,7 +66,8 @@ final class CloudRewriteServiceTests: XCTestCase {
 
         let service = CloudRewriteService(
             session: makeSessionWithMockProtocol(),
-            model: "test-model",
+            baseEndpoint: "https://test.openai.azure.com",
+            deploymentName: "test-model",
             apiKeyProvider: { "test-key" }
         )
 
@@ -82,7 +87,8 @@ final class CloudRewriteServiceTests: XCTestCase {
 
         let service = CloudRewriteService(
             session: makeSession(statusCode: 200, body: body),
-            model: "test-model",
+            baseEndpoint: "https://test.openai.azure.com",
+            deploymentName: "test-model",
             apiKeyProvider: { "test-key" }
         )
 
@@ -91,7 +97,10 @@ final class CloudRewriteServiceTests: XCTestCase {
     }
 
     func testRewriteOrPassthroughBypassesWhenNoApiKey() async {
-        let service = CloudRewriteService(apiKeyProvider: { nil })
+        let service = CloudRewriteService(
+            baseEndpoint: "https://test.openai.azure.com",
+            apiKeyProvider: { nil }
+        )
         let input = "hello world"
         let output = await service.rewriteOrPassthrough(input)
         XCTAssertEqual(output, input)
