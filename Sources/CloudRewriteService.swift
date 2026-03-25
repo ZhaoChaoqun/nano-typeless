@@ -149,7 +149,7 @@ final class CloudRewriteService {
 
         let body = ChatCompletionRequest(
             temperature: 0,
-            maxTokens: 2048,
+            maxCompletionTokens: 2048,
             messages: [
                 ChatMessage(role: "system", content: Self.systemPrompt),
                 ChatMessage(role: "user", content: "<transcript>\(text)</transcript>")
@@ -243,12 +243,12 @@ private enum CloudRewriteError: Error {
 
 private struct ChatCompletionRequest: Encodable {
     let temperature: Double
-    let maxTokens: Int
+    let maxCompletionTokens: Int
     let messages: [ChatMessage]
 
     enum CodingKeys: String, CodingKey {
         case temperature
-        case maxTokens = "max_tokens"
+        case maxCompletionTokens = "max_completion_tokens"
         case messages
     }
 }
