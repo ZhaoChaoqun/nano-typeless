@@ -140,7 +140,7 @@ class QwenASREngine: ASREngine {
             // unfixed 投机文本（rollback 窗口 + unfixed chunks 中的 token）
             let unfixedText = self.recognizer.getUnfixed()
 
-            let hasContent = !stableText.isEmpty || (unfixedText != nil && !unfixedText!.isEmpty)
+            let hasContent = !stableText.isEmpty || !(unfixedText?.isEmpty ?? true)
             if hasContent {
                 onPartialResult(stableText, unfixedText)
             }
@@ -177,7 +177,9 @@ class QwenASREngine: ASREngine {
     }
 
     func reset() {
-        _isFlushing = false
-        recognizer.reset()
+        recognitionQueue.sync {
+            _isFlushing = false
+            recognizer.reset()
+        }
     }
 }
