@@ -140,8 +140,9 @@ class DualEngineASR: ASREngine {
             let result = self.qwenRecognizer.getResult()
             self.qwenRecognizer.reset()
 
-            // 重置 HUD 切换标志，为下一次录音做准备
+            // 重置标志，为下一次录音做准备
             self.qwenHasOutput = false
+            self.isFlushing = false
 
             // 同步 reset Paraformer，防止下次录音 HUD 残留上次的累积文本
             self.paraformerEngine.reset()
