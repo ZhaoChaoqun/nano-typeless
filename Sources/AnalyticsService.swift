@@ -106,9 +106,11 @@ enum AnalyticsService {
 
     // MARK: - Private Helpers
 
-    /// Whether a Cloud Rewrite API key is configured (user-provided or built-in).
+    /// Whether a Cloud Rewrite API key is configured (env var or built-in).
     private static var hasCloudRewriteAPIKey: Bool {
-        let userKey = UserDefaults.standard.string(forKey: "cloudRewriteAPIKey") ?? ""
-        return !userKey.isEmpty || GeneratedSecrets.azureOpenAIAPIKey != nil
+        if let envKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"], !envKey.isEmpty {
+            return true
+        }
+        return GeneratedSecrets.azureOpenAIAPIKey != nil
     }
 }

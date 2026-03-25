@@ -132,8 +132,9 @@ class ASRPipelineBenchmarkTests: XCTestCase {
 
         // Cloud Rewrite (Azure OpenAI gpt-5.4-mini)
         cloudRewriteService = CloudRewriteService()
-        cloudRewriteAvailable = true
-        log("[Benchmark] Cloud Rewrite: ✓ (Azure OpenAI)")
+        cloudRewriteAvailable = (ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"]
+            ?? GeneratedSecrets.azureOpenAIAPIKey) != nil
+        log("[Benchmark] Cloud Rewrite: \(cloudRewriteAvailable ? "✓" : "✗") (Azure OpenAI)")
 
         // TermNormalizer
         let bundleURL = Bundle(for: ASRPipelineBenchmarkTests.self).url(forResource: "term_dictionary", withExtension: "json")

@@ -138,7 +138,7 @@ final class CloudRewriteService {
 
     private func rewrite(text: String, apiKey: String) async throws -> String {
         guard let url = completionsURL else {
-            throw CloudRewriteError.invalidResponse
+            throw CloudRewriteError.invalidConfiguration
         }
 
         var request = URLRequest(url: url)
@@ -216,6 +216,7 @@ final class CloudRewriteService {
 }
 
 private enum CloudRewriteError: Error {
+    case invalidConfiguration
     case invalidResponse
     case unauthorized
     case rateLimited
@@ -225,6 +226,8 @@ private enum CloudRewriteError: Error {
 
     var logDescription: String {
         switch self {
+        case .invalidConfiguration:
+            return "invalid_configuration"
         case .invalidResponse:
             return "invalid_response"
         case .unauthorized:
