@@ -1,33 +1,35 @@
 import Foundation
 import AppKit
-import Carbon.HIToolbox
 import os
 
 private let logger = Logger(subsystem: "com.typeless.app", category: "KeyMonitor")
 
-/// 触发键配置，支持修饰键和普通键
+/// 触发键配置，仅支持修饰键（Fn/Command/Option/Control/Shift）
 struct TriggerKeyConfig: Codable, Equatable {
-    /// 事件类型：flagsChanged (修饰键) 或 keyDown/keyUp (普通键)
-    let isModifierKey: Bool
-    /// 按键的 keyCode
+    /// 按键的 keyCode（Fn 为 -1，其他修饰键使用实际 keyCode 区分左右）
     let keyCode: Int64
-    /// 修饰键的 flag 掩码（仅修饰键有效，如 .maskSecondaryFn = 0x800000）
+    /// 修饰键的 flag 掩码（如 .maskSecondaryFn = 0x800000）
     let flagMask: UInt64
     /// 用户可读的按键名称
     let displayName: String
 
     /// 默认触发键：Fn
     static let defaultFn = TriggerKeyConfig(
-        isModifierKey: true,
-        keyCode: -1,  // Fn 不使用 keyCode，而是检查 flagMask
+        keyCode: -1,
         flagMask: CGEventFlags.maskSecondaryFn.rawValue,
         displayName: "Fn"
     )
 
-    /// 从 UserDefaults 读取，默认 Fn
+    /// 从 UserDefaults 读取，默认 Fn。若旧配置为非修饰键则回退到默认值。
     static var current: TriggerKeyConfig {
         guard let data = UserDefaults.standard.data(forKey: "triggerKeyConfig"),
               let config = try? JSONDecoder().decode(TriggerKeyConfig.self, from: data) else {
+            return .defaultFn
+        }
+        // 迁移：旧版本允许普通键作为触发键，其 flagMask 为 0（修饰键的 flagMask 始终非零）。
+        // 由于 listenOnly event tap 无法拦截普通键事件，已移除普通键支持，回退到默认 Fn。
+        if config.flagMask == 0 {
+            defaultFn.save()
             return .defaultFn
         }
         return config
@@ -40,23 +42,14 @@ struct TriggerKeyConfig: Codable, Equatable {
         }
     }
 
-    /// 检查事件是否匹配此触发键
+    /// 检查 flagsChanged 事件是否匹配此触发键，返回是否按下
     func matches(type: CGEventType, event: CGEvent) -> Bool? {
-        if isModifierKey {
-            guard type == .flagsChanged else { return nil }
-            if keyCode >= 0 {
-                // 区分左右修饰键（如 Right Command keyCode=54）
-                let eventKeyCode = event.getIntegerValueField(.keyboardEventKeycode)
-                guard eventKeyCode == keyCode else { return nil }
-            }
-            return event.flags.rawValue & flagMask != 0
-        } else {
+        guard type == .flagsChanged else { return nil }
+        if keyCode >= 0 {
             let eventKeyCode = event.getIntegerValueField(.keyboardEventKeycode)
             guard eventKeyCode == keyCode else { return nil }
-            if type == .keyDown { return true }
-            if type == .keyUp { return false }
-            return nil
         }
+        return event.flags.rawValue & flagMask != 0
     }
 }
 
@@ -72,7 +65,7 @@ extension Notification.Name {
     static let triggerKeyRecorded = Notification.Name("triggerKeyRecorded")
 }
 
-/// 监听全局触发键按下/松开（支持任意按键）
+/// 监听全局修饰键按下/松开（Fn/Command/Option/Control/Shift）
 class KeyMonitor {
     var onKeyDown: (() -> Void)?
     var onKeyUp: (() -> Void)?
@@ -122,11 +115,9 @@ class KeyMonitor {
             return
         }
 
-        // 监听所有需要的事件类型（修饰键 + 普通键）
+        // 只监听修饰键事件
         let eventMask: CGEventMask =
-            (1 << CGEventType.flagsChanged.rawValue) |
-            (1 << CGEventType.keyDown.rawValue) |
-            (1 << CGEventType.keyUp.rawValue)
+            (1 << CGEventType.flagsChanged.rawValue)
 
         // 刷新触发键配置
         triggerConfig = .current
@@ -207,122 +198,38 @@ class KeyMonitor {
         return Unmanaged.passRetained(event)
     }
 
-    /// 从事件中捕获按键配置（用于录制模式）
+    /// 从 flagsChanged 事件中捕获修饰键配置（用于录制模式）
     private func captureKeyConfig(type: CGEventType, event: CGEvent) -> TriggerKeyConfig? {
+        guard type == .flagsChanged else { return nil }
+
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        let flags = event.flags
 
-        if type == .flagsChanged {
-            // 修饰键：检测哪个 flag 变化了
-            let flags = event.flags
-
-            if flags.contains(.maskSecondaryFn) {
-                return TriggerKeyConfig(isModifierKey: true, keyCode: -1,
-                                        flagMask: CGEventFlags.maskSecondaryFn.rawValue, displayName: "Fn")
-            }
-            if flags.contains(.maskCommand) {
-                let name = keyCode == 54 ? "Right Command ⌘" : "Left Command ⌘"
-                return TriggerKeyConfig(isModifierKey: true, keyCode: keyCode,
-                                        flagMask: CGEventFlags.maskCommand.rawValue, displayName: name)
-            }
-            if flags.contains(.maskAlternate) {
-                let name = keyCode == 61 ? "Right Option ⌥" : "Left Option ⌥"
-                return TriggerKeyConfig(isModifierKey: true, keyCode: keyCode,
-                                        flagMask: CGEventFlags.maskAlternate.rawValue, displayName: name)
-            }
-            if flags.contains(.maskControl) {
-                let name = keyCode == 62 ? "Right Control ⌃" : "Left Control ⌃"
-                return TriggerKeyConfig(isModifierKey: true, keyCode: keyCode,
-                                        flagMask: CGEventFlags.maskControl.rawValue, displayName: name)
-            }
-            if flags.contains(.maskShift) {
-                let name = keyCode == 60 ? "Right Shift ⇧" : "Left Shift ⇧"
-                return TriggerKeyConfig(isModifierKey: true, keyCode: keyCode,
-                                        flagMask: CGEventFlags.maskShift.rawValue, displayName: name)
-            }
-            return nil
+        if flags.contains(.maskSecondaryFn) {
+            return TriggerKeyConfig(keyCode: -1,
+                                    flagMask: CGEventFlags.maskSecondaryFn.rawValue, displayName: "Fn")
         }
-
-        if type == .keyDown {
-            // 普通键：用 keyCode 标识
-            let name = keyCodeDisplayName(keyCode)
-            return TriggerKeyConfig(isModifierKey: false, keyCode: keyCode,
-                                    flagMask: 0, displayName: name)
+        if flags.contains(.maskCommand) {
+            let name = keyCode == 54 ? "Right Command ⌘" : "Left Command ⌘"
+            return TriggerKeyConfig(keyCode: keyCode,
+                                    flagMask: CGEventFlags.maskCommand.rawValue, displayName: name)
         }
-
+        if flags.contains(.maskAlternate) {
+            let name = keyCode == 61 ? "Right Option ⌥" : "Left Option ⌥"
+            return TriggerKeyConfig(keyCode: keyCode,
+                                    flagMask: CGEventFlags.maskAlternate.rawValue, displayName: name)
+        }
+        if flags.contains(.maskControl) {
+            let name = keyCode == 62 ? "Right Control ⌃" : "Left Control ⌃"
+            return TriggerKeyConfig(keyCode: keyCode,
+                                    flagMask: CGEventFlags.maskControl.rawValue, displayName: name)
+        }
+        if flags.contains(.maskShift) {
+            let name = keyCode == 60 ? "Right Shift ⇧" : "Left Shift ⇧"
+            return TriggerKeyConfig(keyCode: keyCode,
+                                    flagMask: CGEventFlags.maskShift.rawValue, displayName: name)
+        }
         return nil
-    }
-
-    /// 将 keyCode 转为人类可读名称
-    private func keyCodeDisplayName(_ keyCode: Int64) -> String {
-        // 常见特殊键
-        switch keyCode {
-        case 110: return "App / Menu"
-        case 53: return "Escape"
-        case 36: return "Return"
-        case 48: return "Tab"
-        case 49: return "Space"
-        case 51: return "Delete"
-        case 117: return "Forward Delete"
-        case 114: return "Insert"
-        case 115: return "Home"
-        case 119: return "End"
-        case 116: return "Page Up"
-        case 121: return "Page Down"
-        case 123: return "←"
-        case 124: return "→"
-        case 125: return "↓"
-        case 126: return "↑"
-        case 122: return "F1"
-        case 120: return "F2"
-        case 99: return "F3"
-        case 118: return "F4"
-        case 96: return "F5"
-        case 97: return "F6"
-        case 98: return "F7"
-        case 100: return "F8"
-        case 101: return "F9"
-        case 109: return "F10"
-        case 103: return "F11"
-        case 111: return "F12"
-        case 105: return "F13"
-        case 107: return "F14"
-        case 113: return "F15"
-        default:
-            // 尝试用 Carbon 获取字符名称
-            if let char = keyCodeToCharacter(keyCode) {
-                return String(char).uppercased()
-            }
-            return "Key \(keyCode)"
-        }
-    }
-
-    /// 将 keyCode 转为字符（用于字母/数字键）
-    private func keyCodeToCharacter(_ keyCode: Int64) -> Character? {
-        guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue() else { return nil }
-        guard let layoutData = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return nil }
-        let layout = unsafeBitCast(layoutData, to: CFData.self)
-        let keyboardLayout = unsafeBitCast(CFDataGetBytePtr(layout), to: UnsafePointer<UCKeyboardLayout>.self)
-
-        var deadKeyState: UInt32 = 0
-        var chars = [UniChar](repeating: 0, count: 4)
-        var length: Int = 0
-
-        let status = UCKeyTranslate(
-            keyboardLayout,
-            UInt16(keyCode),
-            UInt16(kUCKeyActionDown),
-            0, // no modifiers
-            UInt32(LMGetKbdType()),
-            UInt32(kUCKeyTranslateNoDeadKeysMask),
-            &deadKeyState,
-            chars.count,
-            &length,
-            &chars
-        )
-
-        guard status == noErr, length > 0 else { return nil }
-        guard let scalar = UnicodeScalar(chars[0]) else { return nil }
-        return Character(scalar)
     }
 
     /// 统一处理触发键状态变化
