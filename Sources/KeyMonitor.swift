@@ -26,7 +26,8 @@ struct TriggerKeyConfig: Codable, Equatable {
               let config = try? JSONDecoder().decode(TriggerKeyConfig.self, from: data) else {
             return .defaultFn
         }
-        // 迁移：旧版本可能存了非修饰键配置（flagMask == 0），回退到默认 Fn
+        // 迁移：旧版本允许普通键作为触发键，其 flagMask 为 0（修饰键的 flagMask 始终非零）。
+        // 由于 listenOnly event tap 无法拦截普通键事件，已移除普通键支持，回退到默认 Fn。
         if config.flagMask == 0 {
             defaultFn.save()
             return .defaultFn
