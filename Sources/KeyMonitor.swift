@@ -195,7 +195,6 @@ class KeyMonitor {
                 DispatchQueue.main.async {
                     self.onKeyRecorded?(config)
                 }
-                return nil  // 吞掉录制的按键事件
             }
             return Unmanaged.passRetained(event)
         }
@@ -203,10 +202,6 @@ class KeyMonitor {
         // 正常触发键检测模式
         if let pressed = triggerConfig.matches(type: type, event: event) {
             handleTriggerState(pressed: pressed)
-            // 非修饰键需要吞掉事件，防止触发系统默认行为
-            if !triggerConfig.isModifierKey {
-                return nil
-            }
         }
 
         return Unmanaged.passRetained(event)
