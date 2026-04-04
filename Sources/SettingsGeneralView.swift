@@ -15,7 +15,7 @@ struct SettingsGeneralView: View {
                 Text("触发键")
                 Spacer()
                 if isRecording {
-                    Text("请按下任意键...")
+                    Text("请按下修饰键...")
                         .foregroundStyle(.secondary)
                         .italic()
                 } else {
@@ -47,7 +47,7 @@ struct SettingsGeneralView: View {
         } header: {
             Text("快捷键")
         } footer: {
-            Text("长按所选按键开始录音，松开结束。外接机械键盘的 Fn 键通常无法被系统检测，建议录制其他按键。")
+            Text("长按所选修饰键开始录音，松开结束。支持 Fn、Command、Option、Control、Shift（可区分左右）。外接机械键盘的 Fn 键通常无法被系统检测，建议改用其他修饰键。")
         }
         .onReceive(NotificationCenter.default.publisher(for: .triggerKeyRecorded)) { notification in
             if let config = notification.object as? TriggerKeyConfig {
